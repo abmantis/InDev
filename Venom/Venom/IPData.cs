@@ -24,11 +24,11 @@ namespace VenomNamespace
         set { _ipaddress = value; }
     }
 
-    private string _otapay;
-    public string OTAPayload
+    private string _macaddress;
+    public string MACAddress
         {
-        get { return _otapay; }
-        set { _otapay = value; }
+        get { return _macaddress; }
+        set { _macaddress = value; }
     }
 
     private int _avg;
@@ -149,10 +149,10 @@ namespace VenomNamespace
         set { _wifiresyncstatistics = value; }
     }
 
-    public IPData(string ip, string pay)
+    public IPData(string ip, string mac)
     {
         _ipaddress = ip;
-        _otapay = pay;
+        _macaddress = mac;
         numrecords = 0;
         _dropcount = 0;
         _runningdropcount = 0;

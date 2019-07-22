@@ -486,7 +486,7 @@ namespace VenomNamespace
                     using (StreamWriter sw = File.AppendText(curfilename))
                     {
                         sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
-                            iplist[listindex].OTAPayload + "," +
+                            iplist[listindex].MACAddress + "," +
                             rtt + "," +
                             iplist[listindex].DropCount + "," +
                             iplist[listindex].UptimePct + "," +
@@ -666,11 +666,11 @@ namespace VenomNamespace
                     {
                         LB_IPs.Items.Add(cai.IPAddress);
                         ota_pay = TB_Payload.Text;
-                        IPData newip = new IPData(cai.IPAddress, ota_pay);
+                        IPData newip = new IPData(cai.IPAddress, cai.MacAddress);
                         iplist.Add(newip);
                         DataRow dr = results.NewRow();
                         dr["IP Address"] = newip.IPAddress;
-                        dr["OTA Payload"] = newip.OTAPayload;
+                        dr["MAC Address"] = newip.MACAddress;
                         results.Rows.Add(dr);
                     }
                 }
