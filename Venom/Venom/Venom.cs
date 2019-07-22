@@ -17,6 +17,9 @@ namespace VenomNamespace
         /// <summary>
         /// Opcodes parsed by this form
         /// </summary>
+        /// 
+        string IPAddress;
+        string Payload;
         public enum OPCODES
         {
             //Include your opcodes in here
@@ -50,12 +53,12 @@ namespace VenomNamespace
             RevealPacket reveal_pkt = new RevealPacket();
             if (reveal_pkt.ParseSimpleWhirlpoolMessage(data))
             {
-                string text = reveal_pkt.API.ToString("X2") + "," + reveal_pkt.OpCode.ToString("X2");
+              /*  string text = reveal_pkt.API.ToString("X2") + "," + reveal_pkt.OpCode.ToString("X2");
                 foreach (byte b in reveal_pkt.PayLoad)
                 {
                     text += "," + b.ToString("X2");
                 }
-                TB_Log.Text = text;
+                TB_Log.Text = text;*/
 
                 switch (reveal_pkt.API)
                 {
@@ -178,6 +181,59 @@ namespace VenomNamespace
 
         }
 
+        //This command does not come with Lucas's template.  You will have to add it manually.
+        public override void parseTraceMessages(ExtendedTracePacket data)
+        {
+            //base.parseTraceMessages(data);
+            if (data.ContentAsString.Contains("linkstate"))
+            {
+                string s = data.ContentAsString;
+                try
+                {
+                    int linkstate = int.Parse(s.Substring(s.IndexOf("linkstate") + 10, 1));
+                    int claimstate = int.Parse(s.Substring(s.IndexOf("claimed") + 8, 1));
+                    lock (lockObj)
+                    {
+                        iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).LinkState = linkstate;
+                        iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).ClaimState = claimstate;
+                    }
+                }
+                catch { }
+            }
+            if (data.ContentAsString.StartsWith("mqtt_in_data:"))
+            {
+                //MQTT data in the Trace just comes as raw hex regardless of message format, so need to conver it to ASCII to get the topic string
+                string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
+                string sb = "";
+                for (int i = 0; i < parts[2].Length; i += 2)
+                {
+                    string hs = parts[2].Substring(i, 2);
+                    sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
+                }
+
+                //Locate the MQTT Statistics message in the Trace and grab the four wifi reset reason bytes from it
+                if (sb.Contains("\"statistics\": \""))
+                {
+                    try
+                    {
+                        sb = sb.Replace("\"statistics\": \"", "@");
+                        string[] stats = sb.Split('@');
+                        string[] wifireset = stats[1].Split(',');
+                        string resetreason = "";
+                        for (int j = 0; j < 4; j++)
+                        {
+                            resetreason += wifireset[j] + (j == 3 ? "" : ";");
+                        }
+                        lock (lockObj)
+                        {
+                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).WifiResyncStatistics = resetreason;
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+
         #region WIRED BUS Message functions
         /// <summary>
         /// Send a wide Message over the bus
@@ -283,14 +339,22 @@ namespace VenomNamespace
 
         #endregion
 
-        private void Venom_Load(object sender, EventArgs e)
+        private void BTN_LogDir_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            fbd.ShowDialog();
+            if (fbd.SelectedPath != "")
+            {
+                TB_LogDir.Text = fbd.SelectedPath;
+            }
+        }
+
+
+        private void BT_Payload_Click(object sender, EventArgs e)
         {
 
         }
 
-        private void Label1_Click(object sender, EventArgs e)
-        {
-
-        }
+      
     }
 }
