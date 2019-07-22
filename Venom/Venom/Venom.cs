@@ -379,8 +379,8 @@ namespace VenomNamespace
 
             // results.Rows.Add(TB_IP.Text + TB_Payload.Text + "Pass12");
           
-            resultRow["IP Address"] = TB_IP;
-            resultRow["OTA Payload"] = TB_Payload;
+            resultRow["IP Address"] = TB_IP.Text;
+            resultRow["OTA Payload"] = TB_Payload.Text;
             resultRow["OTA Result"] = "ff";
             results.Rows.Add(resultRow);
 
@@ -388,7 +388,7 @@ namespace VenomNamespace
                 {
                     using (StreamWriter sw = File.AppendText(curfilename))
                     {
-                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + TB_IP + "," +
+                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + TB_IP.Text + "," +
                             TB_Payload.Text + "," +
                             "Pass0");
                     }
@@ -417,16 +417,39 @@ namespace VenomNamespace
 
         private void BT_Payload_Click(object sender, EventArgs e)
         {
-            
+            //string ip = TB_IP;
+
+            //Parse OTA payload into byte array for sending via MQTT
+            byte[] bytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
+
+
+            //System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            //ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
+
+            //Prepare IP address for sending via MQTT
+            string[] ipad = TB_IP.Text.Split('.');
+            byte[] ipbytes = new byte[4];
+            for (int j = 0; j < 4; j++)
+            {
+                ipbytes[j] = byte.Parse(ipad[j]);
+            }
+            System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
+
+            //Write info to log
             if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
             {
                 curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
                 using (StreamWriter sw = File.CreateText(curfilename))
                 {
-                    sw.WriteLine("Time,IP,Payload,Result");
+                    sw.WriteLine("Time,,IP,Payload,Result");
                 }
             }
+
+            // Write info to widebox window
             SetText();
+
+            //Semd payload
+            WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", bytes);
         }
 
       

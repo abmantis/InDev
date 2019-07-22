@@ -1,0 +1,1445 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>WirelessLib</name>
+    </assembly>
+    <members>
+        <member name="P:WirelessLib.ConnectedAppliance.Info">
+            <summary>
+            Gets or sets the information.
+            </summary>
+            <value>
+            The information.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedAppliance.ConnectedRevelation">
+            <summary>
+            Gets or sets the connected revelation.
+            </summary>
+            <value>
+            The connected revelation.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedAppliance.IsTraceOn">
+            <summary>
+            Gets or sets a value indicating whether this instance trace is on.
+            </summary>
+            <value>
+            <c>true</c> if this instance trace is on; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedAppliance.ConnectedTrace">
+            <summary>
+            Gets or sets the connected trace.
+            </summary>
+            <value>
+            The connected trace.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedAppliance.ConnectedMqtt">
+            <summary>
+            Gets or sets the connected MQTT.
+            </summary>
+            <value>
+            The connected MQTT.
+            </value>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo">
+            <summary>
+            Represent a Connected Appliance information.
+            Contains some information about the current state of the connect applicance and some of the pipes connected to it.
+            Also contains if provided some info about the Appliance itself.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.IsRevelationConnected">
+            <summary>
+            Gets or sets a value indicating whether this instance is connected to Revelation.
+            </summary>
+            <value>
+            <c>true</c> if this instance is connected; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.IsM2MVersion">
+            <summary>
+            Gets or sets a value indicating whether this instance is m2m version.
+            </summary>
+            <value>
+            <c>true</c> if this instance is m2 m version; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.IsTraceOn">
+            <summary>
+            Gets or sets a value indicating whether this instance is connected to Trace.
+            </summary>
+            <value>
+            <c>true</c> if this instance is connected; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.IsMqttConnected">
+            <summary>
+            Gets or sets a value indicating whether this instance is MQTT connected.
+            </summary>
+            <value>
+            <c>true</c> if this instance is MQTT connected; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.IPAddress">
+            <summary>
+            Gets or sets the ip address.
+            </summary>
+            <value>
+            The ip address.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.RevelationPort">
+            <summary>
+            Gets or sets the revelation port.
+            </summary>
+            <value>
+            The revelation port.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.MqttPort">
+            <summary>
+            Gets or sets the MQTT port.
+            </summary>
+            <value>
+            The MQTT port.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.MacAddress">
+            <summary>
+            Gets or sets the MAC Address.
+            </summary>
+            <value>
+            The MAC Address.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.ModelNumber">
+            <summary>
+            Gets or sets the model number.
+            </summary>
+            <value>
+            The model number.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.SerialNumber">
+            <summary>
+            Gets or sets the serial number.
+            </summary>
+            <value>
+            The serial number.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.VersionNumber">
+            <summary>
+            Gets or sets the version number.
+            </summary>
+            <value>
+            The version number.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.Extensions">
+            <summary>
+            Gets or sets the extensions.
+            Stuff not parsed yet.
+            </summary>
+            <value>
+            The extensions.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.Brand">
+            <summary>
+            Gets or sets the brand.
+            </summary>
+            <value>
+            The brand.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.Category">
+            <summary>
+            Gets or sets the category.
+            </summary>
+            <value>
+            The category.
+            </value>
+        </member>
+        <member name="M:WirelessLib.ConnectedApplianceInfo.ToString">
+            <summary>
+            Returns a <see cref="T:System.String" /> that represents this instance.
+            </summary>
+            <returns>
+            A <see cref="T:System.String" /> that represents this instance.
+            </returns>
+        </member>
+        <member name="M:WirelessLib.ConnectedApplianceInfo.ParseUDPMessage(System.String,System.String)">
+            <summary>
+            Parses the UDP message into a ConnectedAppliance Information
+            </summary>
+            <param name="ipaddress">The ipaddress.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo.JsonProductInfo">
+            <summary>
+            Helper to desialize json incoming string prod info json
+            </summary>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.JsonProductInfo.d">
+            <summary>
+            Gets or sets the d.
+            </summary>
+            <value>
+            The d.
+            </value>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo.Data">
+            <summary>
+            Helper to desialize json incoming string prod info json
+            </summary>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo.JsonId">
+            <summary>
+            Helper to desialize json incoming string id json
+            </summary>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.JsonId.d">
+            <summary>
+            Gets or sets the d.
+            </summary>
+            <value>
+            The d.
+            </value>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo.IdData">
+            <summary>
+            Helper to desialize json incoming string prod info json
+            </summary>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo.JsonIsp">
+            <summary>
+            Helper to desialize json incoming string isp json
+            </summary>
+        </member>
+        <member name="P:WirelessLib.ConnectedApplianceInfo.JsonIsp.info">
+            <summary>
+            Gets or sets the info.
+            </summary>
+            <value>
+            The info.
+            </value>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo.IspData">
+            <summary>
+            Helper to desialize json incoming string isp json
+            </summary>
+        </member>
+        <member name="T:WirelessLib.ConnectedApplianceInfo.JsonMessageType">
+            <summary>
+            Message type to be parsed
+            </summary>
+        </member>
+        <member name="F:WirelessLib.ConnectedApplianceInfo.JsonMessageType.PROD_INFO">
+            <summary>
+            The prod information
+            </summary>
+        </member>
+        <member name="F:WirelessLib.ConnectedApplianceInfo.JsonMessageType.ID">
+            <summary>
+            The identifier
+            </summary>
+        </member>
+        <member name="F:WirelessLib.ConnectedApplianceInfo.JsonMessageType.ISP">
+            <summary>
+            The isp
+            </summary>
+        </member>
+        <member name="M:WirelessLib.ConnectedApplianceInfo.ParseJsonMessage(System.String,WirelessLib.ConnectedApplianceInfo.JsonMessageType)">
+            <summary>
+            Parses the json message.
+            </summary>
+            <param name="message">The message.</param>
+            <param name="messageType">Type of the message.</param>
+            <returns></returns>
+        </member>
+        <member name="E:WirelessLib.ConnectedApplianceInfo.PropertyChanged">
+            <summary>
+            Occurs when a property value changes.
+            </summary>
+        </member>
+        <member name="T:WirelessLib.ExtendedMqttMsgPublish">
+            <summary>
+            Extends a <see cref="T:uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublish">MqttMsgPublish</see> representation adding Source, Destination, IsTrace and TimeStamp of the packet.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.ExtendedMqttMsgPublish.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:WirelessLib.ExtendedMqttMsgPublish"/> class.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.ExtendedMqttMsgPublish.#ctor(uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublish)">
+            <summary>
+            Initializes a new instance of the <see cref="T:WirelessLib.ExtendedMqttMsgPublish"/> class starting from a base.
+            </summary>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:WirelessLib.ExtendedMqttMsgPublish.#ctor(System.String,System.Byte[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:WirelessLib.ExtendedMqttMsgPublish"/> class.
+            </summary>
+            <param name="topic">Message topic</param>
+            <param name="message">Message data</param>
+        </member>
+        <member name="M:WirelessLib.ExtendedMqttMsgPublish.#ctor(System.String,System.Byte[],System.Boolean,System.Byte,System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:WirelessLib.ExtendedMqttMsgPublish"/> class.
+            </summary>
+            <param name="topic">Message topic</param>
+            <param name="message">Message data</param>
+            <param name="dupFlag">Duplicate flag</param>
+            <param name="qosLevel">Quality of Service level</param>
+            <param name="retain">Retain flag</param>
+        </member>
+        <member name="P:WirelessLib.ExtendedMqttMsgPublish.Source">
+            <summary>
+            Gets or sets the source.
+            </summary>
+            <value>
+            The source.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedMqttMsgPublish.Destination">
+            <summary>
+            Gets or sets the destination.
+            </summary>
+            <value>
+            The destination.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedMqttMsgPublish.TimeStamp">
+            <summary>
+            Gets or sets the time stamp.
+            </summary>
+            <value>
+            The time stamp.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedMqttMsgPublish.IsTrace">
+            <summary>
+            Gets or sets a value indicating whether this instance is trace message.
+            </summary>
+            <value>
+              <c>true</c> if this instance is trace; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="T:WirelessLib.ExtendedRevelationPacket">
+            <summary>
+            Extends a <see cref="T:WirelessLib.RevelationPacket">RevelationPacket</see> representation adding Source, Destination, IsTrace and TimeStamp of the packet.
+            </summary>
+            <remarks>Revelation Packets can be under Trace messages, so IsTrace was added to mark the messages that are coming from trace and not from revelation pipe.</remarks>
+        </member>
+        <member name="M:WirelessLib.ExtendedRevelationPacket.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:WirelessLib.ExtendedRevelationPacket"/> class.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.ExtendedRevelationPacket.#ctor(WirelessLib.RevelationPacket)">
+            <summary>
+            Initializes a new instance of the <see cref="T:WirelessLib.ExtendedRevelationPacket"/> class.
+            </summary>
+            <param name="packet">The packet.</param>
+        </member>
+        <member name="P:WirelessLib.ExtendedRevelationPacket.Source">
+            <summary>
+            Gets or sets the source.
+            </summary>
+            <value>
+            The source.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedRevelationPacket.Destination">
+            <summary>
+            Gets or sets the destination.
+            </summary>
+            <value>
+            The destination.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedRevelationPacket.TimeStamp">
+            <summary>
+            Gets or sets the time stamp.
+            </summary>
+            <value>
+            The time stamp.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedRevelationPacket.IsTrace">
+            <summary>
+            Gets or sets a value indicating whether this instance is trace message.
+            </summary>
+            <value>
+              <c>true</c> if this instance is trace; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedUdpMessage.Data">
+            <summary>
+            Gets or sets the data.
+            </summary>
+            <value>
+            The data.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedUdpMessage.DataAsString">
+            <summary>
+            Gets or sets the data as string.
+            </summary>
+            <value>
+            The data as string.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedUdpMessage.Source">
+            <summary>
+            Gets or sets the source.
+            </summary>
+            <value>
+            The source.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedUdpMessage.Destination">
+            <summary>
+            Gets or sets the destination.
+            </summary>
+            <value>
+            The destination.
+            </value>
+        </member>
+        <member name="P:WirelessLib.ExtendedUdpMessage.TimeStamp">
+            <summary>
+            Gets or sets the time stamp.
+            </summary>
+            <value>
+            The time stamp.
+            </value>
+        </member>
+        <member name="T:WirelessLib.HttpServer.CsHTTPRequest">
+            <summary>
+            Summary description for CsHTTPRequest.
+            </summary>
+        </member>
+        <member name="T:WirelessLib.HttpServer.CsHTTPServer">
+            <summary>
+            Summary description for CsHTTPServer.
+            </summary>
+        </member>
+        <member name="T:WirelessLib.HttpServer.FirmwareUpdateServer">
+            <summary>
+            Summary description for FirmwareUpdateServer.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.HttpServer.FirmwareUpdateServer.GetMimeType(System.String)">
+            <summary>
+            Gets the the MIME type given an extension.
+            </summary>
+            <param name="extension">The extension.</param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentNullException">extension</exception>
+        </member>
+        <member name="T:WirelessLib.IWhirlpoolWireless">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.CloseAll(System.Boolean)">
+             <summary>
+             Closes all connections and/or stop all servers if stop Listeners is true (setWifi again to restart).
+             </summary>
+            <param name="stopListeners">if set to <c>true</c> will stop listeners so SetWifi must be called again.</param>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.Close(WirelessLib.ConnectedApplianceInfo)">
+            <summary>
+            Closes the connection with the specified connected appliance information.
+            </summary>
+            <param name="connectedappInfo">The application information.</param>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.Close(System.Net.IPAddress)">
+            <summary>
+            Closes the connections with the specified ip_address.
+            </summary>
+            <param name="ip_address">The ip_address.</param>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SetWifi(System.Net.IPAddress,OpenSSL.X509.X509Certificate)">
+            <summary>
+            Sets the wifi.
+            </summary>
+            <param name="localIpAddress">The local ip address.</param>
+            <param name="caCert">The Certificate Authority certificate.</param>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.GetMqttMessage">
+            <summary>
+            Gets the mqtt message. Returns null if no message in the queue.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.FlushMqttMessages">
+            <summary>
+            Flushes the mqtt messages queue.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.GetRevelationMessage">
+            <summary>
+            Gets the revelation message. Returns null if no message in the queue.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.FlushRevelationMessages">
+            <summary>
+            Flushes the revelation messages queue.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.GetUdpMessage">
+            <summary>
+            Gets the udp message. Returns null if no message in the queue.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.FlushUdpMessages">
+            <summary>
+            Flushes the udp messages queue.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SendRevelationMessage(WirelessLib.ConnectedApplianceInfo,WirelessLib.RevelationPacket,System.Boolean)">
+            <summary>
+            Sends the revelation message.
+            </summary>
+            <param name="connectedAppliance">The connected appliance.</param>
+            <param name="data">The data.</param>
+            <param name="blocking">if set to <c>true</c> [blocking].</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SendRevelationMessage(System.Net.IPAddress,WirelessLib.RevelationPacket,System.Boolean)">
+            <summary>
+            Sends the revelation message.
+            </summary>
+            <param name="destinationIP">The destination ip.</param>
+            <param name="data">The data.</param>
+            <param name="blocking">if set to <c>true</c> [blocking].</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SendMqttMessage(WirelessLib.ConnectedApplianceInfo,System.String,System.Byte[])">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="connectedAppliance">The connected appliance.</param>
+            <param name="topic">The topic.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SendMqttMessage(System.Net.IPAddress,System.String,System.Byte[])">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="destinationIP">The destination ip.</param>
+            <param name="topic">The topic.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SendMqttMessage(WirelessLib.ConnectedApplianceInfo,uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublish)">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="connectedAppliance">The connected appliance.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SendMqttMessage(System.Net.IPAddress,uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublish)">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="destinationIP">The destination ip.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.SendUdpMessage(WirelessLib.ConnectedApplianceInfo,System.Byte[])">
+            <summary>
+            Sends an UDP message to a selected appliance.
+            </summary>
+            <param name="appliance">The appliance.</param>
+            <param name="data">The data.</param>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.ScanConnectedAppliances(System.Boolean,System.String)">
+            <summary>
+            Scans the connected appliances.
+            </summary>
+            <param name="loop">if set to <c>true</c> [loop] the D field instead of broadcast (255 on D field).</param>
+            <param name="specificIPAddress">The specific ip address. Set null to use local Address set on the SetWifi with broadcast or loop on D field.</param>
+        </member>
+        <member name="M:WirelessLib.IWhirlpoolWireless.ConnectTo(WirelessLib.ConnectedApplianceInfo)">
+            <summary>
+            Connects Revelation to the selected appliance.
+            </summary>
+            <param name="appliance">The appliance.</param>
+        </member>
+        <member name="T:WirelessLib.Properties.Resources">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.Properties.Resources.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.Properties.Resources.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevealExtensions">
+            <summary>
+            Provides a set of static (Shared in Visual Basic) methods for Parsing and Converting the WirelessLib packets
+                that implement <see cref="T:WideBoxLib.RevealPacket" />.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.RevealExtensions.ParseRevelationPacket(WideBoxLib.RevealPacket,WirelessLib.RevelationPacket)">
+            <summary>
+            Parses the revelation packet.
+            </summary>
+            <param name="packet">The packet.</param>
+            <param name="data">The data.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevealExtensions.ParseRevelationPacket(System.Collections.Generic.List{WideBoxLib.RevealPacket},WirelessLib.RevelationPacket)">
+            <summary>
+            Parses the revelation packet.
+            </summary>
+            <param name="packetList">The packet list.</param>
+            <param name="data">The data.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevealExtensions.ToRevelation(WideBoxLib.RevealPacket)">
+            <summary>
+            Create a Revelation Packet to be sent based on the reveal message.
+            </summary>
+            <param name="packet">The reveal packet.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevealExtensions.ToRevelation(System.Collections.Generic.List{WideBoxLib.RevealPacket})">
+            <summary>
+            Create a Revelation Packet to be sent based on the reveal message list.
+            </summary>
+            <param name="packetList">The reveal packet list.</param>
+            <returns></returns>
+        </member>
+        <member name="F:WirelessLib.RevealExtensions.evttopic">
+            <summary>
+            The evttopic. Reveal message to server.
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevealExtensions.cmdtopic">
+            <summary>
+            The cmdtopic. Reveal message from server.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.RevealExtensions.ToMqtt(WideBoxLib.RevealPacket)">
+            <summary>
+            To a MQTT publish message.
+            </summary>
+            <param name="packet">The packet.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevealExtensions.ToMqtt(WideBoxLib.RevealPacket,System.Boolean,System.Byte,System.Boolean)">
+            <summary>
+            To a MQTT publish message.
+            </summary>
+            <param name="packet">The packet.</param>
+            <param name="dupFlag">if set to <c>true</c> [dup flag].</param>
+            <param name="qosLevel">The qos level.</param>
+            <param name="retain">if set to <c>true</c> [retain].</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevealExtensions.ParseMqttPacket(WideBoxLib.RevealPacket,uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublish)">
+            <summary>
+            Parses the MQTT packet.
+            </summary>
+            <param name="packet">The packet.</param>
+            <param name="data">The data.</param>
+            <returns></returns>
+        </member>
+        <member name="P:WirelessLib.RevelationClient.RevelationReceivedEventArgs.RevelationMessage">
+            <summary>
+            Gets the received revelation message.
+            </summary>
+            <value>
+            The revelation message.
+            </value>
+        </member>
+        <member name="M:WirelessLib.RevelationClient.RevelationReceivedEventArgs.#ctor(WirelessLib.ExtendedRevelationPacket)">
+            <summary>
+            Initializes a new instance of the <see cref="T:WirelessLib.RevelationClient.RevelationReceivedEventArgs"/> class.
+            </summary>
+            <param name="revelationMessage">The revelation message.</param>
+        </member>
+        <member name="T:WirelessLib.RevelationClient.RevelationReceivedEventHandler">
+            <summary>
+            Delagate that defines event handler for Revelation message received
+            </summary>
+        </member>
+        <member name="P:WirelessLib.RevelationClient.IsConnected">
+            <summary>
+            Gets a value indicating whether this instance is connected.
+            </summary>
+            <value>
+            <c>true</c> if this instance is connected; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="F:WirelessLib.RevelationClient._sslStream">
+            <summary>
+            The SSL stream.
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationClient._client">
+            <summary>
+            The TCP client.
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationClient._caCert">
+            <summary>
+            The Certificate Authority certificate.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.RevelationClient.IPAddress">
+            <summary>
+            Gets or sets the ip address.
+            </summary>
+            <value>
+            The ip address.
+            </value>
+        </member>
+        <member name="E:WirelessLib.RevelationClient.RevelationMessageReceived">
+            <summary>
+            Occurs when a revelation message is received.
+            </summary>
+        </member>
+        <member name="E:WirelessLib.RevelationClient.ClientDisconnected">
+            <summary>
+            Occurs when client get disconnected.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.RevelationClient.ServerSideHandshake">
+            <summary>
+            Perform the server handshake
+            </summary>
+        </member>
+        <member name="M:WirelessLib.RevelationClient.Send(WirelessLib.RevelationPacket,System.Boolean)">
+            <summary>
+            Sends the specified message.
+            </summary>
+            <param name="message">The message.</param>
+            <param name="blocking">if set to <c>true</c> [blocking].</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevelationClient.Open">
+            <summary>
+            Opens this instance and start receiving messages threads.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.RevelationClient.Close">
+            <summary>
+            Closes this instance connections.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.RevelationClient.ExceptionLog">
+            <summary>
+            Gets the exception log.
+            </summary>
+            <value>
+            The exception log.
+            </value>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket">
+            <summary>
+            Revelation protocol is use for communication between the Arrayent back-end server and the connected
+            appliance. Revelation messages are received by the Arrayent library and is handled by the WebReveal
+            process. Revelation api 0xE6 can be used to encapsulate Reveal commands to be sent to the appliance
+            controls. Definitions of Revelation API and Opcodes are available in API-Definitions.h.
+            <img src="Resources\RevelationPacket.png"></img>
+            </summary>
+        </member>
+        <member name="M:WirelessLib.RevelationPacket.ParseTraceMessage(WirelessLib.TracePacket)">
+            <summary>
+            Parses the trace message into this packet.
+            </summary>
+            <param name="data">The TracePacket object data.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevelationPacket.ToString">
+            <summary>
+            Returns a <see cref="T:System.String" /> that represents this instance.
+            </summary>
+            <returns>
+            A <see cref="T:System.String" /> that represents this instance.
+            </returns>
+        </member>
+        <member name="M:WirelessLib.RevelationPacket.ToString(System.Boolean)">
+            <summary>
+            Returns a <see cref="T:System.String" /> that represents this instance.
+            </summary>
+            <param name="payloadAsString">if set to <c>true</c> return with the payload as string.</param>
+            <returns>
+            A <see cref="T:System.String" /> that represents this instance.
+            </returns>
+        </member>
+        <member name="M:WirelessLib.RevelationPacket.ToArray">
+            <summary>
+            Converts current packet into a byte array.
+            [ED][Lenght MSB][Lenght LSB][API][Opcode][Payload 0]...[[Payload n]
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.RevelationPacket.FromArray(System.Byte[])">
+            <summary>
+            Convert froms the array of incoming data into a Revelation Packet.
+            </summary>
+            <param name="data">The incoming data.</param>
+            <returns></returns>
+        </member>
+        <member name="P:WirelessLib.RevelationPacket.TransactionID">
+            <summary>
+            Gets or sets the transaction identifier.
+            Use for synchronization,
+            0 is for unsolicited message 
+            </summary>
+            <value>
+            The transaction identifier.
+            </value>
+        </member>
+        <member name="P:WirelessLib.RevelationPacket.Length">
+            <summary>
+            Gets or sets the length.
+            Payload Data length + API + Opcode
+            </summary>
+            <value>
+            The length.
+            </value>
+        </member>
+        <member name="P:WirelessLib.RevelationPacket.API">
+            <summary>
+            Gets or sets the API.
+            </summary>
+            <value>
+            The API.
+            </value>
+        </member>
+        <member name="P:WirelessLib.RevelationPacket.Opcode">
+            <summary>
+            Gets or sets the opcode.
+            </summary>
+            <value>
+            The opcode.
+            </value>
+        </member>
+        <member name="P:WirelessLib.RevelationPacket.IsFeedback">
+            <summary>
+            Gets or sets a value indicating whether this instance is feedback.
+            </summary>
+            <value>
+            <c>true</c> if this instance is feedback; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:WirelessLib.RevelationPacket.Payload">
+            <summary>
+            Gets or sets the payload.
+            </summary>
+            <value>
+            The payload.
+            </value>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.REVELATION_API">
+            <summary>
+            Enum of Predefined Revelation API's
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.SYSTEM_API">
+            <summary>
+            The system API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.FIRMWARE_UPDATE_API">
+            <summary>
+            The firmware update API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.WEB_SERVER_API">
+            <summary>
+            The web server API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.INFO_API">
+            <summary>
+            The info API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.OUTBOUND_FILTER_API">
+            <summary>
+            The outbound filter API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.CACHE_API">
+            <summary>
+            The cache API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.REVEAL_API">
+            <summary>
+            The reveal API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.SMARTGRID_API">
+            <summary>
+            The smartgrid API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.APPLIANCE_API">
+            <summary>
+            The appliance API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.RESET_API">
+            <summary>
+            The reset API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.M2M_ADMIN_API">
+            <summary>
+            The M2M admin API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.M2M_ISP_API">
+            <summary>
+            The M2M isp API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.M2M_APPLIANCE_IDENTITY_API">
+            <summary>
+            The M2M appliance identity API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.M2M_SUBSCRIBE_API">
+            <summary>
+            The M2M subscribe API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.M2M_DATE_TIME_API">
+            <summary>
+            The M2M date time API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.M2M_RESET_API">
+            <summary>
+            The M2M reset API
+            </summary>
+        </member>
+        <member name="F:WirelessLib.RevelationPacket.REVELATION_API.M2M_COMMAND_CONTROL_KVP_API">
+            <summary>
+            The M2M command control kvp API
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.M2M_ADMIN_OPCODE">
+            <summary>
+            opcode definitions for SYSTEM_API 
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.SYSTEM_OPCODE">
+            <summary>
+            opcode definitions for SYSTEM_API 
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.FIRMWARE_UPDATE_OPCODE">
+            <summary>
+            opcode definitions for FIRMWARE_UPDATE_API  
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.WEB_SERVER_OPCODE">
+            <summary>
+            opcode definitions for WEB_SERVER_API   
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.INFO_OPCODE">
+            <summary>
+            opcode definitions for INFO_API  
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.OUTBOUND_FILTER_OPCODE">
+            <summary>
+            Opcode definitions for OUTBOUND_FILTER_API.
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.CACHE_OPCODE">
+            <summary>
+            Opcode definitions for CACHE_API.
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.REVEAL_OPCODE">
+            <summary>
+            Opcode definitions for REVEAL_API. 
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.SMARTGRID_OPCODE">
+            <summary>
+            Opcode definitions for SMARTGRID_API. 
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.APPLIANCE_OPCODE">
+            <summary>
+            Opcode definitions for APPLIANCE_API. 
+            </summary>
+        </member>
+        <member name="T:WirelessLib.RevelationPacket.RESET_OPCODE">
+            <summary>
+            Opcode definitions for RESET_API. 
+            </summary>
+        </member>
+        <member name="T:WirelessLib.TracePacket">
+            <summary>
+            Represent a packet from the Trace bus.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.TracePacket.FromArray(System.Byte[])">
+            <summary>
+            From the array.
+            </summary>
+            <param name="data">The data array.</param>
+        </member>
+        <member name="P:WirelessLib.TracePacket.TraceID">
+            <summary>
+            Gets or sets the trace identifier.
+            Each application can define its own trace-id which can be use for filtering within the trace log.
+            </summary>
+            <value>
+            The trace identifier.
+            </value>
+        </member>
+        <member name="T:WirelessLib.TracePacket.MessageTypes">
+            <summary>
+            Enumeration of Message Types current enumerated.
+            </summary>
+        </member>
+        <member name="F:WirelessLib.TracePacket.MessageTypes.General_Text_Info">
+            <summary>
+            A general text information
+            </summary>
+        </member>
+        <member name="F:WirelessLib.TracePacket.MessageTypes.State">
+            <summary>
+            A state
+            </summary>
+        </member>
+        <member name="F:WirelessLib.TracePacket.MessageTypes.Event">
+            <summary>
+            A event
+            </summary>
+        </member>
+        <member name="F:WirelessLib.TracePacket.MessageTypes.Connect">
+            <summary>
+            A connect
+            </summary>
+        </member>
+        <member name="F:WirelessLib.TracePacket.MessageTypes.Connect_Ack">
+            <summary>
+            A connect_ ack
+            </summary>
+        </member>
+        <member name="F:WirelessLib.TracePacket.MessageTypes.TLV">
+            <summary>
+            A Tag, length, Value
+            </summary>
+        </member>
+        <member name="P:WirelessLib.TracePacket.MessageTypeByte">
+            <summary>
+            Gets or sets the type of the Message.
+            Message Type defines the content that is provided.
+            </summary>
+            <value>
+            The type of the Message.
+            </value>
+        </member>
+        <member name="P:WirelessLib.TracePacket.MessageType">
+            <summary>
+            Gets or sets the type of the message.
+            Message Type defines the content that is provided.
+            </summary>
+            <value>
+            The type of the message.
+            </value>
+        </member>
+        <member name="P:WirelessLib.TracePacket.LineColumnBegin">
+            <summary>
+            Gets or sets the line column begin.
+            Used by the UITracer tool to set the beginning of a line or rectangle box.
+            </summary>
+            <value>
+            The line column begin.
+            </value>
+        </member>
+        <member name="P:WirelessLib.TracePacket.LineColumnEnd">
+            <summary>
+            Gets or sets the line column end.
+            Used by the UITracer tool to set the end of a line or rectangle box.
+            </summary>
+            <value>
+            The line column end.
+            </value>
+        </member>
+        <member name="P:WirelessLib.TracePacket.TimeStampString">
+            <summary>
+            Sets the time stamp string.
+            </summary>
+            <value>
+            The time stamp string.
+            </value>
+        </member>
+        <member name="P:WirelessLib.TracePacket.Content">
+            <summary>
+            Gets or sets the content.
+            </summary>
+            <value>
+            The content.
+            </value>
+        </member>
+        <member name="P:WirelessLib.TracePacket.ContentAsString">
+            <summary>
+            Gets the content as string.
+            </summary>
+            <value>
+            The content as string.
+            </value>
+        </member>
+        <member name="T:WirelessLib.WhirlpoolWifi">
+            <summary>
+            Class that implements Whirlpool Wireles Interface.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.connectedAppliancesRef">
+            <summary>
+            Internal ref the connected appliances.
+            </summary>
+            <value>
+            The connected appliances.
+            </value>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.ConnectedAppliances">
+            <summary>
+            Gets the connected appliances.
+            </summary>
+            <value>
+            The connected appliances.
+            </value>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.ExceptionLog">
+            <summary>
+            Gets or sets the exception log.
+            </summary>
+            <value>
+            The exception log.
+            </value>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SetWifi(System.Net.IPAddress,OpenSSL.X509.X509Certificate)">
+            <summary>
+            Sets the wifi.
+            </summary>
+            <param name="localIpAddress">The local ip address.</param>
+            <param name="caCert">The Certificate Authority certificate.</param>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.EnableMQTT(WirelessLib.ConnectedApplianceInfo,System.Boolean)">
+            <summary>
+            Enables the MQTT in the current selected appliance to talk with localhost.
+            Must be connected in Revelation Server.
+            </summary>
+            <param name="appliance">The appliance.</param>
+            <param name="enable">if set to <c>true</c> [enable].</param>
+            <returns><c>true</c> if is connected to Revelation and queue the message</returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.GetPSMDataPacket(System.String,System.String,System.Boolean)">
+            <summary>
+            Build a the PSM data packet into a RevelationPacket.
+            </summary>
+            <param name="parameter_id">The parameter_id.</param>
+            <param name="value">The value. Always ASCII enconded. (i.e. int 5 is value 0x35)</param>
+            <param name="isM2M">if set to <c>true</c> is m2m.</param>
+            <returns></returns>
+            <example>
+            Get PSM packet to enable MQTT
+            <code lang="C#">GetPSMDataPacket("enable_mqtt", 1.ToString()); </code></example>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.UpdateFirmware(System.Collections.Generic.List{WirelessLib.ConnectedApplianceInfo},System.String,System.Int32,System.Int32)">
+            <summary>
+            Updates the firmware in the wifi module.
+            </summary>
+            <param name="connectedAppliances">The connected appliances.</param>
+            <param name="firmwarePath">The firmware path.</param>
+            <param name="port">The port.</param>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.CloseAll(System.Boolean)">
+             <summary>
+             Closes all connections and/or stop all servers if stop Listeners is true (setWifi again to restart).
+             </summary>
+            <param name="stopListeners">if set to <c>true</c> will stop listeners so SetWifi must be called again.</param>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.Close(WirelessLib.ConnectedApplianceInfo)">
+            <summary>
+            Closes the connection with the specified connected appliance information.
+            </summary>
+            <param name="connectedappInfo">The application information.</param>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.Close(System.Net.IPAddress)">
+            <summary>
+            Closes the connections with the specified ip_address.
+            </summary>
+            <param name="ip_address">The ip_address.</param>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.GetBroadcast(System.Net.IPAddress)">
+            <summary>
+            Gets the broadcast address from a ipv4 ip address. (C type)
+            </summary>
+            <param name="ipv4">The ipv4.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.Getlocalhost">
+            <summary>
+            Get the List of IPAddress of the local machine.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.TraceMessages">
+            <summary>
+            Gets the UDP messages.
+            </summary>
+            <value>
+            The UDP messages.
+            </value>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.GetTraceMessage">
+            <summary>
+            Gets the revelation message. Returns null if no message in the queue.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.FlushTraceMessages">
+            <summary>
+            Flushes the trace messages queue.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.EnableTrace(WirelessLib.ConnectedApplianceInfo,System.Boolean,System.Boolean)">
+            <summary>
+            Enables the trace.
+            </summary>
+            <param name="connectedAppliance">The connected appliance.</param>
+            <param name="enable">if set to <c>true</c> enable tracing.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.Trace(System.Object)">
+            <summary>
+            Traces the specified connected application. Should run in a separated thread.
+            </summary>
+            <param name="connectedApp">The connected application.</param>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.IncomingRevelationPackets">
+            <summary>
+            Gets the incoming revelation packets.   (internal buffer)
+            </summary>
+            <value>
+            The incoming revelation packets.
+            </value>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.GetRevelationMessage">
+            <summary>
+            Gets the revelation message. Returns null if no message in the queue.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.FlushRevelationMessages">
+            <summary>
+            Flushes the revelation messages queue.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.IncomingMqttPackets">
+            <summary>
+            Gets the incoming mqtt packets.   (internal buffer)
+            </summary>
+            <value>
+            The incoming mqtt packets.
+            </value>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.GetMqttMessage">
+            <summary>
+            Gets the mqtt message. Returns null if no message in the queue.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.FlushMqttMessages">
+            <summary>
+            Flushes the mqtt messages queue.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SendRevelationMessage(WirelessLib.ConnectedApplianceInfo,WirelessLib.RevelationPacket,System.Boolean)">
+            <summary>
+            Sends the revelation message.
+            </summary>
+            <param name="connectedAppliance">The connected appliance.</param>
+            <param name="data">The data.</param>
+            <param name="blocking">if set to <c>true</c> [blocking].</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SendRevelationMessage(System.Net.IPAddress,WirelessLib.RevelationPacket,System.Boolean)">
+            <summary>
+            Sends the revelation message.
+            </summary>
+            <param name="destinationIP">The destination ip.</param>
+            <param name="data">The data.</param>
+            <param name="blocking">if set to <c>true</c> [blocking].</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SendMqttMessage(WirelessLib.ConnectedApplianceInfo,System.String,System.Byte[])">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="connectedAppliance">The connected appliance.</param>
+            <param name="topic">The topic.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SendMqttMessage(System.Net.IPAddress,System.String,System.Byte[])">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="destinationIP">The destination ip.</param>
+            <param name="topic">The topic.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SendMqttMessage(WirelessLib.ConnectedApplianceInfo,uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublish)">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="connectedAppliance">The connected appliance.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SendMqttMessage(System.Net.IPAddress,uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublish)">
+            <summary>
+            Sends a MQTT Publish message.
+            </summary>
+            <param name="destinationIP">The destination ip.</param>
+            <param name="message">The message.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.ManageClientRequest(System.Net.Sockets.TcpClient)">
+            
+             <summary>
+             Manage a client request
+             </summary>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.SendUdpMessage(WirelessLib.ConnectedApplianceInfo,System.Byte[])">
+            <summary>
+            Sends an UDP message to a selected appliance.
+            </summary>
+            <param name="appliance">The appliance.</param>
+            <param name="data">The data.</param>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.ReceiveUDP">
+            <summary>
+            Receives the UDP.
+            </summary>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.IncomingUdpPackets">
+            <summary>
+            Gets the incoming udp packets.   (internal buffer)
+            </summary>
+            <value>
+            The incoming udp packets.
+            </value>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.GetUdpMessage">
+            <summary>
+            Gets the udp message. Returns null if no message in the queue.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.FlushUdpMessages">
+            <summary>
+            Flushes the udp messages queue.
+            </summary>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.ScanConnectedAppliances(System.Boolean,System.String)">
+            <summary>
+            Scans the connected appliances.
+            </summary>
+            <param name="loop">if set to <c>true</c> [loop] the D field instead of broadcast (255 on D field).</param>
+            <param name="specificIPAddress">The specific ip address. Set null to use local Address set on the SetWifi with broadcast or loop on D field.</param>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.ConnectTo(WirelessLib.ConnectedApplianceInfo)">
+            <summary>
+            Connects Revelation to the selected appliance.
+            </summary>
+            <param name="appliance">The appliance.</param>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.Localhost">
+            <summary>
+            Gets the localhost setup on this module.
+            </summary>
+            <value>
+            The localhost.
+            </value>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.IsRunning">
+            <summary>
+            Gets a value indicating whether this MQTT and Revelation listeners is running.
+            </summary>
+            <value>
+            <c>true</c> if this instance have MQTT and Revelation listeners running; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.ToSingleJson(System.String,System.String)">
+            <summary>
+            To the single json string. Returns {"param":"value"}.
+            </summary>
+            <param name="param">The parameter.</param>
+            <param name="value">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.ToASCIIString(System.Int32)">
+            <summary>
+            To the ASCII string. (may never needed)
+            </summary>
+            <param name="value">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.ToByteArray(System.String)">
+            <summary>
+            To the byte array. Includes string termination at the end of the byte array.
+            </summary>
+            <param name="asciiString">The ASCII string.</param>
+            <returns></returns>
+        </member>
+        <member name="P:WirelessLib.WhirlpoolWifi.AutoSubscribe">
+            <summary>
+            Gets or sets a value indicating whether [automatic subscribe].
+            </summary>
+            <value>
+              <c>true</c> if [automatic subscribe]; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:WirelessLib.WhirlpoolWifi.Dispose">
+            <summary>
+            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            </summary>
+        </member>
+        <member name="T:WirelessLib.NamespaceDoc">
+            <summary>
+            WirelessLib namespace contains classes that provides support to connect with Whirlpool's wireless communication devices like WifiModule.
+            Open IWhirlpoolWireless interface to see full examples.
+            </summary>
+        </member>
+    </members>
+</doc>

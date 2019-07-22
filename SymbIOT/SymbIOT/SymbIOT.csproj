@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{2F7F66CF-C3D6-4A62-BF3E-5DEDDCB062CA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SymbIOT</RootNamespace>
+    <AssemblyName>SymbIOT</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="GnatMQ, Version=0.9.3.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\AppData\Local\Temporary Projects\SymbIOT\Lib\GnatMQ.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json120r1\Bin\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="openssl, Version=0.6.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\AppData\Local\Temporary Projects\SymbIOT\Lib\openssl.dll</HintPath>
+    </Reference>
+    <Reference Include="RqmLink, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\AppData\Local\Temporary Projects\SymbIOT\Lib\RqmLink.exe</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="wbox, Version=1.2.5.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\AppData\Local\Temporary Projects\SymbIOT\Lib\wbox.dll</HintPath>
+    </Reference>
+    <Reference Include="WideBoxLib, Version=1.5.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\AppData\Local\Temporary Projects\SymbIOT\Lib\WideBoxLib.dll</HintPath>
+    </Reference>
+    <Reference Include="WideInterface, Version=1.1.2.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\AppData\Local\Temporary Projects\SymbIOT\Lib\WideInterface.dll</HintPath>
+    </Reference>
+    <Reference Include="WirelessLib, Version=1.1.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\AppData\Local\Temporary Projects\SymbIOT\Lib\WirelessLib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Capability.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Capability.Designer.cs">
+      <DependentUpon>Capability.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CapabilityItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CapabilityItem.Designer.cs">
+      <DependentUpon>CapabilityItem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Cycle.cs" />
+    <Compile Include="Enumeration.cs" />
+    <Compile Include="KeyValue.cs" />
+    <Compile Include="KeyValueProperty.cs" />
+    <Compile Include="KVPInfoBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="KVPInfoBox.Designer.cs">
+      <DependentUpon>KVPInfoBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="LED.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="LED.Designer.cs">
+      <DependentUpon>LED.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RelationalBuilder.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RelationalBuilder.Designer.cs">
+      <DependentUpon>RelationalBuilder.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RelationalBuilder2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RelationalBuilder2.Designer.cs">
+      <DependentUpon>RelationalBuilder2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RelationalContainer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="RelationalContainer.Designer.cs">
+      <DependentUpon>RelationalContainer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RelationalItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="RelationalItem.Designer.cs">
+      <DependentUpon>RelationalItem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RelationalItem2.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="RelationalItem2.Designer.cs">
+      <DependentUpon>RelationalItem2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SavePreset.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SavePreset.Designer.cs">
+      <DependentUpon>SavePreset.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Scripter.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Scripter.Designer.cs">
+      <DependentUpon>Scripter.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SymbIOT.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SymbIOT.Designer.cs">
+      <DependentUpon>SymbIOT.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TabSelect.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TabSelect.designer.cs">
+      <DependentUpon>TabSelect.cs</DependentUpon>
+    </Compile>
+    <Compile Include="XCategory.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="XCategory.Designer.cs">
+      <DependentUpon>XCategory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="XCatItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="XCatItem.Designer.cs">
+      <DependentUpon>XCatItem.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="Capability.resx">
+      <DependentUpon>Capability.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CapabilityItem.resx">
+      <DependentUpon>CapabilityItem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="KVPInfoBox.resx">
+      <DependentUpon>KVPInfoBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LED.resx">
+      <DependentUpon>LED.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="RelationalBuilder.resx">
+      <DependentUpon>RelationalBuilder.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RelationalBuilder2.resx">
+      <DependentUpon>RelationalBuilder2.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RelationalContainer.resx">
+      <DependentUpon>RelationalContainer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RelationalItem.resx">
+      <DependentUpon>RelationalItem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RelationalItem2.resx">
+      <DependentUpon>RelationalItem2.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SavePreset.resx">
+      <DependentUpon>SavePreset.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Scripter.resx">
+      <DependentUpon>Scripter.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SymbIOT.resx">
+      <DependentUpon>SymbIOT.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TabSelect.resx">
+      <DependentUpon>TabSelect.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="XCategory.resx">
+      <DependentUpon>XCategory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="XCatItem.resx">
+      <DependentUpon>XCatItem.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="APIManifest.xml" />
+    <Content Include="Lib\GnatMQ.dll" />
+    <Content Include="Lib\GnatMQ.XML" />
+    <Content Include="Lib\openssl.dll" />
+    <Content Include="Lib\openssl.XML" />
+    <Content Include="Lib\RqmLink.exe" />
+    <Content Include="Lib\RqmLink.XML" />
+    <Content Include="Lib\wbox.dll" />
+    <Content Include="Lib\wbox.xml" />
+    <Content Include="Lib\WideBoxLib.dll" />
+    <Content Include="Lib\WideBoxLib.XML" />
+    <Content Include="Lib\WideInterface.dll" />
+    <Content Include="Lib\WideInterface.XML" />
+    <Content Include="Lib\WirelessLib.dll" />
+    <Content Include="Lib\WirelessLib.XML" />
+    <None Include="SymbIOT_Presets.xml" />
+    <None Include="Resources\SymbIOT_Presets.xml" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
