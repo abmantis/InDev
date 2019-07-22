@@ -1,0 +1,611 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CertManager</name>
+    </assembly>
+    <members>
+        <member name="M:CertManager.AESThenHMAC.NewKey">
+            <summary>
+            Helper that generates a random key on each call.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:CertManager.AESThenHMAC.SimpleEncrypt(System.String,System.Byte[],System.Byte[],System.Byte[])">
+            <summary>
+            Simple Encryption (AES) then Authentication (HMAC) for a UTF8 Message.
+            </summary>
+            <param name="secretMessage">The secret message.</param>
+            <param name="cryptKey">The crypt key.</param>
+            <param name="authKey">The auth key.</param>
+            <param name="nonSecretPayload">(Optional) Non-Secret Payload.</param>
+            <returns>
+            Encrypted Message
+            </returns>
+            <exception cref="T:System.ArgumentException">Secret Message Required!;secretMessage</exception>
+            <remarks>
+            Adds overhead of (Optional-Payload + BlockSize(16) + Message-Padded-To-Blocksize +  HMac-Tag(32)) * 1.33 Base64
+            </remarks>
+        </member>
+        <member name="M:CertManager.AESThenHMAC.SimpleDecrypt(System.String,System.Byte[],System.Byte[],System.Int32)">
+            <summary>
+            Simple Authentication (HMAC) then Decryption (AES) for a secrets UTF8 Message.
+            </summary>
+            <param name="encryptedMessage">The encrypted message.</param>
+            <param name="cryptKey">The crypt key.</param>
+            <param name="authKey">The auth key.</param>
+            <param name="nonSecretPayloadLength">Length of the non secret payload.</param>
+            <returns>
+            Decrypted Message
+            </returns>
+            <exception cref="T:System.ArgumentException">Encrypted Message Required!;encryptedMessage</exception>
+        </member>
+        <member name="M:CertManager.AESThenHMAC.SimpleEncryptWithPassword(System.String,System.String,System.Byte[])">
+            <summary>
+            Simple Encryption (AES) then Authentication (HMAC) of a UTF8 message
+            using Keys derived from a Password (PBKDF2).
+            </summary>
+            <param name="secretMessage">The secret message.</param>
+            <param name="password">The password.</param>
+            <param name="nonSecretPayload">The non secret payload.</param>
+            <returns>
+            Encrypted Message
+            </returns>
+            <exception cref="T:System.ArgumentException">password</exception>
+            <remarks>
+            Significantly less secure than using random binary keys.
+            Adds additional non secret payload for key generation parameters.
+            </remarks>
+        </member>
+        <member name="M:CertManager.AESThenHMAC.SimpleDecryptWithPassword(System.String,System.String,System.Int32)">
+            <summary>
+            Simple Authentication (HMAC) and then Descryption (AES) of a UTF8 Message
+            using keys derived from a password (PBKDF2). 
+            </summary>
+            <param name="encryptedMessage">The encrypted message.</param>
+            <param name="password">The password.</param>
+            <param name="nonSecretPayloadLength">Length of the non secret payload.</param>
+            <returns>
+            Decrypted Message
+            </returns>
+            <exception cref="T:System.ArgumentException">Encrypted Message Required!;encryptedMessage</exception>
+            <remarks>
+            Significantly less secure than using random binary keys.
+            </remarks>
+        </member>
+        <member name="T:CertManager.CertificateManager">
+            <summary>
+            Represent the object that can Manage Certificates.
+            </summary>
+        </member>
+        <member name="T:CertManager.CertificateManager.CertificateTypes">
+            <summary>
+            Current Certificates stored on google drive
+            </summary>
+        </member>
+        <member name="F:CertManager.CertificateManager.CertificateTypes.WifiCommander">
+            <summary>
+            The wifi commander certificate.
+            Used when wifi module not yet claimed.
+            </summary>
+        </member>
+        <member name="F:CertManager.CertificateManager.CertificateTypes.Verisign">
+            <summary>
+            The verisign ecrtificate.
+            </summary>
+        </member>
+        <member name="M:CertManager.CertificateManager.SaveSaltedKey(System.IO.FileInfo,System.IO.FileInfo)">
+            <summary>
+            Saves the salted key into destination file.
+            </summary>
+            <param name="source">The source.</param>
+            <param name="destination">The destination.</param>
+        </member>
+        <member name="M:CertManager.CertificateManager.GetCertificate(CertManager.CertificateManager.CertificateTypes)">
+            <summary>
+            Gets the certificate from local encrypted file.
+            </summary>
+            <param name="type">The type.</param>
+            <returns>Return the <see cref="T:OpenSSL.X509.X509Certificate">Certificate</see> based on the choosen type.</returns>
+        </member>
+        <member name="P:CertManager.CertificateManager.RemainingCertTime">
+            <summary>
+            Gets the remaining certificate time.
+            </summary>
+            <value>
+            The remaining certificate time.
+            </value>
+        </member>
+        <member name="P:CertManager.CertificateManager.IsLocalValid">
+            <summary>
+            Gets or sets a value indicating whether this instance is local valid.
+            </summary>
+            <value>
+            <c>true</c> if this instance is local valid; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:CertManager.GoogleServices.CertificateManagerGoogleServices.GetMimeType(System.String)">
+            <summary>
+            Gets the the MIME type given an extension.
+            </summary>
+            <param name="extension">The extension.</param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentNullException">extension</exception>
+        </member>
+        <member name="P:CertManager.GoogleServices.CertificateManagerGoogleServices.DefaultIconFileID">
+            <summary>
+            Gets the default icon file identifier.
+            </summary>
+            <value>
+            The default icon file identifier.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.CertificateManagerGoogleServices.AnonymousUserPicture">
+            <summary>
+            Gets the anonymous user picture.
+            </summary>
+            <value>
+            The anonymous user picture.
+            </value>
+        </member>
+        <member name="M:CertManager.GoogleServices.CertificateManagerGoogleServices.RevokeCredentials">
+            <summary>
+            Revokes the credentials. If new operations is called it will ask for permissions again.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.CertificateManagerGoogleServices.GetCredentials">
+            <summary>
+            Gets the credentials for using WBIStore Services.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.CertificateManagerGoogleServices.GetDriveService">
+            <summary>
+            Gets the drive service.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:CertManager.GoogleServices.CertificateManagerGoogleServices.WifiCmdCertID">
+            <summary>
+            Gets the wifi command cert identifier.
+            </summary>
+            <value>
+            The wifi command cert identifier.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.CertificateManagerGoogleServices.WifiCmdKeyID">
+            <summary>
+            Gets the wifi command key identifier.
+            </summary>
+            <value>
+            The wifi command key identifier.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.CertificateManagerGoogleServices.VerisignCertID">
+            <summary>
+            Gets the verisign cert identifier.
+            </summary>
+            <value>
+            The verisign cert identifier.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.CertificateManagerGoogleServices.VerisignKeyID">
+            <summary>
+            Gets the verisign key identifier.
+            </summary>
+            <value>
+            The verisign key identifier.
+            </value>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.GetCredentials(System.String[],System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets the credentials.
+            </summary>
+            <param name="scope">The scope.</param>
+            <param name="username">The username.</param>
+            <param name="taskCancellationToken">The task cancellation token.</param>
+            <returns>The User Credentials</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.InsertFileInApplicationDataFolder(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.String)">
+            <summary>
+            Insert new file in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="title">Title of the file to insert, including the extension.</param>
+            <param name="description">Description of the file to insert.</param>
+            <param name="mimeType">MIME type of the file to insert.</param>
+            <param name="filename">Filename of the file to insert.</param>
+            <returns>Inserted file metadata, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.InsertFileInApplicationDataFolder(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.IO.MemoryStream)">
+            <summary>
+            Insert new file in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="title">Title of the file to insert, including the extension.</param>
+            <param name="description">Description of the file to insert.</param>
+            <param name="mimeType">MIME type of the file to insert.</param>
+            <param name="fileStream">The file stream.</param>
+            <returns>Inserted file metadata, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.InsertFileInFolder(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Insert new file in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="title">Title of the file to insert, including the extension.</param>
+            <param name="description">Description of the file to insert.</param>
+            <param name="mimeType">MIME type of the file to insert.</param>
+            <param name="filename">Filename of the file to insert.</param>
+            <param name="folderID">The folder identifier.</param>
+            <returns>Inserted file metadata, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.InsertFileInFolder(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.IO.MemoryStream,System.String)">
+            <summary>
+            Insert new file in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="title">Title of the file to insert, including the extension.</param>
+            <param name="description">Description of the file to insert.</param>
+            <param name="mimeType">MIME type of the file to insert.</param>
+            <param name="filestream">Memory Stream of the file to be inserted into the folder.</param>
+            <param name="folderID">The folder identifier.</param>
+            <returns>Inserted file metadata, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.UpdateFile(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Update file
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="fileID">Id of the file to be updated.</param>
+            <param name="title">Title of the file to update, including the extension.</param>
+            <param name="description">Description of the file to insert.</param>
+            <param name="mimeType">MIME type of the file to update.</param>
+            <param name="filename">Filename of the file to update.</param>
+            <returns>Update file metadata, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.UpdateFile(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.String,System.IO.MemoryStream)">
+            <summary>
+            Update file in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="fileID">Id of the file to be updated.</param>
+            <param name="title">Title of the file to update, including the extension.</param>
+            <param name="description">Description of the file to update.</param>
+            <param name="mimeType">MIME type of the file to update.</param>
+            <param name="fileStream">Memory Stream of the file to be updated into the folder.</param>
+            <returns>Update <see cref="T:Google.Apis.Drive.v2.Data.File">File</see> metadata, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.CreateFolderInFolder(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String)">
+            <summary>
+            Creates a folder in folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="title">The title.</param>
+            <param name="description">The description.</param>
+            <param name="parentfolderID">The parentfolder identifier.</param>
+            <returns><see cref="T:Google.Apis.Drive.v2.Data.File">File</see> created, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.UpdateFileInApplicationDataFolder(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Update file in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="fileID">Id of the file to be updated.</param>
+            <param name="title">Title of the file to insert, including the extension.</param>
+            <param name="description">Description of the file to insert.</param>
+            <param name="mimeType">MIME type of the file to insert.</param>
+            <param name="filename">Filename of the file to insert.</param>
+            <returns><see cref="T:Google.Apis.Drive.v2.Data.File">File</see> created, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.UpdateFileInApplicationDataFolder(Google.Apis.Drive.v2.DriveService,System.String,System.String,System.String,System.String,System.IO.MemoryStream)">
+            <summary>
+            Update file in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="fileID">Id of the file to be updated.</param>
+            <param name="title">Title of the file to insert, including the extension.</param>
+            <param name="description">Description of the file to insert.</param>
+            <param name="mimeType">MIME type of the file to insert.</param>
+            <param name="fileStream">Memory Stream of the file to be updated into the folder.</param>
+            <returns>Update file metadata, null is returned if an API error occurred.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.ListFilesInApplicationDataFolder(Google.Apis.Drive.v2.DriveService)">
+            <summary>
+            List all files contained in the Application Data folder.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <returns>List of File resources.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.GetFilesFromQuery(Google.Apis.Drive.v2.DriveService,System.String)">
+            <summary>
+            Retrieve a list of File resources.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="query">The query.</param>
+            <returns></returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.RetrieveAllFilesInFolder(Google.Apis.Drive.v2.DriveService,System.String)">
+            <summary>
+            Retrieve a list of File resources.
+            </summary>
+            <param name="service">Drive API service instance.</param>
+            <param name="folderID">Id of the folder.</param>
+            <returns>List of File resources.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.DownloadFile(Google.Apis.Drive.v2.DriveService,System.String)">
+            <summary>
+            Download a file and return a string with its content.
+            </summary>
+            <param name="service">
+            Authenticator responsible for creating authorized web requests.
+            </param>
+            <param name="fileID">Id of the file to be downloaded.</param>
+            <returns>File's content if successful, null otherwise.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.DownloadFile(Google.Apis.Drive.v2.DriveService,Google.Apis.Drive.v2.Data.File)">
+            <summary>
+            Download a file and return a string with its content.
+            </summary>
+            <param name="service">
+            Authenticator responsible for creating authorized web requests.
+            </param>
+            <param name="file">Drive File instance.</param>
+            <returns>File's content if successful, null otherwise.</returns>
+        </member>
+        <member name="M:CertManager.GoogleServices.DriveAPIUtils.DownloadFile(Google.Apis.Drive.v2.DriveService,System.String,System.String)">
+            <summary>
+            Downloads the file into given path.
+            </summary>
+            <param name="service">The service.</param>
+            <param name="fileID">The file identifier.</param>
+            <param name="targetPath">The target path.</param>
+            <returns></returns>
+        </member>
+        <member name="T:CertManager.GoogleServices.GUser">
+            <summary>
+            Represent a Google User
+            </summary>
+        </member>
+        <member name="P:CertManager.GoogleServices.GUser.UserID">
+            <summary>
+            Gets or sets the user identifier.
+            </summary>
+            <value>
+            The user identifier.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.GUser.PictureUrl">
+            <summary>
+            Gets or sets the picture URL.
+            </summary>
+            <value>
+            The picture URL.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.GUser.UserFullName">
+            <summary>
+            Gets or sets the full name of the user.
+            </summary>
+            <value>
+            The full name of the user.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.GUser.PrimaryEmail">
+            <summary>
+            Gets or sets the primary email.
+            </summary>
+            <value>
+            The primary email.
+            </value>
+        </member>
+        <member name="P:CertManager.GoogleServices.GUser.Region">
+            <summary>
+            Gets or sets the region.
+            </summary>
+            <value>
+            The region.
+            </value>
+        </member>
+        <member name="M:CertManager.GoogleServices.GUser.CreateUser(Google.Apis.Oauth2.v2.Data.Userinfoplus)">
+            <summary>
+            Creates the user.
+            </summary>
+            <param name="userinfo">The userinfo.</param>
+            <returns></returns>
+        </member>
+        <member name="E:CertManager.GoogleServices.GUser.PropertyChanged">
+            <summary>
+            Occurs when a property value changes.
+            </summary>
+        </member>
+        <member name="P:CertManager.Downloader.CertificateManagerDownloader.RemainingCertTime">
+            <summary>
+            Gets the remaining certificate time.
+            </summary>
+            <value>
+            The remaining certificate time.
+            </value>
+        </member>
+        <member name="P:CertManager.Downloader.CertificateManagerDownloader.IsLocalValid">
+            <summary>
+            Gets or sets a value indicating whether this instance is local valid.
+            </summary>
+            <value>
+            <c>true</c> if this instance is local valid; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:CertManager.Downloader.CertificateManagerDownloader.StoreCertificatesLocally(System.Double)">
+            <summary>
+            Stores the certificates locally.
+            </summary>
+            <param name="durationindays">The durationindays.</param>
+        </member>
+        <member name="M:CertManager.Downloader.CertificateManagerDownloader.GetCurrentUser">
+            <summary>
+            Gets the current user.
+            </summary>
+            <returns>User that is authenticated.</returns>
+        </member>
+        <member name="M:CertManager.Downloader.CertificateManagerDownloader.SwitchUser">
+            <summary>
+            Relogs this instance into another user.
+            </summary>
+            <returns>User that is authenticated.</returns>
+            <exception cref="T:System.Exception">Could not relog into this account. Try Relog again. + Environment.NewLine +
+                                e.Message</exception>
+        </member>
+        <member name="M:CertManager.Program.Main">
+            <summary>
+            The main entry point for the application.
+            </summary>
+        </member>
+        <member name="T:CertManager.Properties.Resources">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:CertManager.Properties.Resources.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:CertManager.Properties.Resources.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+        <member name="P:CertManager.Properties.Resources.id1">
+            <summary>
+              Looks up a localized string similar to F30B68AE7495421A9D46A4A1D1D00B0F.
+            </summary>
+        </member>
+        <member name="P:CertManager.Properties.Resources.id2">
+            <summary>
+              Looks up a localized string similar to {F8A40ED4-AE91-4555-A53A-20B26765A0DE}.
+            </summary>
+        </member>
+        <member name="P:CertManager.TempCertFile.IsLocalValidated">
+            <summary>
+            Gets or sets a value indicating whether this instance is local validated.
+            </summary>
+            <value>
+            <c>true</c> if this instance is local validated; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:CertManager.TempCertFile.StartStamp">
+            <summary>
+            Gets or sets the start stamp.
+            </summary>
+            <value>
+            The start stamp.
+            </value>
+        </member>
+        <member name="P:CertManager.TempCertFile.StopStamp">
+            <summary>
+            Gets or sets the stop stamp.
+            </summary>
+            <value>
+            The stop stamp.
+            </value>
+        </member>
+        <member name="P:CertManager.TempCertFile.RemainingTime">
+            <summary>
+            Gets or sets the remaining time.
+            </summary>
+            <value>
+            The remaining time.
+            </value>
+        </member>
+        <member name="P:CertManager.TempCertFile.CertList">
+            <summary>
+            Gets or sets the cert list.
+            </summary>
+            <value>
+            The cert list.
+            </value>
+        </member>
+        <member name="M:CertManager.TempCertFile.StoreLocal(System.Double)">
+            <summary>
+            Stores current cert list into local file.
+            </summary>
+            <param name="durationdays">The durationdays.</param>
+        </member>
+        <member name="M:CertManager.TempCertFile.LoadLocal">
+            <summary>
+            Loads the local file into cert list.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:CertManager.TempCertFile.PurgeLocal">
+            <summary>
+            Purges the local file.
+            </summary>
+        </member>
+        <member name="M:CertManager.TempCertFile.ToStream(System.String,System.Text.Encoding)">
+            <summary>
+            Convert the string into a MemoryStream
+            </summary>
+            <param name="str">string to convert</param>
+            <param name="encoding">Encoding type of the string</param>
+            <returns></returns>
+        </member>
+        <member name="T:CertManager.Views.CertificateDownloadDialog">
+            <summary>
+            Dialog to manage Certificates Donwload
+            </summary>
+        </member>
+        <member name="P:CertManager.Views.CertificateDownloadDialog.Error">
+            <summary>
+            Gets or sets the error.
+            </summary>
+            <value>
+            The error.
+            </value>
+        </member>
+        <member name="M:CertManager.Views.CertificateDownloadDialog.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:CertManager.Views.CertificateDownloadDialog"/> class.
+            </summary>
+        </member>
+        <member name="F:CertManager.Views.CertificateDownloadDialog.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:CertManager.Views.CertificateDownloadDialog.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        </member>
+        <member name="M:CertManager.Views.CertificateDownloadDialog.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="T:CertManager.Views.GUserView">
+            <summary>
+            Interaction logic for GUserView.xaml
+            </summary>
+            <summary>
+            GUserView
+            </summary>
+        </member>
+        <member name="P:CertManager.Views.GUserView.CurrentUser">
+            <summary>
+            Gets or sets the current user.
+            </summary>
+            <value>
+            The current user.
+            </value>
+        </member>
+        <member name="M:CertManager.Views.GUserView.InitializeComponent">
+            <summary>
+            InitializeComponent
+            </summary>
+        </member>
+    </members>
+</doc>

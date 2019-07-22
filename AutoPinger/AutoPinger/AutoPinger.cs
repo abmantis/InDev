@@ -13,21 +13,35 @@ using System.Timers;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace VenomNamespace
+namespace AutoPingerNamespace
 {
-    public partial class Venom : WideInterface
+    public partial class AutoPinger : WideInterface
     {
+        public static int pingtimeout = 4000; //amout of time to wait before considering a ping to have been dropped
+        public static int pingperiod = 10000; //amount of time to wait between ping attempts
+
+        string pingresp = "";
+        bool mqttresp = false;
+        System.Timers.Timer timer;
+
+        public delegate void SetTextCallback();
+        public SetTextCallback settextcallback;
+        public int listindex;
+
+        static object lockObj = new object();
+
+        private DataTable results;
+        private BindingSource sbind = new BindingSource();
+
+        private List<IPData> iplist;
+        private List<string> responses;
+
+        private string curfilename;
+
         public const byte API_NUMBER = 0;//TODO: change to API value
         /// <summary>
         /// Opcodes parsed by this form
         /// </summary>
-        /// 
-
-        private DataTable results;
-        private string curfilename;
-        private List<string> responses;
-
-
         public enum OPCODES
         {
             //Include your opcodes in here
@@ -35,33 +49,54 @@ namespace VenomNamespace
         }
 
         //to access wideLocal use base.WideLocal or simple WideLocal
-        public Venom(WideBox wideLocal, WhirlpoolWifi wifiLocal)
+        public AutoPinger(WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
         {
             InitializeComponent();
-            //Add your constructor operations here
             this.Text += " (" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + ")";
+            //Add your constructor operations here
+
             //AutoSave: Load and Save your CheckBoxes, TextBoxes and ComboBoxes last conditions
             //Default is true, this line can be removed
             AutoSave = true;
-            //To facilitate the debug of your form you can trace your exception or print messages using LogException function
-            //  LogException("My Error Message");
-            //  or
-            //  try { //your code } catch (Exception ex) { LogException(ex,false); }
-            //Avoid to do a to much operations during the construction time to have a faster open time and avoid opening the form errors.
-            //Errors during the construction time are hard to debug because your object are not instantiated yet.
+            pingresp = "";
+            timer = new System.Timers.Timer(pingperiod);
+            timer.Elapsed += new ElapsedEventHandler(timer_Elapsed);
+            settextcallback = new SetTextCallback(SetText);
+            listindex = 0;
 
             results = new DataTable();
             results.Columns.Add("IP Address");
-            results.Columns.Add("OTA Payload");
-            results.Columns.Add("OTA Result");
+            results.Columns.Add("MAC Address");
+            results.Columns.Add("Avg Resp Time");
+            results.Columns.Add("# Missed Pings");
+            results.Columns.Add("Ping Response %");
+            results.Columns.Add("Link State");
+            results.Columns.Add("Claim State");
+            results.Columns.Add("Cloud Disconnect Count");
+            results.Columns.Add("Current Connected Time");
+            results.Columns.Add("Current Disconnected Time");
+            results.Columns.Add("Wifi Resync Statistics");
 
+            sbind.DataSource = results;
             DGV_Data.AutoGenerateColumns = true;
             DGV_Data.DataSource = results;
+            DGV_Data.DataSource = sbind;
 
             TB_LogDir.Text = Directory.GetCurrentDirectory();
 
+            iplist = new List<IPData>();
             responses = new List<string>();
+        }
+
+        void timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (LB_IPs.Items.Count > 0)
+            {
+                PingIPList();
+                //listindex++;
+                //listindex = listindex >= LB_IPs.Items.Count ? 0 : listindex;
+            }
         }
 
         /// <summary>
@@ -73,13 +108,6 @@ namespace VenomNamespace
             RevealPacket reveal_pkt = new RevealPacket();
             if (reveal_pkt.ParseSimpleWhirlpoolMessage(data))
             {
-              /*  string text = reveal_pkt.API.ToString("X2") + "," + reveal_pkt.OpCode.ToString("X2");
-                foreach (byte b in reveal_pkt.PayLoad)
-                {
-                    text += "," + b.ToString("X2");
-                }
-                TB_Log.Text = text;*/
-
                 switch (reveal_pkt.API)
                 {
                     case API_NUMBER:   //parse opcodes to this API (already without the feedback bit, i.e. 0x25: reveal_pkt.OpCode = 5 , reveal_pkt.IsFeedback = true )
@@ -166,7 +194,7 @@ namespace VenomNamespace
         {
             RevealPacket reveal_pkt = new RevealPacket();
             if (reveal_pkt.ParseMqttPacket(data))
-            {
+            {                
                 switch (reveal_pkt.API)
                 {
                     case API_NUMBER:   //parse opcodes to this API (already without the feedback bit, i.e. 0x25: reveal_pkt.OpCode = 5 , reveal_pkt.IsFeedback = true )
@@ -198,7 +226,8 @@ namespace VenomNamespace
         /// <param name="data">The data from the udp connected appliance.</param>
         public override void parseUdpMessages(ExtendedUdpMessage data)
         {
-
+            
+            
         }
 
         //This command does not come with Lucas's template.  You will have to add it manually.
@@ -208,7 +237,7 @@ namespace VenomNamespace
             if (data.ContentAsString.Contains("linkstate"))
             {
                 string s = data.ContentAsString;
-              /*  try
+                try
                 {
                     int linkstate = int.Parse(s.Substring(s.IndexOf("linkstate") + 10, 1));
                     int claimstate = int.Parse(s.Substring(s.IndexOf("claimed") + 8, 1));
@@ -218,19 +247,19 @@ namespace VenomNamespace
                         iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).ClaimState = claimstate;
                     }
                 }
-                catch { }*/
+                catch { }
             }
-            if (data.ContentAsString.StartsWith("mqtt_in_data:"))
+            if(data.ContentAsString.StartsWith("mqtt_in_data:"))
             {
                 //MQTT data in the Trace just comes as raw hex regardless of message format, so need to conver it to ASCII to get the topic string
                 string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
                 string sb = "";
-               /* for (int i = 0; i < parts[2].Length; i += 2)
+                for (int i = 0; i < parts[2].Length; i += 2)
                 {
                     string hs = parts[2].Substring(i, 2);
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
-                
+
                 //Locate the MQTT Statistics message in the Trace and grab the four wifi reset reason bytes from it
                 if (sb.Contains("\"statistics\": \""))
                 {
@@ -250,7 +279,7 @@ namespace VenomNamespace
                         }
                     }
                     catch { }
-                }*/
+                }
             }
         }
 
@@ -359,42 +388,116 @@ namespace VenomNamespace
 
         #endregion
 
-        private void BTN_LogDir_Click(object sender, EventArgs e)
+        //Not used right now, was used when pinging was done serially rather than asynchronously
+        public bool PingHost(string nameOrAddress)
         {
-            FolderBrowserDialog fbd = new FolderBrowserDialog();
-            fbd.ShowDialog();
-            if (fbd.SelectedPath != "")
+            bool pingable = false;
+            Ping pinger = null;
+
+            try
             {
-                TB_LogDir.Text = fbd.SelectedPath;
+                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == nameOrAddress);
+                if (cai != null)
+                {
+                    mqttresp = cai.IsMqttConnected;
+                }
+                else
+                {
+                    mqttresp = false;
+                }
+                pinger = new Ping();
+                PingReply reply = pinger.Send(nameOrAddress,pingtimeout);
+                pingable = reply.Status == IPStatus.Success;
+                if (pingable)
+                {                    
+                    
+                    pingresp = reply.Address + "\t" + reply.RoundtripTime + "ms" + "\t" + mqttresp.ToString();
+                    
+                }
+                else
+                {                    
+                    pingresp = nameOrAddress + "\t" + reply.Status.ToString() + "\t" + mqttresp.ToString();
+                    
+                }
+            }
+            catch (PingException)
+            {
+                // Discard PingExceptions and return false;
+                mqttresp = false;
+                pingresp = nameOrAddress + "\t" + "FAIL" + "\t" + mqttresp.ToString();
+                
+            }
+            finally
+            {
+                if (pinger != null)
+                {
+                    pinger.Dispose();
+                }
+            }
+
+            return pingable;
+        }
+
+        private void PingIPList()
+        {
+            string s = LB_IPs.Items[listindex].ToString();
+            {
+                //PingHost(s);
+                DateTime startime = DateTime.Now;
+                PingHostsAsync();
+                while (DateTime.Now < startime.AddMilliseconds(pingtimeout))
+                {
+                    // wait for responses to finish
+                }
+                Invoke(settextcallback);
+                
+                pingresp = "";
             }
         }
 
         private void SetText()
         {
-           // foreach (string s in responses)
-           // {
-               // string[] parts = s.Split('\t');
-                //int listindex = 0;
-           DataRow resultRow = results.NewRow();
-
-            // results.Rows.Add(TB_IP.Text + TB_Payload.Text + "Pass12");
-          
-            resultRow["IP Address"] = TB_IP;
-            resultRow["OTA Payload"] = TB_Payload;
-            resultRow["OTA Result"] = "ff";
-            results.Rows.Add(resultRow);
+            foreach (string s in responses)
+            {
+                string[] parts = s.Split('\t');
+                IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
+                listindex = iplist.IndexOf(ipd);
+                int rtt = parts[1].EndsWith("ms") ? int.Parse(parts[1].Substring(0, parts[1].Length - 2)) : pingtimeout;
+                iplist[listindex].AddReply(rtt);
+                if (parts[2] == "FALSE" && iplist[listindex].LinkState != -1)
+                {
+                    iplist[listindex].LinkState = 0;
+                }
+                results.Rows[listindex]["Avg Resp Time"] = iplist[listindex].Average;
+                results.Rows[listindex]["# Missed Pings"] = iplist[listindex].DropCount;
+                results.Rows[listindex]["Ping Response %"] = iplist[listindex].UptimePct;
+                results.Rows[listindex]["Link State"] = iplist[listindex].LinkState;
+                results.Rows[listindex]["Claim State"] = iplist[listindex].ClaimState;
+                results.Rows[listindex]["Cloud Disconnect Count"] = iplist[listindex].MQTTDropCount;
+                results.Rows[listindex]["Current Connected Time"] = iplist[listindex].ConnectedTime.ToString("g");
+                results.Rows[listindex]["Current Disconnected Time"] = iplist[listindex].DisconnectedTime.ToString("g");
+                results.Rows[listindex]["Wifi Resync Statistics"] = iplist[listindex].WifiResyncStatistics;
 
                 try
                 {
                     using (StreamWriter sw = File.AppendText(curfilename))
                     {
-                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + TB_IP + "," +
-                            TB_Payload.Text + "," +
-                            "Pass0");
+                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
+                            iplist[listindex].MACAddress + "," +
+                            rtt + "," + 
+                            iplist[listindex].DropCount + "," +
+                            iplist[listindex].UptimePct + "," +
+                            iplist[listindex].LinkState + "," +
+                            iplist[listindex].ClaimState + "," +
+                            iplist[listindex].MQTTDropCount + "," +
+                            iplist[listindex].ConnectedTime.ToString("g") + "," +
+                            iplist[listindex].DisconnectedTime.ToString("g") + "," +
+                            iplist[listindex].WifiResyncStatistics);
                     }
                 }
                 catch { }
-           // }
+            }
             /*//LB_Response.Items.Add(pingresp);
             string[] parts = pingresp.Split('\t');
             int rtt = parts[1].EndsWith("ms") ? int.Parse(parts[1].Substring(0,parts[1].Length-2)) : pingtimeout;
@@ -415,20 +518,166 @@ namespace VenomNamespace
             catch { }*/
         }
 
-        private void BT_Payload_Click(object sender, EventArgs e)
+        private void BTN_Ping_Click(object sender, EventArgs e)
         {
-            
-            if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
+            if (BTN_Ping.Text == "Start Auto Ping")
             {
-                curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                using (StreamWriter sw = File.CreateText(curfilename))
+                if (!File.Exists(TB_LogDir.Text + "\\" + "PingLog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
                 {
-                    sw.WriteLine("Time,IP,Payload,Result");
+                    curfilename = TB_LogDir.Text + "\\" + "PingLog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+                    using (StreamWriter sw = File.CreateText(curfilename))
+                    {
+                        sw.WriteLine("Time,IP,MAC,Ping Response Time (ms), # Missed Pings, Ping Response %, Link State, Claim State, Cloud Disconnect Count, Current Connected Time, Current Disconnected Time, Wifi Resync Statistics");
+                    }                    
+                }
+                timer.Enabled = true;
+                BTN_Ping.Text = "Stop Ping";
+                BTN_Add.Enabled = false;
+                BTN_Remove.Enabled = false;
+            }
+            else
+            {
+                try
+                {
+                    //sw.Close();
+                }
+                catch { }
+                timer.Enabled = false;
+                BTN_Ping.Text = "Start Auto Ping";
+                BTN_Add.Enabled = true;
+                BTN_Remove.Enabled = true;
+            }
+        }
+
+        private void BTN_Add_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
+                {
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
+                    if (cai != null)
+                    {
+                        LB_IPs.Items.Add(cai.IPAddress);
+                        IPData newip = new IPData(cai.IPAddress,cai.MacAddress);
+                        iplist.Add(newip);
+                        DataRow dr = results.NewRow();
+                        dr["IP Address"] = newip.IPAddress;
+                        dr["MAC Address"] = newip.MACAddress;
+                        results.Rows.Add(dr);
+                    }
                 }
             }
+            catch
+            {
+            }
+        }
+
+        private void BTN_Remove_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                iplist.RemoveAt(LB_IPs.SelectedIndex);
+                results.Rows.RemoveAt(LB_IPs.SelectedIndex);
+                LB_IPs.Items.Remove(LB_IPs.SelectedItem);
+            }
+            catch { }
+        }
+
+        //Not used right now, had a button to send a manual ping but removed it
+        private void BTN_Manual_Click(object sender, EventArgs e)
+        {
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            PingHost(TB_IP.Text);
             SetText();
         }
 
-      
+        private void BTN_LogDir_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            fbd.ShowDialog();
+            if (fbd.SelectedPath != "")
+            {
+                TB_LogDir.Text = fbd.SelectedPath;
+            }
+        }
+
+        private void LB_IPs_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            TB_IP.Text = LB_IPs.SelectedItem.ToString();
+        }
+
+        void PingHostsAsync()
+        {
+            //responses.Clear();
+            foreach (IPData ipd in iplist)
+            {
+                string ip = ipd.IPAddress;
+
+                Ping p = new Ping();
+                p.PingCompleted += new PingCompletedEventHandler(p_PingCompleted);
+                p.SendAsync(ip, pingtimeout, ip);
+            }
+        }
+
+        //If the product responds to a ping, set the ping data and also check its MQTT connection from the Trace.  Also re-enable the Trace if it has been lost due to disconnection/reboot/power loss
+        void p_PingCompleted(object sender, PingCompletedEventArgs e)
+        {
+            string ip = (string)e.UserState;
+            if (e.Reply != null)
+            {                
+                lock (lockObj)
+                {
+                    //gets the list of appliances from WifiBasic
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    //Selects the appliance based on IP address
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
+                    //If an appliance with the specified IP address is found in the list...
+                    if (cai != null)
+                    {
+                        mqttresp = cai.IsTraceOn; //check if Trace is currently enabled
+                        if (!cai.IsTraceOn)
+                        {
+                            //if it's not and Revelation is also not enabled, enable Revelation
+                            if (!cai.IsRevelationConnected)
+                            {
+                                WifiLocal.ConnectTo(cai);
+                            }
+                            else
+                            {
+                                //If Revelation is enabled, enable Trace
+                                WifiLocal.EnableTrace(cai, true);
+                            }
+                            mqttresp = false;
+                        }
+                        else
+                        {
+                            //If the Trace is enabled and Revelation is also connected, close the Revelation connection
+                            if (cai.IsRevelationConnected)
+                            {
+                                WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                            }
+                            mqttresp = true;
+                        }
+                    }
+                    // Else if the IP address is not found in the WifiBasic list, connection has been lost
+                    else
+                    {
+                        mqttresp = false;
+                    }
+                    if (e.Reply.Status == IPStatus.Success)
+                    {
+                        pingresp = ip + "\t" + e.Reply.RoundtripTime + "ms" + "\t" + mqttresp.ToString();
+                    }
+                    else
+                    {
+                        pingresp = ip + "\t" + e.Reply.Status.ToString() + "\t" + mqttresp.ToString();
+                    }
+                    responses.Add(pingresp);
+                }
+            }         
+        } 
+       
     }
 }

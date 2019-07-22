@@ -30,13 +30,13 @@
         {
             this.TB_IP = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.DGV_Data = new System.Windows.Forms.DataGridView();
             this.TB_LogDir = new System.Windows.Forms.TextBox();
             this.BTN_LogDir = new System.Windows.Forms.Button();
             this.TB_Payload = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.BT_Payload = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -55,13 +55,13 @@
             this.label2.TabIndex = 1;
             this.label2.Text = "Product IP Address";
             // 
-            // dataGridView1
+            // DGV_Data
             // 
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(143, 107);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(391, 186);
-            this.dataGridView1.TabIndex = 2;
+            this.DGV_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.DGV_Data.Location = new System.Drawing.Point(143, 107);
+            this.DGV_Data.Name = "DGV_Data";
+            this.DGV_Data.Size = new System.Drawing.Size(391, 186);
+            this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
             // 
@@ -116,12 +116,12 @@
             this.Controls.Add(this.TB_Payload);
             this.Controls.Add(this.TB_LogDir);
             this.Controls.Add(this.BTN_LogDir);
-            this.Controls.Add(this.dataGridView1);
+            this.Controls.Add(this.DGV_Data);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.TB_IP);
             this.Name = "Venom";
             this.Text = "Venom";
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -131,7 +131,7 @@
 
         private System.Windows.Forms.TextBox TB_IP;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.DataGridView DGV_Data;
         private System.Windows.Forms.TextBox TB_LogDir;
         private System.Windows.Forms.Button BTN_LogDir;
         private System.Windows.Forms.TextBox TB_Payload;
