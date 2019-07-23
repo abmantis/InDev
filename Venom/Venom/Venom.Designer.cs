@@ -36,12 +36,13 @@
             this.TB_Payload = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.BT_Payload = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
             // TB_IP
             // 
-            this.TB_IP.Location = new System.Drawing.Point(18, 133);
+            this.TB_IP.Location = new System.Drawing.Point(18, 222);
             this.TB_IP.Name = "TB_IP";
             this.TB_IP.Size = new System.Drawing.Size(100, 20);
             this.TB_IP.TabIndex = 0;
@@ -49,7 +50,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(20, 107);
+            this.label2.Location = new System.Drawing.Point(20, 191);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(98, 13);
             this.label2.TabIndex = 1;
@@ -98,7 +99,7 @@
             // 
             // BT_Payload
             // 
-            this.BT_Payload.Location = new System.Drawing.Point(18, 206);
+            this.BT_Payload.Location = new System.Drawing.Point(18, 258);
             this.BT_Payload.Name = "BT_Payload";
             this.BT_Payload.Size = new System.Drawing.Size(100, 35);
             this.BT_Payload.TabIndex = 14;
@@ -106,11 +107,21 @@
             this.BT_Payload.UseVisualStyleBackColor = true;
             this.BT_Payload.Click += new System.EventHandler(this.BT_Payload_Click);
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(15, 133);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(98, 13);
+            this.label3.TabIndex = 83;
+            this.label3.Text = "MQTT Connection:";
+            // 
             // Venom
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(560, 320);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.BT_Payload);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.TB_Payload);
@@ -137,6 +148,7 @@
         private System.Windows.Forms.TextBox TB_Payload;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button BT_Payload;
+        private System.Windows.Forms.Label label3;
     }
 }
 

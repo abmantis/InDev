@@ -87,6 +87,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LED.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="LED.Designer.cs">
+      <DependentUpon>LED.cs</DependentUpon>
+    </Compile>
     <Compile Include="Venom.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -94,6 +100,9 @@
       <DependentUpon>Venom.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="LED.resx">
+      <DependentUpon>LED.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

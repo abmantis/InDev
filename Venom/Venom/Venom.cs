@@ -27,7 +27,11 @@ namespace VenomNamespace
         private string curfilename;
         private List<string> responses;
         public string statusb = "RUNNING";
+        public System.Net.IPAddress ip;
 
+        static object lockObj = new object();
+
+        bool mqttresp = false;
 
         public enum OPCODES
         {
@@ -165,32 +169,18 @@ namespace VenomNamespace
         /// <param name="data">The data from the mqtt connected appliance.</param>
         public override void parseMqttMessages(ExtendedMqttMsgPublish data)
         {
-            RevealPacket reveal_pkt = new RevealPacket();
-            if (reveal_pkt.ParseMqttPacket(data))
-            {
-                switch (reveal_pkt.API)
-                {
-                    case API_NUMBER:   //parse opcodes to this API (already without the feedback bit, i.e. 0x25: reveal_pkt.OpCode = 5 , reveal_pkt.IsFeedback = true )
-                        switch ((OPCODES)reveal_pkt.OpCode)
-                        {
-                            /*
-                             * Create a opcode enumeration to parse specific opcode
-                             * case OPCODES.SET_VALUE:
-                             *     if(reveal_pkt.IsFeedback)
-                             *     {
-                             *          textBox1.Text = reveal_pkt.PayLoad[0].ToString();
-                             *     }
-                             *     break;
-                             *   */
-                            default:
 
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
-                }
+            switch (data.Topic)
+            {
+                case "iot-2/evt/subscribe/fmt/json":
+                    string pay = System.Text.Encoding.ASCII.GetString(data.Message);
+                   // setLEDs((byte)4, (pay.Contains("1") ? (byte)3 : (byte)2));
+                   // setLEDs((byte)3, (byte)2);
+                    break;
+                default:
+                    break;
             }
+
         }
 
         /// <summary>
@@ -364,6 +354,25 @@ namespace VenomNamespace
         }
 
         #endregion
+       /* private void setLEDs(byte opCode, byte payload)
+        {
+            switch (payload)
+                {
+                    case 1:
+                        LED_Internet.SetColor(Color.Red);
+                        break;
+                    case 2:
+                        LED_Internet.SetColor(Color.Yellow);
+                        break;
+                    case 3:
+                        LED_Internet.SetColor(Color.LightGreen);
+                        break;
+                    default:
+                        LED_Internet.SetColor(Color.DarkGray);
+                        break;
+                }
+
+        }*/
 
         private void BTN_LogDir_Click(object sender, EventArgs e)
         {
@@ -439,7 +448,7 @@ namespace VenomNamespace
             {
                 ipbytes[j] = byte.Parse(ipad[j]);
             }
-            System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
+            ip = new System.Net.IPAddress(ipbytes);
 
             //Write info to log
             if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
@@ -450,14 +459,65 @@ namespace VenomNamespace
                     sw.WriteLine("Time,IP,Payload,Result");
                 }
             }
+            // Check Trace Connect
+            TraceConnect();
 
             // Write info to widebox window
             SetText();
-
+            
             //Semd payload
             WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", bytes);
         }
 
-      
+        //Check trace status
+        void TraceConnect()
+        {
+            string ip_local = TB_IP.Text;
+            
+           // lock (lockObj)
+           // {
+                    //gets the list of appliances from WifiBasic
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    //Selects the appliance based on IP address
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip_local);
+                //If an appliance with the specified IP address is found in the list...
+                while (!mqttresp)
+                {
+                    if (cai != null)
+                    {
+                        mqttresp = cai.IsTraceOn; //check if Trace is currently enabled
+                        if (!cai.IsTraceOn)
+                        {
+                            //if it's not and Revelation is also not enabled, enable Revelation
+                            if (!cai.IsRevelationConnected)
+                            {
+                                WifiLocal.ConnectTo(cai);
+                            }
+                            if (cai.IsRevelationConnected)
+                            {
+                                //If Revelation is enabled, enable Trace
+                                WifiLocal.EnableTrace(cai, true);
+                            }
+                            mqttresp = false;
+                        }
+                        else
+                        {
+                            //If the Trace is enabled and Revelation is also connected, close the Revelation connection
+                            if (cai.IsRevelationConnected)
+                            {
+                                WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                            }
+                            mqttresp = true;
+                        }
+                    }
+                    // Else if the IP address is not found in the WifiBasic list, connection has been lost
+                    else
+
+                        mqttresp = false;
+                }
+            // }
+            
+        }
+
     }
 }
