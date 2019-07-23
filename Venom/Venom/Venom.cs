@@ -26,6 +26,7 @@ namespace VenomNamespace
         private DataTable results;
         private string curfilename;
         private List<string> responses;
+        public string statusb = "RUNNING";
 
 
         public enum OPCODES
@@ -205,10 +206,10 @@ namespace VenomNamespace
         public override void parseTraceMessages(ExtendedTracePacket data)
         {
             //base.parseTraceMessages(data);
-            if (data.ContentAsString.Contains("linkstate"))
+            /*if (data.ContentAsString.Contains("linkstate"))
             {
                 string s = data.ContentAsString;
-              /*  try
+                try
                 {
                     int linkstate = int.Parse(s.Substring(s.IndexOf("linkstate") + 10, 1));
                     int claimstate = int.Parse(s.Substring(s.IndexOf("claimed") + 8, 1));
@@ -218,39 +219,44 @@ namespace VenomNamespace
                         iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).ClaimState = claimstate;
                     }
                 }
-                catch { }*/
-            }
-            if (data.ContentAsString.StartsWith("mqtt_in_data:"))
+                catch { }
+            }*/
+           // Console.WriteLine("Data " + data);
+            if (data.ContentAsString.StartsWith("mqtt_out_data:"))
             {
                 //MQTT data in the Trace just comes as raw hex regardless of message format, so need to conver it to ASCII to get the topic string
                 string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
                 string sb = "";
-               /* for (int i = 0; i < parts[2].Length; i += 2)
+                for (int i = 0; i < parts[2].Length; i += 2)
                 {
                     string hs = parts[2].Substring(i, 2);
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
-                
+
                 //Locate the MQTT Statistics message in the Trace and grab the four wifi reset reason bytes from it
-                if (sb.Contains("\"statistics\": \""))
+                if (sb.Contains("\"status\": ["))
                 {
                     try
                     {
-                        sb = sb.Replace("\"statistics\": \"", "@");
+                        sb = sb.Replace("\"status\": [", "@");
                         string[] stats = sb.Split('@');
-                        string[] wifireset = stats[1].Split(',');
-                        string resetreason = "";
-                        for (int j = 0; j < 4; j++)
+                        statusb = stats[1];
+                       // Console.WriteLine("Status BPre" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
+                        if (Equals(statusb, "0") || Equals(statusb, "1"))
                         {
-                            resetreason += wifireset[j] + (j == 3 ? "" : ";");
+                            statusb += " PASS.";
+
+                           // Console.WriteLine("Status BWork" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
                         }
-                        lock (lockObj)
-                        {
-                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).WifiResyncStatistics = resetreason;
-                        }
+
+                        else { 
+                            statusb += " FAIL.";
+
+                        //Console.WriteLine("Status BFail" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
+                             }
                     }
                     catch { }
-                }*/
+                }
             }
         }
 
@@ -381,7 +387,7 @@ namespace VenomNamespace
           
             resultRow["IP Address"] = TB_IP.Text;
             resultRow["OTA Payload"] = TB_Payload.Text;
-            resultRow["OTA Result"] = "ff";
+            resultRow["OTA Result"] = statusb;
             results.Rows.Add(resultRow);
 
                 try
@@ -390,7 +396,7 @@ namespace VenomNamespace
                     {
                         sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + TB_IP.Text + "," +
                             TB_Payload.Text + "," +
-                            "Pass0");
+                            statusb);
                     }
                 }
                 catch { }
@@ -441,7 +447,7 @@ namespace VenomNamespace
                 curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
                 using (StreamWriter sw = File.CreateText(curfilename))
                 {
-                    sw.WriteLine("Time,,IP,Payload,Result");
+                    sw.WriteLine("Time,IP,Payload,Result");
                 }
             }
 
