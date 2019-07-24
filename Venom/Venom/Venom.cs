@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using WideBoxLib;
 using WirelessLib;
-using System.Net.NetworkInformation;
-using System.Timers;
 using System.IO;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace VenomNamespace
 {
@@ -24,10 +20,16 @@ namespace VenomNamespace
         /// 
 
         private DataTable results;
+        private BindingSource sbind = new BindingSource();
         private string curfilename;
-        //private List<string> responses;
+        private List<IPData> iplist;
+        private List<string> responses;
+
         public string statusb = "RUNNING";
         public System.Net.IPAddress ip;
+        public delegate void SetTextCallback();
+        public SetTextCallback settextcallback;
+        public int listindex;
 
         static object lockObj = new object();
 
@@ -56,17 +58,23 @@ namespace VenomNamespace
             //Avoid to do a to much operations during the construction time to have a faster open time and avoid opening the form errors.
             //Errors during the construction time are hard to debug because your object are not instantiated yet.
 
+            settextcallback = new SetTextCallback(SetText);
+
             results = new DataTable();
             results.Columns.Add("IP Address");
             results.Columns.Add("OTA Payload");
             results.Columns.Add("OTA Result");
 
+            sbind.DataSource = results;
+            listindex = 0;
             DGV_Data.AutoGenerateColumns = true;
             DGV_Data.DataSource = results;
+            DGV_Data.DataSource = sbind;
 
             TB_LogDir.Text = Directory.GetCurrentDirectory();
 
-            // responses = new List<string>();
+            iplist = new List<IPData>();
+            responses = new List<string>();
         }
 
         /// <summary>
@@ -253,11 +261,19 @@ namespace VenomNamespace
 
                         //Console.WriteLine("Status BFail" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
                              }
+
+                        //lock (lockObj)
+                        // {
+                        responses.Add(statusb);
+                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = statusb;
+
+                        SetText();
+                        // }
                     }
                     catch { }
 
                     // Write info to widebox window
-                    SetText();
+                   // SetText();
                 }
             }
         }
@@ -398,42 +414,62 @@ namespace VenomNamespace
 
         private void SetText()
         {
-           // foreach (string s in responses)
-           // {
-               // string[] parts = s.Split('\t');
-                //int listindex = 0;
-           DataRow resultRow = results.NewRow();
+            // foreach (string s in responses)
+            // {
+            // string[] parts = s.Split('\t');
+            //int listindex = 0;
+            /*DataRow resultRow = results.NewRow();
 
-            // results.Rows.Add(TB_IP.Text + TB_Payload.Text + "Pass12");
-          
-            resultRow["IP Address"] = TB_IP.Text;
-            resultRow["OTA Payload"] = TB_Payload.Text;
-            resultRow["OTA Result"] = statusb;
-            results.Rows.Add(resultRow);
+             // results.Rows.Add(TB_IP.Text + TB_Payload.Text + "Pass12");
+
+             resultRow["IP Address"] = TB_IP.Text;
+             resultRow["OTA Payload"] = TB_Payload.Text;
+             resultRow["OTA Result"] = statusb;
+             results.Rows.Add(resultRow);
+
+                 try
+                 {
+                     using (StreamWriter sw = File.AppendText(curfilename))
+                     {
+                         sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + TB_IP.Text + "," +
+                             TB_Payload.Text + "," +
+                             statusb);
+                     }
+                 }
+                 catch { }
+            // }*/
+
+            foreach (string s in responses)
+            {
+                string[] parts = s.Split('\t');
+                IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
+                listindex = iplist.IndexOf(ipd);
+
+                results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
+                /*//LB_Response.Items.Add(pingresp);
+                string[] parts = pingresp.Split('\t');
+                int rtt = parts[1].EndsWith("ms") ? int.Parse(parts[1].Substring(0,parts[1].Length-2)) : pingtimeout;
+                iplist[listindex].AddReply(rtt,mqttresp);
+                
+                results.Rows[listindex]["# Missed Packets"] = iplist[listindex].DropCount;
+                results.Rows[listindex]["Uptime %"] = iplist[listindex].Uptime;
+                results.Rows[listindex]["MQTT Drop Count"] = iplist[listindex].MQTTDropCount;
+                results.Rows[listindex]["MQTT Uptime %"] = iplist[listindex].MQTTUptime;*/
 
                 try
                 {
                     using (StreamWriter sw = File.AppendText(curfilename))
                     {
-                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + TB_IP.Text + "," +
-                            TB_Payload.Text + "," +
-                            statusb);
+                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
+                            iplist[listindex].Payload + "," +
+                            iplist[listindex].Result);
                     }
                 }
                 catch { }
-           // }
-            /*//LB_Response.Items.Add(pingresp);
-            string[] parts = pingresp.Split('\t');
-            int rtt = parts[1].EndsWith("ms") ? int.Parse(parts[1].Substring(0,parts[1].Length-2)) : pingtimeout;
-            iplist[listindex].AddReply(rtt,mqttresp);
-            results.Rows[listindex]["Avg Resp Time"] = iplist[listindex].Average;
-            results.Rows[listindex]["# Missed Packets"] = iplist[listindex].DropCount;
-            results.Rows[listindex]["Uptime %"] = iplist[listindex].Uptime;
-            results.Rows[listindex]["MQTT Drop Count"] = iplist[listindex].MQTTDropCount;
-            results.Rows[listindex]["MQTT Uptime %"] = iplist[listindex].MQTTUptime;*/
+            }
 
             DGV_Data.Refresh();
-           // responses.Clear();
+            responses.Clear();
 
             /*try
             {
@@ -442,54 +478,94 @@ namespace VenomNamespace
             catch { }*/
         }
 
-        private void BT_Payload_Click(object sender, EventArgs e)
+        private void BTN_Payload_Click(object sender, EventArgs e)
         {
-            //string ip = TB_IP;
-
-            //Parse OTA payload into byte array for sending via MQTT
-            byte[] bytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
-
-
-            //System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-            //ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
-
-            //Prepare IP address for sending via MQTT
-            string[] ipad = TB_IP.Text.Split('.');
-            byte[] ipbytes = new byte[4];
-            for (int j = 0; j < 4; j++)
+            if (BTN_Payload.Text == "Send Payload")
             {
-                ipbytes[j] = byte.Parse(ipad[j]);
-            }
-            ip = new System.Net.IPAddress(ipbytes);
-
-            //Write info to log
-            if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
-            {
-                curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                using (StreamWriter sw = File.CreateText(curfilename))
+                //Write info to log
+                if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
                 {
-                    sw.WriteLine("Time,IP,Payload,Result");
+                    curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+                    using (StreamWriter sw = File.CreateText(curfilename))
+                    {
+                        sw.WriteLine("Time,IP,Payload,Result");
+                    }
                 }
-            }
-            // Check Trace Connect
-            TraceConnect();
+                BTN_Payload.Text = "Stop Running";
+                BTN_Add.Enabled = false;
+                BTN_Remove.Enabled = false;
 
-            SetText();            
-            //Semd payload
-            WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", bytes);
+                if (LB_IPs.Items.Count > 0)
+                
+                    ProcessIP();
+                
+            }
+            else
+            {
+                BTN_Payload.Text = "Send Payload";
+                BTN_Add.Enabled = true;
+                BTN_Remove.Enabled = true;
+            }
         }
 
-        //Check trace status
-        void TraceConnect()
+        public void SendMQTT(byte[] ipbytes, byte[] paybytes)
         {
-            string ip_local = TB_IP.Text;
+
+            ip = new System.Net.IPAddress(ipbytes);
+
+            //Semd payload
+            WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", paybytes);
+        }
+        public void Wait(int time)
+        {
+            Thread thread = new Thread(delegate ()
+            {
+                System.Threading.Thread.Sleep(time);
+            });
+            thread.Start();
+            while (thread.IsAlive)
+                Application.DoEvents();
+        }
+
+        void ProcessIP()
+        {
+            foreach (IPData ipd in iplist)
+            {
+                string ip = ipd.IPAddress;
+                string pay = ipd.Payload;
+
+                TraceConnect(ip);
+
+                //Parse OTA payload into byte array for sending via MQTT
+                byte[] paybytes = Encoding.ASCII.GetBytes(pay);
+
+
+                //Prepare IP address for sending via MQTT
+                string[] ipad = ip.Split('.');
+                byte[] ipbytes = new byte[4];
+                for (int j = 0; j < 4; j++)
+                {
+                    ipbytes[j] = byte.Parse(ipad[j]);
+                }
+
+                SendMQTT(ipbytes, paybytes);
+
+                //Invoke(settextcallback);
+
+                SetText();
+
+            }
+        }
+        //Check trace status
+        void TraceConnect(string ip)
+        {
             
            // lock (lockObj)
            // {
                     //gets the list of appliances from WifiBasic
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                     //Selects the appliance based on IP address
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip_local);
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
                 //If an appliance with the specified IP address is found in the list...
                 while (!mqttresp)
                 {
@@ -502,12 +578,14 @@ namespace VenomNamespace
                             if (!cai.IsRevelationConnected)
                             {
                                 WifiLocal.ConnectTo(cai);
+                                Wait(1000);
                             }
                             if (cai.IsRevelationConnected)
                             {
                                 //If Revelation is enabled, enable Trace
                                 WifiLocal.EnableTrace(cai, true);
-                            }
+                                Wait(1000);
+                        }
                             mqttresp = false;
                         }
                         else
@@ -516,7 +594,8 @@ namespace VenomNamespace
                             if (cai.IsRevelationConnected)
                             {
                                 WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
-                            }
+                            Wait(1000);
+                        }
                             mqttresp = true;
                         }
                     }
@@ -528,6 +607,48 @@ namespace VenomNamespace
             // }
             
         }
+        private void LB_IPs_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            TB_IP.Text = LB_IPs.SelectedItem.ToString();
+        }
 
+
+        private void BTN_Add_Click(object sender, EventArgs e)
+        {
+            string localpay = TB_Payload.Text;
+            try
+            {
+                if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
+                {
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
+                    if (cai != null)
+                    {
+                        LB_IPs.Items.Add(cai.IPAddress);
+                        IPData newip = new IPData(cai.IPAddress, localpay);
+                        iplist.Add(newip);
+                        DataRow dr = results.NewRow();
+                        dr["IP Address"] = newip.IPAddress;
+                        dr["OTA Payload"] = newip.Payload;
+                        //dr["OTA Result"] = statusb;
+                        results.Rows.Add(dr);
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private void BTN_Remove_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                iplist.RemoveAt(LB_IPs.SelectedIndex);
+                results.Rows.RemoveAt(LB_IPs.SelectedIndex);
+                LB_IPs.Items.Remove(LB_IPs.SelectedItem);
+            }
+            catch { }
+        }
     }
 }

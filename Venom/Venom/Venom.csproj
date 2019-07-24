@@ -87,6 +87,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IPData.cs" />
     <Compile Include="LED.cs">
       <SubType>UserControl</SubType>
     </Compile>
