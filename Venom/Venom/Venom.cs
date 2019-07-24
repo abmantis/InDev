@@ -25,7 +25,7 @@ namespace VenomNamespace
 
         private DataTable results;
         private string curfilename;
-        private List<string> responses;
+        //private List<string> responses;
         public string statusb = "RUNNING";
         public System.Net.IPAddress ip;
 
@@ -66,7 +66,7 @@ namespace VenomNamespace
 
             TB_LogDir.Text = Directory.GetCurrentDirectory();
 
-            responses = new List<string>();
+            // responses = new List<string>();
         }
 
         /// <summary>
@@ -211,7 +211,8 @@ namespace VenomNamespace
                 }
                 catch { }
             }*/
-           // Console.WriteLine("Data " + data);
+            // Console.WriteLine("Data " + data);
+            double statusval = 0;
             if (data.ContentAsString.StartsWith("mqtt_out_data:"))
             {
                 //MQTT data in the Trace just comes as raw hex regardless of message format, so need to conver it to ASCII to get the topic string
@@ -224,28 +225,39 @@ namespace VenomNamespace
                 }
 
                 //Locate the MQTT Statistics message in the Trace and grab the four wifi reset reason bytes from it
-                if (sb.Contains("\"status\": ["))
+                // if (sb.Contains("\"status\": ["))
+                if (sb.Contains("\"status\""))
                 {
                     try
                     {
-                        sb = sb.Replace("\"status\": [", "@");
+                        sb = sb.Replace("\"status\":[", "@");
                         string[] stats = sb.Split('@');
-                        statusb = stats[1];
+                        sb = "";
+                        parts = stats[1].Split(',');
+                        for (int i = 0; i < parts[0].Length; i++)
+                            //for (int i = 0; !statusb[i].Equals(","); i++)
+                            sb += parts[i];
+
+                        statusval = Char.GetNumericValue(Char.Parse(sb));
+                        //for (int i = 0; i < )
                        // Console.WriteLine("Status BPre" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
-                        if (Equals(statusb, "0") || Equals(statusb, "1"))
+                        if (statusval == 0 || statusval == 1)
                         {
-                            statusb += " PASS.";
+                            statusb = "OTA Status Result was " + statusval.ToString() + " PASS.";
 
                            // Console.WriteLine("Status BWork" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
                         }
 
-                        else { 
-                            statusb += " FAIL.";
+                        else {
+                            statusb = "OTA Status Result was " + statusval.ToString() + " FAIL.";
 
                         //Console.WriteLine("Status BFail" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
                              }
                     }
                     catch { }
+
+                    // Write info to widebox window
+                    SetText();
                 }
             }
         }
@@ -421,7 +433,7 @@ namespace VenomNamespace
             results.Rows[listindex]["MQTT Uptime %"] = iplist[listindex].MQTTUptime;*/
 
             DGV_Data.Refresh();
-            responses.Clear();
+           // responses.Clear();
 
             /*try
             {
@@ -462,9 +474,7 @@ namespace VenomNamespace
             // Check Trace Connect
             TraceConnect();
 
-            // Write info to widebox window
-            SetText();
-            
+            SetText();            
             //Semd payload
             WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", bytes);
         }
