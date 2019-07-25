@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Venom.Properties
+namespace AutoPinger.Properties
 {
 
 
