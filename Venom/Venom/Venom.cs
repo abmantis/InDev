@@ -25,7 +25,7 @@ namespace VenomNamespace
         private List<IPData> iplist;
         private List<string> responses;
 
-        public string statusb = "RUNNING";
+        public string statusb = "PENDING";
         public System.Net.IPAddress ip;
         public delegate void SetTextCallback();
         public SetTextCallback settextcallback;
@@ -221,6 +221,7 @@ namespace VenomNamespace
             }*/
             // Console.WriteLine("Data " + data);
             double statusval = 0;
+
             if (data.ContentAsString.StartsWith("mqtt_out_data:"))
             {
                 //MQTT data in the Trace just comes as raw hex regardless of message format, so need to conver it to ASCII to get the topic string
@@ -264,16 +265,19 @@ namespace VenomNamespace
 
                         //lock (lockObj)
                         // {
-                        responses.Add(statusb);
-                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = statusb;
-
+                        iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = statusb;
+                        
+                        // Write info to widebox window
+                        //Invoke(settextcallback);
                         SetText();
+
+                        responses.Clear();
+                        statusb = "PENDING";
                         // }
                     }
                     catch { }
 
-                    // Write info to widebox window
-                   // SetText();
+                    
                 }
             }
         }
@@ -410,6 +414,8 @@ namespace VenomNamespace
             {
                 TB_LogDir.Text = fbd.SelectedPath;
             }
+
+            // ADD IF FOLDER DOESN'T EXIST *********************
         }
 
         private void SetText()
@@ -469,7 +475,6 @@ namespace VenomNamespace
             }
 
             DGV_Data.Refresh();
-            responses.Clear();
 
             /*try
             {
@@ -510,7 +515,7 @@ namespace VenomNamespace
 
         public void SendMQTT(byte[] ipbytes, byte[] paybytes)
         {
-
+            // ADD IF MQTT NOT SELECTEC AND ADD REVELATION SEND OPTION ****************
             ip = new System.Net.IPAddress(ipbytes);
 
             //Semd payload
@@ -534,7 +539,7 @@ namespace VenomNamespace
                 string ip = ipd.IPAddress;
                 string pay = ipd.Payload;
 
-                TraceConnect(ip);
+                TraceConnect(ip, pay);
 
                 //Parse OTA payload into byte array for sending via MQTT
                 byte[] paybytes = Encoding.ASCII.GetBytes(pay);
@@ -552,12 +557,12 @@ namespace VenomNamespace
 
                 //Invoke(settextcallback);
 
-                SetText();
+               // SetText();
 
             }
         }
         //Check trace status
-        void TraceConnect(string ip)
+        void TraceConnect(string ip, string pay)
         {
             
            // lock (lockObj)
@@ -604,8 +609,11 @@ namespace VenomNamespace
 
                         mqttresp = false;
                 }
+
+
+            responses.Add(ip + "\t" + pay + "\t" + statusb);
             // }
-            
+
         }
         private void LB_IPs_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -630,7 +638,7 @@ namespace VenomNamespace
                         DataRow dr = results.NewRow();
                         dr["IP Address"] = newip.IPAddress;
                         dr["OTA Payload"] = newip.Payload;
-                        //dr["OTA Result"] = statusb;
+                        dr["OTA Result"] = statusb;
                         results.Rows.Add(dr);
                     }
                 }

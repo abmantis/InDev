@@ -40,7 +40,7 @@ namespace VenomNamespace
         {
             _ipaddress = ip;
             _payload = payload;
-            _result = "";
+            _result = "RUNNING";
             _mqttconnected = false;
         }
 
