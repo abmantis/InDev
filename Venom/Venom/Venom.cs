@@ -513,6 +513,20 @@ namespace VenomNamespace
             }
         }
 
+        public void SchedSendMQTT(byte[] ipbytes, byte[] paybytes)
+        {
+            foreach (IPData ipd in iplist)
+            {
+                if (ipd.Duplicate)
+                // ADD IF MQTT NOT SELECTEC AND ADD REVELATION SEND OPTION ****************
+                ip = new System.Net.IPAddress(ipbytes);
+
+                //Semd payload
+                WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", paybytes);
+            }
+
+            
+        }
         public void SendMQTT(byte[] ipbytes, byte[] paybytes)
         {
             // ADD IF MQTT NOT SELECTEC AND ADD REVELATION SEND OPTION ****************
@@ -538,7 +552,7 @@ namespace VenomNamespace
             {
                 string ip = ipd.IPAddress;
                 string pay = ipd.Payload;
-
+                listindex = iplist.IndexOf(ipd);
                 TraceConnect(ip, pay);
 
                 //Parse OTA payload into byte array for sending via MQTT
@@ -553,7 +567,11 @@ namespace VenomNamespace
                     ipbytes[j] = byte.Parse(ipad[j]);
                 }
 
-                SendMQTT(ipbytes, paybytes);
+                if (!ipd.Duplicate)
+                    SendMQTT(ipbytes, paybytes);
+
+                else
+                    SchedSendMQTT(ipbytes, paybytes);
 
                 //Invoke(settextcallback);
 
@@ -624,6 +642,7 @@ namespace VenomNamespace
         private void BTN_Add_Click(object sender, EventArgs e)
         {
             string localpay = TB_Payload.Text;
+            string localip = TB_IP.Text;
             try
             {
                 if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
@@ -641,6 +660,25 @@ namespace VenomNamespace
                         dr["OTA Result"] = statusb;
                         results.Rows.Add(dr);
                     }
+                }
+
+                else if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) != null)
+                {
+                   // System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    //ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
+                    //if (cai == null)
+                   // {
+                        LB_IPs.Items.Add(localip);
+                        IPData newip = new IPData(localip, localpay);
+                        iplist.Add(newip);
+                        listindex = iplist.IndexOf(newip);
+                        iplist[listindex].Duplicate = true;
+                        DataRow dr = results.NewRow();
+                        dr["IP Address"] = localip;
+                        dr["OTA Payload"] = localpay;
+                        dr["OTA Result"] = statusb;
+                        results.Rows.Add(dr);
+                    //}
                 }
             }
             catch
