@@ -521,6 +521,49 @@ namespace VenomNamespace
             //Semd payload
             WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", paybytes);
         }
+
+        public void SendReveal(string ips, byte[] ipbytes, byte[] paybytes)
+        {
+            //RevealPacket reveal_pkt = new RevealPacket(Convert.ToByte(Convert.ToUInt32("F1", 16)), Convert.ToByte(Convert.ToUInt32("00", 16)), Convert.ToByte(Convert.ToUInt32("00", 16)), Convert.ToByte(Convert.ToUInt32("03", 16)), paybytes);
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
+            //for (int i = 0; i < paybytes.Length; i++)
+            //reveal_pkt.PayLoad[i] = paybytes[i];
+            ip = new System.Net.IPAddress(ipbytes);
+            //string rawpacket = reveal_pkt.ToSimpleWhirlpoolPacket().ToString();
+            /*RevelationPacket rev_pkt = new RevelationPacket();
+
+            rev_pkt.API = Convert.ToByte(Convert.ToUInt32("F1", 16));
+            rev_pkt.Opcode = Convert.ToByte(Convert.ToUInt32("00", 16));
+            rev_pkt.Payload = paybytes;*/
+
+            var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals("1.2.3.4"));
+            if (myDestination != null)
+            {
+                WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
+                {
+                    API = 0x10,
+                    Opcode = 2,
+                });
+            }
+
+            while (!cai.IsRevelationConnected)
+            {
+                WifiLocal.ConnectTo(cai);
+                Wait(1000);
+            }
+            // ADD IF MQTT NOT SELECTEC AND ADD REVELATION SEND OPTION ****************
+            //ip = new System.Net.IPAddress(ipbytes);
+
+            //Semd payload
+            WifiLocal.SendRevelationMessage(ip, rev_pkt); //reveal_pkt.ToRevelation(), false);
+
+            if (cai.IsRevelationConnected)
+            {
+                WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                Wait(1000);
+            }
+        }
         public void Wait(int time)
         {
             Thread thread = new Thread(delegate ()
@@ -553,7 +596,11 @@ namespace VenomNamespace
                     ipbytes[j] = byte.Parse(ipad[j]);
                 }
 
-                SendMQTT(ipbytes, paybytes);
+                if (RB_MQTT.Checked)
+                    SendMQTT(ipbytes, paybytes);
+
+                else
+                    SendReveal(ip, ipbytes, paybytes);
 
                 //Invoke(settextcallback);
 
@@ -600,7 +647,7 @@ namespace VenomNamespace
                             {
                                 WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
                             Wait(1000);
-                        }
+                             }
                             mqttresp = true;
                         }
                     }
@@ -657,6 +704,12 @@ namespace VenomNamespace
                 LB_IPs.Items.Remove(LB_IPs.SelectedItem);
             }
             catch { }
+        }
+
+        private void BTN_Clr_Click(object sender, EventArgs e)
+        {
+            results.Clear();
+            DGV_Data.Refresh();
         }
     }
 }
