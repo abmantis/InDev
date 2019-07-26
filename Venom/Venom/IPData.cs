@@ -30,18 +30,11 @@ namespace VenomNamespace
             set { _result = value; }
         }
 
-        private bool _mqttconnected;
-        public bool MQTTConn
-        {
-            get { return _mqttconnected; }
-            set { _mqttconnected = value; }
-        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
             _payload = payload;
             _result = "RUNNING";
-            _mqttconnected = false;
         }
 
     }
