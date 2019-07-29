@@ -537,15 +537,7 @@ namespace VenomNamespace
             rev_pkt.Opcode = Convert.ToByte(Convert.ToUInt32("00", 16));
             rev_pkt.Payload = paybytes;*/
 
-            var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals("1.2.3.4"));
-            if (myDestination != null)
-            {
-                WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
-                {
-                    API = 0x10,
-                    Opcode = 2,
-                });
-            }
+            
 
             while (!cai.IsRevelationConnected)
             {
@@ -556,7 +548,17 @@ namespace VenomNamespace
             //ip = new System.Net.IPAddress(ipbytes);
 
             //Semd payload
-            WifiLocal.SendRevelationMessage(ip, rev_pkt); //reveal_pkt.ToRevelation(), false);
+            // WifiLocal.SendRevelationMessage(ip, rev_pkt); //reveal_pkt.ToRevelation(), false);
+            var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals(ips));
+            if (myDestination != null)
+            {
+                WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
+                {
+                    API = 0xF1,
+                    Opcode = 00,
+                    Payload = paybytes,
+                });
+            }
 
             if (cai.IsRevelationConnected)
             {
@@ -564,7 +566,7 @@ namespace VenomNamespace
                 Wait(1000);
             }
         }
-        public void Wait(int time)
+        public void Wait(int time) //***** cHANGE THIS IT SUX ***
         {
             Thread thread = new Thread(delegate ()
             {
@@ -657,7 +659,7 @@ namespace VenomNamespace
                         mqttresp = false;
                 }
 
-
+    
             responses.Add(ip + "\t" + pay + "\t" + statusb);
             // }
 
