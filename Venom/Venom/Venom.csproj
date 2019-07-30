@@ -47,6 +47,9 @@
     <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CertManager">
+      <HintPath>Lib\CertManager.exe</HintPath>
+    </Reference>
     <Reference Include="GnatMQ, Version=0.9.3.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Lib\GnatMQ.dll</HintPath>
@@ -61,6 +64,15 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http">
+      <HintPath>Lib\System.Net.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime">
+      <HintPath>Lib\System.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks">
+      <HintPath>Lib\System.Threading.Tasks.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -143,6 +155,9 @@
     <Content Include="Lib\WideInterface.XML" />
     <Content Include="Lib\WirelessLib.dll" />
     <Content Include="Lib\WirelessLib.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

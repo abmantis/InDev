@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -13,28 +14,29 @@ namespace VenomNamespace
 {
     public partial class Venom : WideInterface
     {
-        public const byte API_NUMBER = 0;//TODO: change to API value
+        public const byte API_NUMBER = 0;
         /// <summary>
         /// Opcodes parsed by this form
         /// </summary>
         /// 
-
+        public static int WAITTIME = 2000;
+        public static int ATTEMPTMAX = 10;
+        // Entities used to store log and window data
         private DataTable results;
         private BindingSource sbind = new BindingSource();
-        private string curfilename;
+        
+        // Entities used to store the list of targeted IPs and their progress
         private List<IPData> iplist;
         private List<string> responses;
-
-        public string statusb = "PENDING";
-        public System.Net.IPAddress ip;
-        public delegate void SetTextCallback();
-        public SetTextCallback settextcallback;
+        
+        private string curfilename;
         public int listindex;
 
-        static object lockObj = new object();
-
-        bool mqttresp = false;
-
+        //public delegate void SetTextCallback();
+        //public SetTextCallback settextcallback;
+                
+        //static object lockObj = new object();   Leaving place holder if multi threading is going to be used
+        
         public enum OPCODES
         {
             //Include your opcodes in here
@@ -58,13 +60,16 @@ namespace VenomNamespace
             //Avoid to do a to much operations during the construction time to have a faster open time and avoid opening the form errors.
             //Errors during the construction time are hard to debug because your object are not instantiated yet.
 
-            settextcallback = new SetTextCallback(SetText);
+            //settextcallback = new SetTextCallback(SetText);
 
+            // Build log and window table
             results = new DataTable();
             results.Columns.Add("IP Address");
             results.Columns.Add("OTA Payload");
+            results.Columns.Add("Delivery Method");
             results.Columns.Add("OTA Result");
 
+            // Generate tables
             sbind.DataSource = results;
             listindex = 0;
             DGV_Data.AutoGenerateColumns = true;
@@ -73,6 +78,7 @@ namespace VenomNamespace
 
             TB_LogDir.Text = Directory.GetCurrentDirectory();
 
+            // Generate lists
             iplist = new List<IPData>();
             responses = new List<string>();
         }
@@ -85,14 +91,7 @@ namespace VenomNamespace
         {
             RevealPacket reveal_pkt = new RevealPacket();
             if (reveal_pkt.ParseSimpleWhirlpoolMessage(data))
-            {
-              /*  string text = reveal_pkt.API.ToString("X2") + "," + reveal_pkt.OpCode.ToString("X2");
-                foreach (byte b in reveal_pkt.PayLoad)
-                {
-                    text += "," + b.ToString("X2");
-                }
-                TB_Log.Text = text;*/
-
+            {              
                 switch (reveal_pkt.API)
                 {
                     case API_NUMBER:   //parse opcodes to this API (already without the feedback bit, i.e. 0x25: reveal_pkt.OpCode = 5 , reveal_pkt.IsFeedback = true )
@@ -180,11 +179,11 @@ namespace VenomNamespace
 
             switch (data.Topic)
             {
-                case "iot-2/evt/subscribe/fmt/json":
+                /*case "iot-2/evt/subscribe/fmt/json": // Not currently used
                     string pay = System.Text.Encoding.ASCII.GetString(data.Message);
-                   // setLEDs((byte)4, (pay.Contains("1") ? (byte)3 : (byte)2));
-                   // setLEDs((byte)3, (byte)2);
-                    break;
+                   setLEDs((byte)4, (pay.Contains("1") ? (byte)3 : (byte)2));
+                   setLEDs((byte)3, (byte)2);
+                    break;*/
                 default:
                     break;
             }
@@ -202,24 +201,7 @@ namespace VenomNamespace
 
         //This command does not come with Lucas's template.  You will have to add it manually.
         public override void parseTraceMessages(ExtendedTracePacket data)
-        {
-            //base.parseTraceMessages(data);
-            /*if (data.ContentAsString.Contains("linkstate"))
-            {
-                string s = data.ContentAsString;
-                try
-                {
-                    int linkstate = int.Parse(s.Substring(s.IndexOf("linkstate") + 10, 1));
-                    int claimstate = int.Parse(s.Substring(s.IndexOf("claimed") + 8, 1));
-                    lock (lockObj)
-                    {
-                        iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).LinkState = linkstate;
-                        iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).ClaimState = claimstate;
-                    }
-                }
-                catch { }
-            }*/
-            // Console.WriteLine("Data " + data);
+        {            
             double statusval = 0;
 
             if (data.ContentAsString.StartsWith("mqtt_out_data:"))
@@ -233,51 +215,54 @@ namespace VenomNamespace
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
 
-                //Locate the MQTT Statistics message in the Trace and grab the four wifi reset reason bytes from it
-                // if (sb.Contains("\"status\": ["))
+                // Locate if OTA payload has been sent and update status
+                if (sb.Contains("\"update\""))
+                {
+                    iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = "RUNNING";
+                    SetText();
+                }
+
+                //Locate the MQTT status message in the Trace and grab the reason byte immediately after it
                 if (sb.Contains("\"status\""))
                 {
                     try
                     {
+                        // Overwrite status portion to have a point of reference directly next to status reason byte
                         sb = sb.Replace("\"status\":[", "@");
                         string[] stats = sb.Split('@');
                         sb = "";
                         parts = stats[1].Split(',');
+
                         for (int i = 0; i < parts[0].Length; i++)
-                            //for (int i = 0; !statusb[i].Equals(","); i++)
                             sb += parts[i];
 
+                        // Convert status reason byte to a numeric value
                         statusval = Char.GetNumericValue(Char.Parse(sb));
-                        //for (int i = 0; i < )
-                       // Console.WriteLine("Status BPre" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
+                        //*****TODO add switch statement for all error cases
+                        // Lookup status reason byte pass or fail reason
+                        string statusb = "";
+
                         if (statusval == 0 || statusval == 1)
                         {
                             statusb = "OTA Status Result was " + statusval.ToString() + " PASS.";
-
-                           // Console.WriteLine("Status BWork" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
                         }
 
                         else {
                             statusb = "OTA Status Result was " + statusval.ToString() + " FAIL.";
-
-                        //Console.WriteLine("Status BFail" + DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + statusb);
                              }
 
-                        //lock (lockObj)
-                        // {
                         iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = statusb;
                         
                         // Write info to widebox window
                         //Invoke(settextcallback);
                         SetText();
 
-                        responses.Clear();
-                        statusb = "PENDING";
-                        // }
+                        // Restore progress information entities to default
+                        //responses.Clear();
+                        //statusb = "PENDING";
                     }
                     catch { }
-
-                    
+                                        
                 }
             }
         }
@@ -386,7 +371,7 @@ namespace VenomNamespace
         }
 
         #endregion
-       /* private void setLEDs(byte opCode, byte payload)
+       private void setLEDs(byte opCode, byte payload) // Not currently used
         {
             switch (payload)
                 {
@@ -404,7 +389,7 @@ namespace VenomNamespace
                         break;
                 }
 
-        }*/
+        }
 
         private void BTN_LogDir_Click(object sender, EventArgs e)
         {
@@ -414,53 +399,22 @@ namespace VenomNamespace
             {
                 TB_LogDir.Text = fbd.SelectedPath;
             }
-
-            // ADD IF FOLDER DOESN'T EXIST *********************
+            
         }
 
         private void SetText()
         {
-            // foreach (string s in responses)
-            // {
-            // string[] parts = s.Split('\t');
-            //int listindex = 0;
-            /*DataRow resultRow = results.NewRow();
-
-             // results.Rows.Add(TB_IP.Text + TB_Payload.Text + "Pass12");
-
-             resultRow["IP Address"] = TB_IP.Text;
-             resultRow["OTA Payload"] = TB_Payload.Text;
-             resultRow["OTA Result"] = statusb;
-             results.Rows.Add(resultRow);
-
-                 try
-                 {
-                     using (StreamWriter sw = File.AppendText(curfilename))
-                     {
-                         sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + TB_IP.Text + "," +
-                             TB_Payload.Text + "," +
-                             statusb);
-                     }
-                 }
-                 catch { }
-            // }*/
-
+            // Process each progress entity for each IP added
             foreach (string s in responses)
             {
+                // Seperate on tabs and pull the IP address
                 string[] parts = s.Split('\t');
                 IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
                 listindex = iplist.IndexOf(ipd);
 
+                // Update window with OTA result
+                results.Rows[listindex]["Delivery Method"] = iplist[listindex].Delivery;
                 results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
-                /*//LB_Response.Items.Add(pingresp);
-                string[] parts = pingresp.Split('\t');
-                int rtt = parts[1].EndsWith("ms") ? int.Parse(parts[1].Substring(0,parts[1].Length-2)) : pingtimeout;
-                iplist[listindex].AddReply(rtt,mqttresp);
-                
-                results.Rows[listindex]["# Missed Packets"] = iplist[listindex].DropCount;
-                results.Rows[listindex]["Uptime %"] = iplist[listindex].Uptime;
-                results.Rows[listindex]["MQTT Drop Count"] = iplist[listindex].MQTTDropCount;
-                results.Rows[listindex]["MQTT Uptime %"] = iplist[listindex].MQTTUptime;*/
 
                 try
                 {
@@ -468,19 +422,16 @@ namespace VenomNamespace
                     {
                         sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
                             iplist[listindex].Payload + "," +
+                            iplist[listindex].Delivery + "," +
                             iplist[listindex].Result);
                     }
                 }
                 catch { }
             }
 
+            // Push result update
             DGV_Data.Refresh();
 
-            /*try
-            {
-                sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," + rtt + "," + mqttresp);                
-            }
-            catch { }*/
         }
 
         private void BTN_Payload_Click(object sender, EventArgs e)
@@ -490,87 +441,102 @@ namespace VenomNamespace
                 //Write info to log
                 if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
                 {
-                    curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                    using (StreamWriter sw = File.CreateText(curfilename))
                     {
-                        sw.WriteLine("Time,IP,Payload,Result");
+                        // Verify directory exists, if not, throw exception
+                        curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+                        try
+                        {                            
+                            using (StreamWriter sw = File.CreateText(curfilename))
+                            {
+                                sw.WriteLine("Time,IP,Payload,Method,Result");
+                            }
+                        }
+                        catch {
+                            MessageBox.Show("The chosen path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
                     }
                 }
                 BTN_Payload.Text = "Stop Running";
                 BTN_Add.Enabled = false;
                 BTN_Remove.Enabled = false;
+                BTN_Clr.Enabled = false;
 
-                if (LB_IPs.Items.Count > 0)
-                
-                    ProcessIP();
-                
+                // Begin processing all IPs on list
+                if (LB_IPs.Items.Count > 0)                
+                    ProcessIP();                
             }
             else
             {
                 BTN_Payload.Text = "Send Payload";
                 BTN_Add.Enabled = true;
                 BTN_Remove.Enabled = true;
+                BTN_Clr.Enabled = true;
             }
         }
 
         public void SendMQTT(byte[] ipbytes, byte[] paybytes)
         {
-            // ADD IF MQTT NOT SELECTEC AND ADD REVELATION SEND OPTION ****************
-            ip = new System.Net.IPAddress(ipbytes);
+            System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
 
             //Semd payload
             WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", paybytes);
         }
 
-        public void SendReveal(string ips, byte[] ipbytes, byte[] paybytes)
+        public void SendReveal(string ips, byte[] paybytes)
         {
-            //RevealPacket reveal_pkt = new RevealPacket(Convert.ToByte(Convert.ToUInt32("F1", 16)), Convert.ToByte(Convert.ToUInt32("00", 16)), Convert.ToByte(Convert.ToUInt32("00", 16)), Convert.ToByte(Convert.ToUInt32("03", 16)), paybytes);
+            int revattempt = 0;
+            // Check CAI and set IP address
             System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
             ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
-            //for (int i = 0; i < paybytes.Length; i++)
-            //reveal_pkt.PayLoad[i] = paybytes[i];
-            ip = new System.Net.IPAddress(ipbytes);
-            //string rawpacket = reveal_pkt.ToSimpleWhirlpoolPacket().ToString();
-            /*RevelationPacket rev_pkt = new RevelationPacket();
 
-            rev_pkt.API = Convert.ToByte(Convert.ToUInt32("F1", 16));
-            rev_pkt.Opcode = Convert.ToByte(Convert.ToUInt32("00", 16));
-            rev_pkt.Payload = paybytes;*/
-
-            
-
-            while (!cai.IsRevelationConnected)
-            {
-                WifiLocal.ConnectTo(cai);
-                Wait(1000);
-            }
-            // ADD IF MQTT NOT SELECTEC AND ADD REVELATION SEND OPTION ****************
-            //ip = new System.Net.IPAddress(ipbytes);
-
-            //Semd payload
-            // WifiLocal.SendRevelationMessage(ip, rev_pkt); //reveal_pkt.ToRevelation(), false);
             var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals(ips));
-            if (myDestination != null)
-            {
-                WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
-                {
-                    API = 0xF1,
-                    Opcode = 00,
-                    Payload = paybytes,
-                });
-            }
 
-            if (cai.IsRevelationConnected)
+            // See if Revelation is Connected and attempt to connect until it is
+            while (!cai.IsRevelationConnected && (revattempt < ATTEMPTMAX))
             {
-                WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
-                Wait(1000);
+                try
+                {
+                    {
+                        WifiLocal.ConnectTo(cai);
+                        Wait();
+                        revattempt++;
+                    }
+
+                    // Send Revelation message
+                    if (myDestination != null)
+                    {
+                        WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
+                        {
+                            API = 0xF1,
+                            Opcode = 00,
+                            Payload = paybytes,
+                        });
+                    }
+
+                    // Close revelation
+                    if (cai.IsRevelationConnected)
+                    {
+                        WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                        Wait();
+                        revattempt = 0;
+                    }
+
+                    if (revattempt >= ATTEMPTMAX)
+                    {
+                        //CycleWifi(System.Net.IPAddress.Parse(cai.IPAddress));
+                        revattempt = 0;
+                    }
+                }
+                catch { }
             }
         }
-        public void Wait(int time) //***** cHANGE THIS IT SUX ***
+        public void Wait()
         {
             Thread thread = new Thread(delegate ()
             {
-                System.Threading.Thread.Sleep(time);
+                System.Threading.Thread.Sleep(WAITTIME);
             });
             thread.Start();
             while (thread.IsAlive)
@@ -583,13 +549,14 @@ namespace VenomNamespace
             {
                 string ip = ipd.IPAddress;
                 string pay = ipd.Payload;
+                string delivery = ipd.Delivery;
 
-                TraceConnect(ip, pay);
+                // Enable Trace for IP address in list
+                TraceConnect(ip, pay, delivery);
 
                 //Parse OTA payload into byte array for sending via MQTT
                 byte[] paybytes = Encoding.ASCII.GetBytes(pay);
-
-
+                
                 //Prepare IP address for sending via MQTT
                 string[] ipad = ip.Split('.');
                 byte[] ipbytes = new byte[4];
@@ -598,30 +565,26 @@ namespace VenomNamespace
                     ipbytes[j] = byte.Parse(ipad[j]);
                 }
 
-                if (RB_MQTT.Checked)
+                // See if sending over MQTT or Revelation
+                if (delivery.Equals("MQTT"))
                     SendMQTT(ipbytes, paybytes);
 
                 else
-                    SendReveal(ip, ipbytes, paybytes);
-
-                //Invoke(settextcallback);
-
-               // SetText();
-
+                    SendReveal(ip, paybytes);                
             }
         }
-        //Check trace status
-        void TraceConnect(string ip, string pay)
+        void TraceConnect(string ip, string pay, string delivery)
         {
-            
-           // lock (lockObj)
-           // {
-                    //gets the list of appliances from WifiBasic
-                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-                    //Selects the appliance based on IP address
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
+            bool mqttresp = false;
+            int traceattempt = 0;
+            //gets the list of appliances from WifiBasic
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+
+            //Selects the appliance based on IP address
+            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
+
                 //If an appliance with the specified IP address is found in the list...
-                while (!mqttresp)
+                while (!mqttresp && (traceattempt < ATTEMPTMAX))
                 {
                     if (cai != null)
                     {
@@ -632,38 +595,63 @@ namespace VenomNamespace
                             if (!cai.IsRevelationConnected)
                             {
                                 WifiLocal.ConnectTo(cai);
-                                Wait(1000);
+                                Wait();
+                                traceattempt++;
                             }
                             if (cai.IsRevelationConnected)
                             {
                                 //If Revelation is enabled, enable Trace
                                 WifiLocal.EnableTrace(cai, true);
-                                Wait(1000);
+                                Wait();
+                                traceattempt++;
+                            }
                         }
-                            mqttresp = false;
-                        }
-                        else
-                        {
+                         else
+                         {
                             //If the Trace is enabled and Revelation is also connected, close the Revelation connection
                             if (cai.IsRevelationConnected)
                             {
                                 WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
-                            Wait(1000);
+                                Wait();
                              }
                             mqttresp = true;
-                        }
-                    }
-                    // Else if the IP address is not found in the WifiBasic list, connection has been lost
-                    else
-
-                        mqttresp = false;
+                         }
+                    }                      
                 }
 
-    
-            responses.Add(ip + "\t" + pay + "\t" + statusb);
-            // }
+            if (mqttresp)
+                // Update progress information   
+                responses.Add(ip + "\t" + pay + "\t" + delivery + "\t" + "PENDING");
+            else
+            {
+                MessageBox.Show("Revelation/Trace was not able to start. Restarting connection attempts.", "Error: Unable to start Trace",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                //CycleWifi(System.Net.IPAddress.Parse(cai.IPAddress));
+                traceattempt = 0;
+
+                /*if (!CycleWifi(System.Net.IPAddress.Parse(cai.IPAddress)))
+                {
+                    MessageBox.Show("Revelation/Trace was not able to start even after retry. Please close Venom and WideBox and try again.", "Error: WideBox issue prevents running Plugin",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }*/
+
+            }
 
         }
+
+       /* void CycleWifi(System.Net.IPAddress ip)
+        {
+            // Close all WifiBasic connections
+            WifiLocal.CloseAll(true);
+
+            // Get new cert to restart WifiBasic connections
+            var cert = new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020);
+
+            // Restart Wifi Connection
+            WifiLocal.SetWifi(ip, cert);
+        }*/
+
         private void LB_IPs_SelectedIndexChanged(object sender, EventArgs e)
         {
             TB_IP.Text = LB_IPs.SelectedItem.ToString();
@@ -673,28 +661,60 @@ namespace VenomNamespace
         private void BTN_Add_Click(object sender, EventArgs e)
         {
             string localpay = TB_Payload.Text;
+            string localdeliver = "";
+
+            // A delivery method must be selected
+            if (!RB_MQTT.Checked && !RB_Reveal.Checked)
+            {
+                // Else if the IP address is not found in the WifiBasic list                        
+                MessageBox.Show("No delivery method was selected. Please choose either the Revelation or MQTT button for a delivery method.", "Error: Payload Delivery Method Not Found",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Set delivery method
+            if (RB_MQTT.Checked)
+                localdeliver = "MQTT";
+            else
+                localdeliver = "Revelation";
+
             try
             {
                 if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
                 {
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                     ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
+
+                    // Will only run if IP address is first time added
                     if (cai != null)
                     {
+                        // Add IP to list of IPs
                         LB_IPs.Items.Add(cai.IPAddress);
-                        IPData newip = new IPData(cai.IPAddress, localpay);
+                        IPData newip = new IPData(cai.IPAddress, localpay, localdeliver);
                         iplist.Add(newip);
+
+                        // Update window for added IP
                         DataRow dr = results.NewRow();
                         dr["IP Address"] = newip.IPAddress;
                         dr["OTA Payload"] = newip.Payload;
-                        dr["OTA Result"] = statusb;
+                        dr["Delivery Method"] = newip.Delivery;
+                        dr["OTA Result"] = "PENDING";
                         results.Rows.Add(dr);
+                    }
+                    else
+                    {
+                        // Else if the IP address is not found in the WifiBasic list                        
+                        MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
             catch
             {
             }
+
+            RB_MQTT.Checked = false;
+            RB_Reveal.Checked = false;
         }
 
         private void BTN_Remove_Click(object sender, EventArgs e)
@@ -707,11 +727,22 @@ namespace VenomNamespace
             }
             catch { }
         }
-
+        
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
-            results.Clear();
-            DGV_Data.Refresh();
+            DialogResult dialogResult = MessageBox.Show("This will clear all IPs and their results from all windows. Press Yes to Clear or No to Cancel.",
+                                                        "Verify Full Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (dialogResult == DialogResult.Yes)
+            {
+                results.Clear();
+                responses.Clear();
+                iplist.Clear();
+                LB_IPs.Items.Clear();
+                DGV_Data.Refresh();
+                // Stop anything that is still running
+                //Environment.Exit(Environment.ExitCode);
+            }
+            
         }
     }
 }

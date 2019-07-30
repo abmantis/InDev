@@ -41,6 +41,7 @@
             this.BTN_Clr = new System.Windows.Forms.Button();
             this.RB_Reveal = new System.Windows.Forms.RadioButton();
             this.RB_MQTT = new System.Windows.Forms.RadioButton();
+            this.LED_Internet = new VenomNamespace.LED();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -136,14 +137,12 @@
             // 
             // BTN_Clr
             // 
-            this.BTN_Clr.Enabled = false;
             this.BTN_Clr.Location = new System.Drawing.Point(18, 341);
             this.BTN_Clr.Name = "BTN_Clr";
             this.BTN_Clr.Size = new System.Drawing.Size(100, 36);
             this.BTN_Clr.TabIndex = 89;
             this.BTN_Clr.Text = "Clear";
             this.BTN_Clr.UseVisualStyleBackColor = true;
-            this.BTN_Clr.Visible = false;
             this.BTN_Clr.Click += new System.EventHandler(this.BTN_Clr_Click);
             // 
             // RB_Reveal
@@ -168,11 +167,21 @@
             this.RB_MQTT.Text = "MQTT";
             this.RB_MQTT.UseVisualStyleBackColor = true;
             // 
+            // LED_Internet
+            // 
+            this.LED_Internet.Enabled = false;
+            this.LED_Internet.Location = new System.Drawing.Point(143, 97);
+            this.LED_Internet.Name = "LED_Internet";
+            this.LED_Internet.Size = new System.Drawing.Size(16, 16);
+            this.LED_Internet.TabIndex = 92;
+            this.LED_Internet.Visible = false;
+            // 
             // Venom
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(626, 400);
+            this.Controls.Add(this.LED_Internet);
             this.Controls.Add(this.RB_MQTT);
             this.Controls.Add(this.RB_Reveal);
             this.Controls.Add(this.BTN_Clr);
@@ -209,6 +218,7 @@
         private System.Windows.Forms.Button BTN_Clr;
         private System.Windows.Forms.RadioButton RB_Reveal;
         private System.Windows.Forms.RadioButton RB_MQTT;
+        private LED LED_Internet;
     }
 }
 

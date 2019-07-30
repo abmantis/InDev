@@ -23,6 +23,12 @@ namespace VenomNamespace
             set { _payload = value; }
         }
 
+        private string _delivery;
+        public string Delivery
+        {
+            get { return _delivery; }
+            set { _delivery = value; }
+        }
         private string _result;
         public string Result
         {
@@ -30,11 +36,12 @@ namespace VenomNamespace
             set { _result = value; }
         }
 
-        public IPData(string ip, string payload)
+        public IPData(string ip, string payload, string delivery)
         {
             _ipaddress = ip;
             _payload = payload;
-            _result = "RUNNING";
+            _delivery = delivery;
+            _result = "";
         }
 
     }
