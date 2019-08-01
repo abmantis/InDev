@@ -179,6 +179,7 @@ namespace VenomNamespace
 
             switch (data.Topic)
             {
+                // TODO ADD PARSE MQTT LOGIC
                 /*case "iot-2/evt/subscribe/fmt/json": // Not currently used
                     string pay = System.Text.Encoding.ASCII.GetString(data.Message);
                    setLEDs((byte)4, (pay.Contains("1") ? (byte)3 : (byte)2));
@@ -201,10 +202,10 @@ namespace VenomNamespace
 
         //This command does not come with Lucas's template.  You will have to add it manually.
         public override void parseTraceMessages(ExtendedTracePacket data)
-        {            
+        {
             double statusval = 0;
-
-            if (data.ContentAsString.StartsWith("mqtt_out_data:"))
+                        
+            if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:"))
             {
                 //MQTT data in the Trace just comes as raw hex regardless of message format, so need to conver it to ASCII to get the topic string
                 string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
@@ -219,7 +220,7 @@ namespace VenomNamespace
                 if (sb.Contains("\"update\""))
                 {
                     iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = "RUNNING";
-                    SetText();
+                    SetText("update");
                 }
 
                 //Locate the MQTT status message in the Trace and grab the reason byte immediately after it
@@ -238,28 +239,163 @@ namespace VenomNamespace
 
                         // Convert status reason byte to a numeric value
                         statusval = Char.GetNumericValue(Char.Parse(sb));
-                        //*****TODO add switch statement for all error cases
+
                         // Lookup status reason byte pass or fail reason
                         string statusb = "";
-
-                        if (statusval == 0 || statusval == 1)
+                        
+                        // Status enumerations for various error or success states of OTA result
+                        switch (statusval)
                         {
-                            statusb = "OTA Status Result was " + statusval.ToString() + " PASS.";
+                            case 0:
+                                statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS.";
+                                break;
+                            case 1:
+                                statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS_REBOOT_NEEDED.";
+                                break;
+                            case 2:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MEMORY_ALLOCATION.";
+                                break;
+                            case 3:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_INPUT.";
+                                break;
+                            case 4:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_RETRIEVING_FILE_FROM_SERVER.";
+                                break;
+                            case 5:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_CRC_MISMATCH.";
+                                break;
+                            case 6:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_BDF_PARSING.";
+                                break;
+                            case 7:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_WAIT_FOR_RESPONSE_TIMED_OUT.";
+                                break;
+                            case 8:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_SENDING_MESSAGE.";
+                                break;
+                            case 9:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MODEL_DOES_NOT_MATCH.";
+                                break;
+                            case 10:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_NODE.";
+                                break;
+                            case 11:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NODE_IS_NOT_UPDATEABLE.";
+                                break;
+                            case 12:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ECM_UPDATE_FAILED.";
+                                break;
+                            case 13:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PART_NUMBER_MISMATCH.";
+                                break;
+                            case 14:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MC200_UPDATE_FAILED_BUT_CONTINUE_UPDATE.";
+                                break;
+                            case 15:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NOT_ENOUGH_MEMORY_TO_DOWNLOAD_ALL_RESOURCES.";
+                                break;
+                            case 16:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_LENGTH_ERROR_IN_DESCRIPTOR_FILE.";
+                                break;
+                            case 17:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_POST_UPDATE_VERIFICATION_FAILED.";
+                                break;
+                            case 18:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_IS_NOT_SUPPORTED.";
+                                break;
+                            case 19:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_REQUIRES_PROG_ADDR_IN_UBD.";
+                                break;
+                            case 20:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_ADDR_NOT_IN_FIT_TABLE.";
+                                break;
+                            case 21:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_END_ADDR_EXCEED_FIT_TABLE.";
+                                break;
+                            case 22:
+                                statusb = "FAIL " + statusval.ToString() + " PA_NEED_APPLICATION_PERMISSION_BEFORE_UPDATE.";
+                                break;
+                            case 23:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_SUPPORTED.";
+                                break;
+                            case 24:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_DSA.";
+                                break;
+                            case 25:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_DSA_VERIFICATION_FAILED.";
+                                break;
+                            case 26:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_APPLIANCE_PART_NUMBER_MISMATCH.";
+                                break;
+                            case 27:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UBD_GOT_CORRUPTED.";
+                                break;
+                            case 28:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_IAP_FAILURE.";
+                                break;
+                            case 29:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_SCRIPT_FAILURE.";
+                                break;
+                            case 30:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR_TO_USB.";
+                                break;
+                            case 31:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR.";
+                                break;
+                            case 32:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHMOD.";
+                                break;
+                            case 33:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NO_BDF_IN_PSM.";
+                                break;
+                            case 34:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_DOWNLOAD.";
+                                break;
+                            case 35:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_WAITING_FOR_APPL_PERMISSION.";
+                                break;
+                            case 36:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_IAP.";
+                                break;
+                            case 37:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_WIFI_SW.";
+                                break;
+                            case 38:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_RADIO_SW.";
+                                break;
+                            case 39:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP.";
+                                break;
+                            case 40:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP_AFTER_SPEED_CHANGE.";
+                                break;
+                            case 41:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASE_NO_RESP.";
+                                break;
+                            case 42:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASING_FLASH.";
+                                break;
+                            case 43:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_HANDLER_IS_NULL.";
+                                break;
+                            case 80:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_BEGIN.";
+                                break;
+                            case 99:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_END.";
+                                break;
+                            case 100:
+                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNKNOWN.";
+                                break;
+                            default:
+                                break;
                         }
-
-                        else {
-                            statusb = "OTA Status Result was " + statusval.ToString() + " FAIL.";
-                             }
 
                         iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = statusb;
                         
                         // Write info to widebox window
-                        //Invoke(settextcallback);
-                        SetText();
+                        SetText("status");
 
-                        // Restore progress information entities to default
-                        //responses.Clear();
-                        //statusb = "PENDING";
                     }
                     catch { }
                                         
@@ -402,7 +538,7 @@ namespace VenomNamespace
             
         }
 
-        private void SetText()
+        private void SetText(string type)
         {
             // Process each progress entity for each IP added
             foreach (string s in responses)
@@ -416,17 +552,20 @@ namespace VenomNamespace
                 results.Rows[listindex]["Delivery Method"] = iplist[listindex].Delivery;
                 results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
 
-                try
+                if (type.Equals("status"))
                 {
-                    using (StreamWriter sw = File.AppendText(curfilename))
+                    try
                     {
-                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
+                        using (StreamWriter sw = File.AppendText(curfilename))
+                        {
+                            sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
                             iplist[listindex].Result);
+                        }
                     }
+                    catch { }
                 }
-                catch { }
             }
 
             // Push result update
@@ -473,6 +612,7 @@ namespace VenomNamespace
                 BTN_Add.Enabled = true;
                 BTN_Remove.Enabled = true;
                 BTN_Clr.Enabled = true;
+                responses.Clear();
             }
         }
 
@@ -487,6 +627,7 @@ namespace VenomNamespace
         public void SendReveal(string ips, byte[] paybytes)
         {
             int revattempt = 0;
+            bool revconnect = false;
             // Check CAI and set IP address
             System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
             ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
@@ -494,18 +635,17 @@ namespace VenomNamespace
             var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals(ips));
 
             // See if Revelation is Connected and attempt to connect until it is
-            while (!cai.IsRevelationConnected && (revattempt < ATTEMPTMAX))
+            while (!revconnect && (revattempt < ATTEMPTMAX))
             {
                 try
                 {
-                    {
-                        WifiLocal.ConnectTo(cai);
-                        Wait();
-                        revattempt++;
-                    }
-
+                    // Connect revelation
+                     WifiLocal.ConnectTo(cai);
+                     Wait();
+                     revattempt++;
+                    
                     // Send Revelation message
-                    if (myDestination != null)
+                    if (myDestination != null && cai.IsRevelationConnected)
                     {
                         WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
                         {
@@ -513,19 +653,21 @@ namespace VenomNamespace
                             Opcode = 00,
                             Payload = paybytes,
                         });
+                        revconnect = true;
                     }
 
                     // Close revelation
-                    if (cai.IsRevelationConnected)
+                    if (revconnect)
                     {
                         WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                        //WifiLocal.Close(cai);
                         Wait();
                         revattempt = 0;
                     }
 
                     if (revattempt >= ATTEMPTMAX)
                     {
-                        //CycleWifi(System.Net.IPAddress.Parse(cai.IPAddress));
+                        CycleWifi(cai);
                         revattempt = 0;
                     }
                 }
@@ -612,6 +754,7 @@ namespace VenomNamespace
                             if (cai.IsRevelationConnected)
                             {
                                 WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                                //WifiLocal.Close(cai);
                                 Wait();
                              }
                             mqttresp = true;
@@ -626,7 +769,7 @@ namespace VenomNamespace
             {
                 MessageBox.Show("Revelation/Trace was not able to start. Restarting connection attempts.", "Error: Unable to start Trace",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //CycleWifi(System.Net.IPAddress.Parse(cai.IPAddress));
+                CycleWifi(cai);
                 traceattempt = 0;
 
                 /*if (!CycleWifi(System.Net.IPAddress.Parse(cai.IPAddress)))
@@ -640,17 +783,18 @@ namespace VenomNamespace
 
         }
 
-       /* void CycleWifi(System.Net.IPAddress ip)
+       void CycleWifi(ConnectedApplianceInfo cai)    //TODO GET THIS WORKING
         {
             // Close all WifiBasic connections
-            WifiLocal.CloseAll(true);
+            //WifiLocal.CloseAll(true);
+            WifiLocal.Close(cai);
 
             // Get new cert to restart WifiBasic connections
-            var cert = new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020);
+           // var cert = new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020);
 
             // Restart Wifi Connection
-            WifiLocal.SetWifi(ip, cert);
-        }*/
+            WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+        }
 
         private void LB_IPs_SelectedIndexChanged(object sender, EventArgs e)
         {
