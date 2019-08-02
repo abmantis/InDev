@@ -175,16 +175,28 @@ namespace VenomNamespace
         /// </summary>
         /// <param name="data">The data from the mqtt connected appliance.</param>
         public override void parseMqttMessages(ExtendedMqttMsgPublish data)
-        {
-
-            switch (data.Topic)
+        {            
+            switch (data.Topic) //TODO ADD PROGRESS TO UPDATE RUNNING STATE, PARSE DOWNLOADING?
             {
-                // TODO ADD PARSE MQTT LOGIC
-                /*case "iot-2/evt/subscribe/fmt/json": // Not currently used
-                    string pay = System.Text.Encoding.ASCII.GetString(data.Message);
-                   setLEDs((byte)4, (pay.Contains("1") ? (byte)3 : (byte)2));
-                   setLEDs((byte)3, (byte)2);
-                    break;*/
+                case "iot-2/evt/isp/fmt/json":
+
+                    // Take data message array and convert to hex string, then to ascii and concatinate to one string
+                    //sb = string.Concat(Array.ConvertAll(data.Message, b => Convert.ToChar((Convert.ToUInt32(b.ToString("X2"), 16)))));
+                    string sb = System.Text.Encoding.ASCII.GetString(data.Message);
+                    ProcessPayload(sb, data.Source.ToString(), "MQTT Message");
+                    break;
+
+                case "iot-2/evt/subscribe/fmt/json":    //TODO figure out why data.Source pulls from wrong place for subscribe (host not target, need target sub)
+                    if (iplist.Count > 0)
+                    {
+                        string pay = System.Text.Encoding.ASCII.GetString(data.Message);
+                        if (pay.Contains("1"))
+                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 3;
+                        else
+                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 2;
+                    }
+                    break;
+
                 default:
                     break;
             }
@@ -202,12 +214,11 @@ namespace VenomNamespace
 
         //This command does not come with Lucas's template.  You will have to add it manually.
         public override void parseTraceMessages(ExtendedTracePacket data)
-        {
-            double statusval = 0;
-                        
+        {   
+            // Filter on relevant OTA topics only
             if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:"))
             {
-                //MQTT data in the Trace just comes as raw hex regardless of message format, so need to conver it to ASCII to get the topic string
+                //MQTT data in the Trace just comes as raw hex regardless of message format, so need to convert it to ASCII to get the payload
                 string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
                 string sb = "";
                 for (int i = 0; i < parts[2].Length; i += 2)
@@ -216,190 +227,7 @@ namespace VenomNamespace
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
 
-                // Locate if OTA payload has been sent and update status
-                if (sb.Contains("\"update\""))
-                {
-                    iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = "RUNNING";
-                    SetText("update");
-                }
-
-                //Locate the MQTT status message in the Trace and grab the reason byte immediately after it
-                if (sb.Contains("\"status\""))
-                {
-                    try
-                    {
-                        // Overwrite status portion to have a point of reference directly next to status reason byte
-                        sb = sb.Replace("\"status\":[", "@");
-                        string[] stats = sb.Split('@');
-                        sb = "";
-                        parts = stats[1].Split(',');
-
-                        for (int i = 0; i < parts[0].Length; i++)
-                            sb += parts[i];
-
-                        // Convert status reason byte to a numeric value
-                        statusval = Char.GetNumericValue(Char.Parse(sb));
-
-                        // Lookup status reason byte pass or fail reason
-                        string statusb = "";
-                        
-                        // Status enumerations for various error or success states of OTA result
-                        switch (statusval)
-                        {
-                            case 0:
-                                statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS.";
-                                break;
-                            case 1:
-                                statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS_REBOOT_NEEDED.";
-                                break;
-                            case 2:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MEMORY_ALLOCATION.";
-                                break;
-                            case 3:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_INPUT.";
-                                break;
-                            case 4:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_RETRIEVING_FILE_FROM_SERVER.";
-                                break;
-                            case 5:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_CRC_MISMATCH.";
-                                break;
-                            case 6:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_BDF_PARSING.";
-                                break;
-                            case 7:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_WAIT_FOR_RESPONSE_TIMED_OUT.";
-                                break;
-                            case 8:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_SENDING_MESSAGE.";
-                                break;
-                            case 9:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MODEL_DOES_NOT_MATCH.";
-                                break;
-                            case 10:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_NODE.";
-                                break;
-                            case 11:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NODE_IS_NOT_UPDATEABLE.";
-                                break;
-                            case 12:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ECM_UPDATE_FAILED.";
-                                break;
-                            case 13:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PART_NUMBER_MISMATCH.";
-                                break;
-                            case 14:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MC200_UPDATE_FAILED_BUT_CONTINUE_UPDATE.";
-                                break;
-                            case 15:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NOT_ENOUGH_MEMORY_TO_DOWNLOAD_ALL_RESOURCES.";
-                                break;
-                            case 16:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_LENGTH_ERROR_IN_DESCRIPTOR_FILE.";
-                                break;
-                            case 17:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_POST_UPDATE_VERIFICATION_FAILED.";
-                                break;
-                            case 18:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_IS_NOT_SUPPORTED.";
-                                break;
-                            case 19:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_REQUIRES_PROG_ADDR_IN_UBD.";
-                                break;
-                            case 20:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_ADDR_NOT_IN_FIT_TABLE.";
-                                break;
-                            case 21:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_END_ADDR_EXCEED_FIT_TABLE.";
-                                break;
-                            case 22:
-                                statusb = "FAIL " + statusval.ToString() + " PA_NEED_APPLICATION_PERMISSION_BEFORE_UPDATE.";
-                                break;
-                            case 23:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_SUPPORTED.";
-                                break;
-                            case 24:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_DSA.";
-                                break;
-                            case 25:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_DSA_VERIFICATION_FAILED.";
-                                break;
-                            case 26:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_APPLIANCE_PART_NUMBER_MISMATCH.";
-                                break;
-                            case 27:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UBD_GOT_CORRUPTED.";
-                                break;
-                            case 28:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_IAP_FAILURE.";
-                                break;
-                            case 29:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_SCRIPT_FAILURE.";
-                                break;
-                            case 30:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR_TO_USB.";
-                                break;
-                            case 31:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR.";
-                                break;
-                            case 32:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHMOD.";
-                                break;
-                            case 33:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NO_BDF_IN_PSM.";
-                                break;
-                            case 34:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_DOWNLOAD.";
-                                break;
-                            case 35:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_WAITING_FOR_APPL_PERMISSION.";
-                                break;
-                            case 36:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_IAP.";
-                                break;
-                            case 37:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_WIFI_SW.";
-                                break;
-                            case 38:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_RADIO_SW.";
-                                break;
-                            case 39:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP.";
-                                break;
-                            case 40:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP_AFTER_SPEED_CHANGE.";
-                                break;
-                            case 41:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASE_NO_RESP.";
-                                break;
-                            case 42:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASING_FLASH.";
-                                break;
-                            case 43:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_HANDLER_IS_NULL.";
-                                break;
-                            case 80:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_BEGIN.";
-                                break;
-                            case 99:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_END.";
-                                break;
-                            case 100:
-                                statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNKNOWN.";
-                                break;
-                            default:
-                                break;
-                        }
-
-                        iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).Result = statusb;
-                        
-                        // Write info to widebox window
-                        SetText("status");
-
-                    }
-                    catch { }
-                                        
-                }
+                ProcessPayload(sb, data.Source.ToString(), "Trace Message");
             }
         }
 
@@ -507,9 +335,9 @@ namespace VenomNamespace
         }
 
         #endregion
-       private void setLEDs(byte opCode, byte payload) // Not currently used
+       private void SetLED(string ip)
         {
-            switch (payload)
+            switch (iplist.FirstOrDefault(x => x.IPAddress == ip).MQTT)
                 {
                     case 1:
                         LED_Internet.SetColor(Color.Red);
@@ -526,7 +354,195 @@ namespace VenomNamespace
                 }
 
         }
+        public void ProcessPayload(string sb, string ip, string source)
+        {
+            // Locate if OTA payload has been sent and update status
+            if (sb.Contains("\"update\""))
+            {
+                iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "RUNNING";
+                SetText("update", source);
+            }
 
+            //Locate the MQTT status message in the Trace and grab the reason byte immediately after it
+            if (sb.Contains("\"status\""))
+            {
+                try
+                {
+                    // Overwrite status portion to have a point of reference directly next to status reason byte
+                    sb = sb.Replace("\"status\":[", "@");
+                    string[] stats = sb.Split('@');
+                    string[] parts = stats[1].Split(',');
+                    sb = "";
+
+                    for (int i = 0; i < parts[0].Length; i++)
+                        sb += parts[i];
+
+                    // Convert status reason byte to a numeric value
+                    double statusval = Char.GetNumericValue(Char.Parse(sb));
+
+                    // Lookup status reason byte pass or fail reason
+                    iplist.FirstOrDefault(x => x.IPAddress == ip).Result = StatusLookup(statusval);
+
+                    // Write info to widebox window
+                    SetText("status", source);
+
+                }
+                catch { }
+            }
+        }
+        public string StatusLookup(double statusval)
+        {
+            string statusb = "";
+            // Status enumerations for various error or success states of OTA result
+            switch (statusval)
+            {
+                case 0:
+                    statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS.";
+                    break;
+                case 1:
+                    statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS_REBOOT_NEEDED.";
+                    break;
+                case 2:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MEMORY_ALLOCATION.";
+                    break;
+                case 3:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_INPUT.";
+                    break;
+                case 4:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_RETRIEVING_FILE_FROM_SERVER.";
+                    break;
+                case 5:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_CRC_MISMATCH.";
+                    break;
+                case 6:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_BDF_PARSING.";
+                    break;
+                case 7:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_WAIT_FOR_RESPONSE_TIMED_OUT.";
+                    break;
+                case 8:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_SENDING_MESSAGE.";
+                    break;
+                case 9:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MODEL_DOES_NOT_MATCH.";
+                    break;
+                case 10:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_NODE.";
+                    break;
+                case 11:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NODE_IS_NOT_UPDATEABLE.";
+                    break;
+                case 12:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ECM_UPDATE_FAILED.";
+                    break;
+                case 13:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PART_NUMBER_MISMATCH.";
+                    break;
+                case 14:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MC200_UPDATE_FAILED_BUT_CONTINUE_UPDATE.";
+                    break;
+                case 15:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NOT_ENOUGH_MEMORY_TO_DOWNLOAD_ALL_RESOURCES.";
+                    break;
+                case 16:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_LENGTH_ERROR_IN_DESCRIPTOR_FILE.";
+                    break;
+                case 17:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_POST_UPDATE_VERIFICATION_FAILED.";
+                    break;
+                case 18:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_IS_NOT_SUPPORTED.";
+                    break;
+                case 19:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_REQUIRES_PROG_ADDR_IN_UBD.";
+                    break;
+                case 20:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_ADDR_NOT_IN_FIT_TABLE.";
+                    break;
+                case 21:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_END_ADDR_EXCEED_FIT_TABLE.";
+                    break;
+                case 22:
+                    statusb = "FAIL " + statusval.ToString() + " PA_NEED_APPLICATION_PERMISSION_BEFORE_UPDATE.";
+                    break;
+                case 23:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_SUPPORTED.";
+                    break;
+                case 24:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_DSA.";
+                    break;
+                case 25:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_DSA_VERIFICATION_FAILED.";
+                    break;
+                case 26:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_APPLIANCE_PART_NUMBER_MISMATCH.";
+                    break;
+                case 27:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UBD_GOT_CORRUPTED.";
+                    break;
+                case 28:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_IAP_FAILURE.";
+                    break;
+                case 29:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_SCRIPT_FAILURE.";
+                    break;
+                case 30:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR_TO_USB.";
+                    break;
+                case 31:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR.";
+                    break;
+                case 32:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHMOD.";
+                    break;
+                case 33:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NO_BDF_IN_PSM.";
+                    break;
+                case 34:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_DOWNLOAD.";
+                    break;
+                case 35:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_WAITING_FOR_APPL_PERMISSION.";
+                    break;
+                case 36:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_IAP.";
+                    break;
+                case 37:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_WIFI_SW.";
+                    break;
+                case 38:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_RADIO_SW.";
+                    break;
+                case 39:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP.";
+                    break;
+                case 40:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP_AFTER_SPEED_CHANGE.";
+                    break;
+                case 41:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASE_NO_RESP.";
+                    break;
+                case 42:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASING_FLASH.";
+                    break;
+                case 43:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_HANDLER_IS_NULL.";
+                    break;
+                case 80:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_BEGIN.";
+                    break;
+                case 99:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_END.";
+                    break;
+                case 100:
+                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNKNOWN.";
+                    break;
+                default:
+                    break;
+            }
+
+            return statusb;
+        }
         private void BTN_LogDir_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog fbd = new FolderBrowserDialog();
@@ -538,7 +554,7 @@ namespace VenomNamespace
             
         }
 
-        private void SetText(string type)
+        private void SetText(string type, string source)
         {
             // Process each progress entity for each IP added
             foreach (string s in responses)
@@ -559,6 +575,7 @@ namespace VenomNamespace
                         using (StreamWriter sw = File.AppendText(curfilename))
                         {
                             sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
+                            source + "," +
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
                             iplist[listindex].Result);
@@ -587,7 +604,7 @@ namespace VenomNamespace
                         {                            
                             using (StreamWriter sw = File.CreateText(curfilename))
                             {
-                                sw.WriteLine("Time,IP,Payload,Method,Result");
+                                sw.WriteLine("Time,IP,Log Source,Payload,Method,Result");
                             }
                         }
                         catch {
@@ -796,12 +813,6 @@ namespace VenomNamespace
             WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
         }
 
-        private void LB_IPs_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            TB_IP.Text = LB_IPs.SelectedItem.ToString();
-        }
-
-
         private void BTN_Add_Click(object sender, EventArgs e)
         {
             string localpay = TB_Payload.Text;
@@ -887,6 +898,13 @@ namespace VenomNamespace
                 //Environment.Exit(Environment.ExitCode);
             }
             
+        }
+
+        private void BTN_MQTT_Click(object sender, EventArgs e)
+        {
+            // Send Subscribe message over MQTT to test MQTT connection
+            WifiLocal.SendMqttMessage(System.Net.IPAddress.Parse(TB_IP.Text), "iot-2/evt/subscribe/fmt/json", Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"));
+            SetLED(TB_IP.Text);
         }
     }
 }
