@@ -36,12 +36,6 @@ namespace VenomNamespace
             set { _result = value; }
         }
 
-        private int _mqtt;
-        public int MQTT
-        {
-            get { return _mqtt; }
-            set { _mqtt = value; }
-        }
 
         public IPData(string ip, string payload, string delivery)
         {
@@ -49,7 +43,6 @@ namespace VenomNamespace
             _payload = payload;
             _delivery = delivery;
             _result = "";
-            _mqtt = 0;
         }
 
     }

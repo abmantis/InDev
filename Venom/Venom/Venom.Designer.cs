@@ -41,10 +41,10 @@
             this.BTN_Clr = new System.Windows.Forms.Button();
             this.RB_Reveal = new System.Windows.Forms.RadioButton();
             this.RB_MQTT = new System.Windows.Forms.RadioButton();
-            this.LED_Internet = new VenomNamespace.LED();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.BTN_MQTT = new System.Windows.Forms.Button();
+            this.LED_Internet = new VenomNamespace.LED();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -151,47 +151,45 @@
             // RB_Reveal
             // 
             this.RB_Reveal.AutoSize = true;
-            this.RB_Reveal.Location = new System.Drawing.Point(18, 110);
+            this.RB_Reveal.Enabled = false;
+            this.RB_Reveal.Location = new System.Drawing.Point(538, 56);
             this.RB_Reveal.Name = "RB_Reveal";
             this.RB_Reveal.Size = new System.Drawing.Size(76, 17);
             this.RB_Reveal.TabIndex = 90;
             this.RB_Reveal.TabStop = true;
             this.RB_Reveal.Text = "Revelation";
             this.RB_Reveal.UseVisualStyleBackColor = true;
+            this.RB_Reveal.Visible = false;
             // 
             // RB_MQTT
             // 
             this.RB_MQTT.AutoSize = true;
-            this.RB_MQTT.Location = new System.Drawing.Point(100, 110);
+            this.RB_MQTT.Location = new System.Drawing.Point(538, 33);
             this.RB_MQTT.Name = "RB_MQTT";
             this.RB_MQTT.Size = new System.Drawing.Size(56, 17);
             this.RB_MQTT.TabIndex = 91;
             this.RB_MQTT.TabStop = true;
             this.RB_MQTT.Text = "MQTT";
             this.RB_MQTT.UseVisualStyleBackColor = true;
-            // 
-            // LED_Internet
-            // 
-            this.LED_Internet.Location = new System.Drawing.Point(155, 111);
-            this.LED_Internet.Name = "LED_Internet";
-            this.LED_Internet.Size = new System.Drawing.Size(16, 16);
-            this.LED_Internet.TabIndex = 92;
+            this.RB_MQTT.Visible = false;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(339, 112);
+            this.label2.Enabled = false;
+            this.label2.Location = new System.Drawing.Point(374, 114);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(257, 13);
             this.label2.TabIndex = 93;
             this.label2.Text = "Grey - None | Yellow - Not Subscribed | Green - Good";
+            this.label2.Visible = false;
             // 
             // label3
             // 
             this.label3.AutoSize = true;
             this.label3.Enabled = false;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Underline))), System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(386, 95);
+            this.label3.Location = new System.Drawing.Point(416, 127);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(180, 13);
             this.label3.TabIndex = 94;
@@ -201,14 +199,25 @@
             // 
             // BTN_MQTT
             // 
+            this.BTN_MQTT.Enabled = false;
             this.BTN_MQTT.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.25F);
-            this.BTN_MQTT.Location = new System.Drawing.Point(177, 104);
+            this.BTN_MQTT.Location = new System.Drawing.Point(521, 79);
             this.BTN_MQTT.Name = "BTN_MQTT";
             this.BTN_MQTT.Size = new System.Drawing.Size(75, 29);
             this.BTN_MQTT.TabIndex = 95;
             this.BTN_MQTT.Text = "Check MQTT";
             this.BTN_MQTT.UseVisualStyleBackColor = true;
+            this.BTN_MQTT.Visible = false;
             this.BTN_MQTT.Click += new System.EventHandler(this.BTN_MQTT_Click);
+            // 
+            // LED_Internet
+            // 
+            this.LED_Internet.Enabled = false;
+            this.LED_Internet.Location = new System.Drawing.Point(499, 92);
+            this.LED_Internet.Name = "LED_Internet";
+            this.LED_Internet.Size = new System.Drawing.Size(16, 16);
+            this.LED_Internet.TabIndex = 92;
+            this.LED_Internet.Visible = false;
             // 
             // Venom
             // 

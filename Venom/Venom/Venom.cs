@@ -186,16 +186,22 @@ namespace VenomNamespace
                     ProcessPayload(sb, data.Source.ToString(), "MQTT Message");
                     break;
 
-                case "iot-2/evt/subscribe/fmt/json":    //TODO figure out why data.Source pulls from wrong place for subscribe (host not target, need target sub)
+               /* case "iot-2/evt/subscribe/fmt/json":    // Not currently implemented
                     if (iplist.Count > 0)
                     {
                         string pay = System.Text.Encoding.ASCII.GetString(data.Message);
-                        if (pay.Contains("1"))
-                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 3;
-                        else
-                            iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 2;
+                        if (pay.Contains("version"))
+                        {
+                            string s = "";
+                            s.Replace("\"version\":", "@");
+                            string[] stats = s.Split('@');
+                            if (stats[1].Equals("1"))
+                                iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 3;
+                            else
+                                iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 2;
+                        }
                     }
-                    break;
+                    break;*/
 
                 default:
                     break;
@@ -337,27 +343,28 @@ namespace VenomNamespace
         #endregion
        private void SetLED(string ip)
         {
-            switch (iplist.FirstOrDefault(x => x.IPAddress == ip).MQTT)
-                {
-                    case 1:
-                        LED_Internet.SetColor(Color.Red);
-                        break;
-                    case 2:
-                        LED_Internet.SetColor(Color.Yellow);
-                        break;
-                    case 3:
-                        LED_Internet.SetColor(Color.LightGreen);
-                        break;
-                    default:
-                        LED_Internet.SetColor(Color.DarkGray);
-                        break;
-                }
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
+            if (cai != null)
+            {
+                if (!cai.IsMqttConnected)
+                    LED_Internet.SetColor(Color.Red);
 
+                else
+                    LED_Internet.SetColor(Color.LightGreen);
+            }
+            else
+            {
+                // Else if the IP address is not found in the WifiBasic list                        
+                MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            
         }
         public void ProcessPayload(string sb, string ip, string source)
         {
             // Locate if OTA payload has been sent and update status
-            if (sb.Contains("\"update\""))
+            if (sb.Contains("\"update\"")  || sb.Contains("\"progress\""))
             {
                 iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "RUNNING";
                 SetText("update", source);
@@ -572,7 +579,7 @@ namespace VenomNamespace
                 {
                     try
                     {
-                        using (StreamWriter sw = File.AppendText(curfilename))
+                        using (  StreamWriter sw = File.AppendText(curfilename))
                         {
                             sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
                             source + "," +
@@ -615,9 +622,12 @@ namespace VenomNamespace
                     }
                 }
                 BTN_Payload.Text = "Stop Running";
+                LED_Internet.SetColor(Color.DarkGray);
                 BTN_Add.Enabled = false;
                 BTN_Remove.Enabled = false;
                 BTN_Clr.Enabled = false;
+               // RB_MQTT.Enabled = false;
+                //RB_Reveal.Enabled = false;
 
                 // Begin processing all IPs on list
                 if (LB_IPs.Items.Count > 0)                
@@ -629,6 +639,8 @@ namespace VenomNamespace
                 BTN_Add.Enabled = true;
                 BTN_Remove.Enabled = true;
                 BTN_Clr.Enabled = true;
+               // RB_MQTT.Enabled = true;
+                //RB_Reveal.Enabled = true;
                 responses.Clear();
             }
         }
@@ -785,7 +797,7 @@ namespace VenomNamespace
             else
             {
                 MessageBox.Show("Revelation/Trace was not able to start. Restarting connection attempts.", "Error: Unable to start Trace",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 CycleWifi(cai);
                 traceattempt = 0;
 
@@ -817,7 +829,7 @@ namespace VenomNamespace
         {
             string localpay = TB_Payload.Text;
             string localdeliver = "";
-
+            RB_MQTT.Checked = true;         // Disable this when actually using RBs for Revelation and MQTT
             // A delivery method must be selected
             if (!RB_MQTT.Checked && !RB_Reveal.Checked)
             {
@@ -829,7 +841,10 @@ namespace VenomNamespace
 
             // Set delivery method
             if (RB_MQTT.Checked)
+            {
                 localdeliver = "MQTT";
+                //SetLED(TB_IP.Text);
+            }
             else
                 localdeliver = "Revelation";
 
@@ -843,18 +858,32 @@ namespace VenomNamespace
                     // Will only run if IP address is first time added
                     if (cai != null)
                     {
-                        // Add IP to list of IPs
-                        LB_IPs.Items.Add(cai.IPAddress);
-                        IPData newip = new IPData(cai.IPAddress, localpay, localdeliver);
-                        iplist.Add(newip);
+                        if (localdeliver.Equals("MQTT") && !cai.IsMqttConnected)
+                        {
+                            DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
+                                                                        " for the entered IP Address of " + TB_IP.Text + " is not currently connected." +
+                                                                        " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
+                                                                        " MQTT connection then try adding the IP Address again.",
+                                                                        "Error: MQTT Delivery but Device is not the MQTT Broker.",
+                                                                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                            if (dialogResult == DialogResult.No)
+                                return;
+                        }
+                        
+                         // Add IP to list of IPs
+                         LB_IPs.Items.Add(cai.IPAddress);
+                         IPData newip = new IPData(cai.IPAddress, localpay, localdeliver);
+                         iplist.Add(newip);
 
-                        // Update window for added IP
-                        DataRow dr = results.NewRow();
-                        dr["IP Address"] = newip.IPAddress;
-                        dr["OTA Payload"] = newip.Payload;
-                        dr["Delivery Method"] = newip.Delivery;
-                        dr["OTA Result"] = "PENDING";
-                        results.Rows.Add(dr);
+                         // Update window for added IP
+                         DataRow dr = results.NewRow();
+                         dr["IP Address"] = newip.IPAddress;
+                         dr["OTA Payload"] = newip.Payload;
+                         dr["Delivery Method"] = newip.Delivery;
+                         dr["OTA Result"] = "PENDING";
+                         results.Rows.Add(dr);
+                                
+                    
                     }
                     else
                     {
@@ -868,8 +897,8 @@ namespace VenomNamespace
             {
             }
 
-            RB_MQTT.Checked = false;
-            RB_Reveal.Checked = false;
+            //RB_MQTT.Checked = false;            //Enable these when actually using RBs for Revelation and MQTT
+            //RB_Reveal.Checked = false;
         }
 
         private void BTN_Remove_Click(object sender, EventArgs e)
@@ -892,6 +921,7 @@ namespace VenomNamespace
                 results.Clear();
                 responses.Clear();
                 iplist.Clear();
+                LED_Internet.SetColor(Color.DarkGray);
                 LB_IPs.Items.Clear();
                 DGV_Data.Refresh();
                 // Stop anything that is still running
@@ -903,7 +933,8 @@ namespace VenomNamespace
         private void BTN_MQTT_Click(object sender, EventArgs e)
         {
             // Send Subscribe message over MQTT to test MQTT connection
-            WifiLocal.SendMqttMessage(System.Net.IPAddress.Parse(TB_IP.Text), "iot-2/evt/subscribe/fmt/json", Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"));
+            //WifiLocal.SendMqttMessage(System.Net.IPAddress.Parse(TB_IP.Text), "iot-2/evt/subscribe/fmt/json", Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"));
+            LED_Internet.SetColor(Color.DarkGray);
             SetLED(TB_IP.Text);
         }
     }
