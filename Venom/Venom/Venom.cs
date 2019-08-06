@@ -31,12 +31,13 @@ namespace VenomNamespace
         
         private string curfilename;
         public int listindex;
+        public PayList plist;
 
         //public delegate void SetTextCallback();
         //public SetTextCallback settextcallback;
-                
+
         //static object lockObj = new object();   Leaving place holder if multi threading is going to be used
-        
+
         public enum OPCODES
         {
             //Include your opcodes in here
@@ -176,7 +177,7 @@ namespace VenomNamespace
         /// <param name="data">The data from the mqtt connected appliance.</param>
         public override void parseMqttMessages(ExtendedMqttMsgPublish data)
         {            
-            switch (data.Topic) //TODO ADD PROGRESS TO UPDATE RUNNING STATE, PARSE DOWNLOADING?
+            switch (data.Topic) 
             {
                 case "iot-2/evt/isp/fmt/json":
 
@@ -186,23 +187,29 @@ namespace VenomNamespace
                     ProcessPayload(sb, data.Source.ToString(), "MQTT Message");
                     break;
 
-               /* case "iot-2/evt/subscribe/fmt/json":    // Not currently implemented
-                    if (iplist.Count > 0)
-                    {
-                        string pay = System.Text.Encoding.ASCII.GetString(data.Message);
-                        if (pay.Contains("version"))
-                        {
-                            string s = "";
-                            s.Replace("\"version\":", "@");
-                            string[] stats = s.Split('@');
-                            if (stats[1].Equals("1"))
-                                iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 3;
-                            else
-                                iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 2;
-                        }
-                    }
-                    break;*/
+                /* case "iot-2/evt/subscribe/fmt/json":    // Not currently implemented
+                     if (iplist.Count > 0)
+                     {
+                         string pay = System.Text.Encoding.ASCII.GetString(data.Message);
+                         if (pay.Contains("version"))
+                         {
+                             string s = "";
+                             s.Replace("\"version\":", "@");
+                             string[] stats = s.Split('@');
+                             if (stats[1].Equals("1"))
+                                 iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 3;
+                             else
+                                 iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 2;
+                         }
+                     }
+                     break;*/
 
+                case "iot-2/evt/cc_Kvp/fmt/binary":
+                    string savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
+
+                    if (savedExtractedMessage.Equals("000A035D4983AC0109000502"))
+                        ProcessPayload("Programming", data.Source.ToString(), "MQTT Message");
+                    break;
                 default:
                     break;
             }
@@ -364,9 +371,29 @@ namespace VenomNamespace
         public void ProcessPayload(string sb, string ip, string source)
         {
             // Locate if OTA payload has been sent and update status
-            if (sb.Contains("\"update\"")  || sb.Contains("\"progress\""))
+            if (sb.Contains("\"update\""))
             {
-                iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "RUNNING";
+                iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Downloading";
+                SetText("update", source);
+            }
+
+            if (sb.Contains("Programming") || sb.Contains("IAP_MODE"))
+            {
+                iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Programming";
+                SetText("update", source);
+            }
+
+            if (sb.Contains("\"progress\"") && source.Equals("MQTT Message"))
+            {
+                sb = sb.Replace("\"progress\":[", "@");
+                string[] stats = sb.Split('@');
+                string[] parts = stats[1].Split(',');
+                sb = "";
+                                
+                if (!parts[6].Equals("0"))
+                    iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Programming";
+                else
+                    iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Downloading";
                 SetText("update", source);
             }
 
@@ -579,10 +606,10 @@ namespace VenomNamespace
                 {
                     try
                     {
-                        using (  StreamWriter sw = File.AppendText(curfilename))
+                        using (StreamWriter sw = File.AppendText(curfilename))
                         {
                             sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
-                            source + "," +
+                            iplist[listindex].MAC + "," + source + "," +
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
                             iplist[listindex].Result);
@@ -606,12 +633,12 @@ namespace VenomNamespace
                 {
                     {
                         // Verify directory exists, if not, throw exception
-                        curfilename = TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+                        curfilename = TB_LogDir.Text + "\\" + "OTALog_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
                         try
                         {                            
                             using (StreamWriter sw = File.CreateText(curfilename))
                             {
-                                sw.WriteLine("Time,IP,Log Source,Payload,Method,Result");
+                                sw.WriteLine("Time,IP,MAC,Log Source,Payload,Method,Result");
                             }
                         }
                         catch {
@@ -874,6 +901,7 @@ namespace VenomNamespace
                          LB_IPs.Items.Add(cai.IPAddress);
                          IPData newip = new IPData(cai.IPAddress, localpay, localdeliver);
                          iplist.Add(newip);
+                         newip.MAC = cai.MacAddress;
 
                          // Update window for added IP
                          DataRow dr = results.NewRow();
@@ -936,6 +964,24 @@ namespace VenomNamespace
             //WifiLocal.SendMqttMessage(System.Net.IPAddress.Parse(TB_IP.Text), "iot-2/evt/subscribe/fmt/json", Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"));
             LED_Internet.SetColor(Color.DarkGray);
             SetLED(TB_IP.Text);
+        }
+
+        private void BTN_MakeList_Click(object sender, EventArgs e)
+        {
+            try
+            {                
+               plist.Show();
+            }
+            catch
+            {
+                plist = new PayList();
+                plist.Show();
+            }
+        }
+
+        private void BTN_Import_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

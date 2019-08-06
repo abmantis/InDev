@@ -36,7 +36,12 @@ namespace VenomNamespace
             set { _result = value; }
         }
 
-
+        private string _mac;
+        public string MAC
+        {
+            get { return _mac; }
+            set { _mac = value; }
+        }
         public IPData(string ip, string payload, string delivery)
         {
             _ipaddress = ip;

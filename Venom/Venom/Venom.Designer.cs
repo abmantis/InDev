@@ -32,25 +32,25 @@
             this.DGV_Data = new System.Windows.Forms.DataGridView();
             this.TB_LogDir = new System.Windows.Forms.TextBox();
             this.BTN_LogDir = new System.Windows.Forms.Button();
-            this.TB_Payload = new System.Windows.Forms.TextBox();
             this.BTN_Payload = new System.Windows.Forms.Button();
             this.BTN_Add = new System.Windows.Forms.Button();
             this.BTN_Remove = new System.Windows.Forms.Button();
             this.LB_IPs = new System.Windows.Forms.ListBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.BTN_Clr = new System.Windows.Forms.Button();
             this.RB_Reveal = new System.Windows.Forms.RadioButton();
             this.RB_MQTT = new System.Windows.Forms.RadioButton();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.BTN_MQTT = new System.Windows.Forms.Button();
+            this.BTN_MakeList = new System.Windows.Forms.Button();
+            this.BTN_Import = new System.Windows.Forms.Button();
             this.LED_Internet = new VenomNamespace.LED();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
             // TB_IP
             // 
-            this.TB_IP.Location = new System.Drawing.Point(18, 140);
+            this.TB_IP.Location = new System.Drawing.Point(18, 102);
             this.TB_IP.Name = "TB_IP";
             this.TB_IP.Size = new System.Drawing.Size(100, 20);
             this.TB_IP.TabIndex = 0;
@@ -83,13 +83,6 @@
             this.BTN_LogDir.UseVisualStyleBackColor = true;
             this.BTN_LogDir.Click += new System.EventHandler(this.BTN_LogDir_Click);
             // 
-            // TB_Payload
-            // 
-            this.TB_Payload.Location = new System.Drawing.Point(143, 53);
-            this.TB_Payload.Name = "TB_Payload";
-            this.TB_Payload.Size = new System.Drawing.Size(383, 20);
-            this.TB_Payload.TabIndex = 12;
-            // 
             // BTN_Payload
             // 
             this.BTN_Payload.Location = new System.Drawing.Point(18, 300);
@@ -102,7 +95,7 @@
             // 
             // BTN_Add
             // 
-            this.BTN_Add.Location = new System.Drawing.Point(18, 166);
+            this.BTN_Add.Location = new System.Drawing.Point(18, 128);
             this.BTN_Add.Name = "BTN_Add";
             this.BTN_Add.Size = new System.Drawing.Size(100, 23);
             this.BTN_Add.TabIndex = 84;
@@ -123,20 +116,10 @@
             // LB_IPs
             // 
             this.LB_IPs.FormattingEnabled = true;
-            this.LB_IPs.Location = new System.Drawing.Point(18, 195);
+            this.LB_IPs.Location = new System.Drawing.Point(18, 156);
             this.LB_IPs.Name = "LB_IPs";
-            this.LB_IPs.Size = new System.Drawing.Size(100, 69);
+            this.LB_IPs.Size = new System.Drawing.Size(100, 108);
             this.LB_IPs.TabIndex = 87;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
-            this.label1.Location = new System.Drawing.Point(36, 56);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(101, 13);
-            this.label1.TabIndex = 88;
-            this.label1.Text = "OTA Payload for IP:";
             // 
             // BTN_Clr
             // 
@@ -152,7 +135,7 @@
             // 
             this.RB_Reveal.AutoSize = true;
             this.RB_Reveal.Enabled = false;
-            this.RB_Reveal.Location = new System.Drawing.Point(538, 56);
+            this.RB_Reveal.Location = new System.Drawing.Point(555, 35);
             this.RB_Reveal.Name = "RB_Reveal";
             this.RB_Reveal.Size = new System.Drawing.Size(76, 17);
             this.RB_Reveal.TabIndex = 90;
@@ -164,7 +147,7 @@
             // RB_MQTT
             // 
             this.RB_MQTT.AutoSize = true;
-            this.RB_MQTT.Location = new System.Drawing.Point(538, 33);
+            this.RB_MQTT.Location = new System.Drawing.Point(555, 12);
             this.RB_MQTT.Name = "RB_MQTT";
             this.RB_MQTT.Size = new System.Drawing.Size(56, 17);
             this.RB_MQTT.TabIndex = 91;
@@ -177,7 +160,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Enabled = false;
-            this.label2.Location = new System.Drawing.Point(374, 114);
+            this.label2.Location = new System.Drawing.Point(357, 378);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(257, 13);
             this.label2.TabIndex = 93;
@@ -189,7 +172,7 @@
             this.label3.AutoSize = true;
             this.label3.Enabled = false;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Underline))), System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(416, 127);
+            this.label3.Location = new System.Drawing.Point(171, 378);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(180, 13);
             this.label3.TabIndex = 94;
@@ -201,7 +184,7 @@
             // 
             this.BTN_MQTT.Enabled = false;
             this.BTN_MQTT.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.25F);
-            this.BTN_MQTT.Location = new System.Drawing.Point(521, 79);
+            this.BTN_MQTT.Location = new System.Drawing.Point(555, 53);
             this.BTN_MQTT.Name = "BTN_MQTT";
             this.BTN_MQTT.Size = new System.Drawing.Size(75, 29);
             this.BTN_MQTT.TabIndex = 95;
@@ -210,10 +193,30 @@
             this.BTN_MQTT.Visible = false;
             this.BTN_MQTT.Click += new System.EventHandler(this.BTN_MQTT_Click);
             // 
+            // BTN_MakeList
+            // 
+            this.BTN_MakeList.Location = new System.Drawing.Point(143, 98);
+            this.BTN_MakeList.Name = "BTN_MakeList";
+            this.BTN_MakeList.Size = new System.Drawing.Size(97, 23);
+            this.BTN_MakeList.TabIndex = 96;
+            this.BTN_MakeList.Text = "Create Pay List";
+            this.BTN_MakeList.UseVisualStyleBackColor = true;
+            this.BTN_MakeList.Click += new System.EventHandler(this.BTN_MakeList_Click);
+            // 
+            // BTN_Import
+            // 
+            this.BTN_Import.Location = new System.Drawing.Point(259, 98);
+            this.BTN_Import.Name = "BTN_Import";
+            this.BTN_Import.Size = new System.Drawing.Size(92, 23);
+            this.BTN_Import.TabIndex = 97;
+            this.BTN_Import.Text = "Import Pay List";
+            this.BTN_Import.UseVisualStyleBackColor = true;
+            this.BTN_Import.Click += new System.EventHandler(this.BTN_Import_Click);
+            // 
             // LED_Internet
             // 
             this.LED_Internet.Enabled = false;
-            this.LED_Internet.Location = new System.Drawing.Point(499, 92);
+            this.LED_Internet.Location = new System.Drawing.Point(533, 13);
             this.LED_Internet.Name = "LED_Internet";
             this.LED_Internet.Size = new System.Drawing.Size(16, 16);
             this.LED_Internet.TabIndex = 92;
@@ -224,6 +227,8 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(626, 400);
+            this.Controls.Add(this.BTN_Import);
+            this.Controls.Add(this.BTN_MakeList);
             this.Controls.Add(this.BTN_MQTT);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -231,12 +236,10 @@
             this.Controls.Add(this.RB_MQTT);
             this.Controls.Add(this.RB_Reveal);
             this.Controls.Add(this.BTN_Clr);
-            this.Controls.Add(this.label1);
             this.Controls.Add(this.LB_IPs);
             this.Controls.Add(this.BTN_Remove);
             this.Controls.Add(this.BTN_Add);
             this.Controls.Add(this.BTN_Payload);
-            this.Controls.Add(this.TB_Payload);
             this.Controls.Add(this.TB_LogDir);
             this.Controls.Add(this.BTN_LogDir);
             this.Controls.Add(this.DGV_Data);
@@ -255,12 +258,10 @@
         private System.Windows.Forms.DataGridView DGV_Data;
         private System.Windows.Forms.TextBox TB_LogDir;
         private System.Windows.Forms.Button BTN_LogDir;
-        private System.Windows.Forms.TextBox TB_Payload;
         private System.Windows.Forms.Button BTN_Payload;
         private System.Windows.Forms.Button BTN_Add;
         private System.Windows.Forms.Button BTN_Remove;
         private System.Windows.Forms.ListBox LB_IPs;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button BTN_Clr;
         private System.Windows.Forms.RadioButton RB_Reveal;
         private System.Windows.Forms.RadioButton RB_MQTT;
@@ -268,6 +269,8 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button BTN_MQTT;
+        private System.Windows.Forms.Button BTN_MakeList;
+        private System.Windows.Forms.Button BTN_Import;
     }
 }
 

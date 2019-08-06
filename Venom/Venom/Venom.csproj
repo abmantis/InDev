@@ -104,6 +104,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PayList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PayList.Designer.cs">
+      <DependentUpon>PayList.cs</DependentUpon>
+    </Compile>
     <Compile Include="IPData.cs" />
     <Compile Include="LED.cs">
       <SubType>UserControl</SubType>
@@ -118,6 +124,9 @@
       <DependentUpon>Venom.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="PayList.resx">
+      <DependentUpon>PayList.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LED.resx">
       <DependentUpon>LED.cs</DependentUpon>
     </EmbeddedResource>
