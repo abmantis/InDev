@@ -7,7 +7,7 @@ namespace VenomNamespace
 
 {
 
-    class IPData
+    public class IPData
     {
         private string _ipaddress;
         public string IPAddress
@@ -29,6 +29,12 @@ namespace VenomNamespace
             get { return _delivery; }
             set { _delivery = value; }
         }
+        private string _type;
+        public string Type
+        {
+            get { return _type; }
+            set { _type = value; }
+        }
         private string _result;
         public string Result
         {
@@ -47,6 +53,8 @@ namespace VenomNamespace
             _ipaddress = ip;
             _payload = payload;
             _delivery = delivery;
+            _type = "";
+            _mac = "";
             _result = "";
         }
 

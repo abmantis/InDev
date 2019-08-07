@@ -29,33 +29,137 @@
         private void InitializeComponent()
         {
             this.TB_Payload = new System.Windows.Forms.TextBox();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.CB_Type = new System.Windows.Forms.ComboBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.DGV_Data = new System.Windows.Forms.DataGridView();
+            this.BTN_Add = new System.Windows.Forms.Button();
+            this.BTN_Remove = new System.Windows.Forms.Button();
+            this.BTN_Clear = new System.Windows.Forms.Button();
+            this.BTN_Save = new System.Windows.Forms.Button();
+            this.CB_Variant = new System.Windows.Forms.ComboBox();
+            this.TB_IPDisplay = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
             // TB_Payload
             // 
-            this.TB_Payload.Location = new System.Drawing.Point(56, 54);
+            this.TB_Payload.Location = new System.Drawing.Point(91, 51);
             this.TB_Payload.Name = "TB_Payload";
-            this.TB_Payload.Size = new System.Drawing.Size(383, 20);
+            this.TB_Payload.Size = new System.Drawing.Size(368, 20);
             this.TB_Payload.TabIndex = 13;
             // 
-            // comboBox1
+            // CB_Type
             // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(522, 54);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(121, 21);
-            this.comboBox1.TabIndex = 14;
+            this.CB_Type.FormattingEnabled = true;
+            this.CB_Type.Location = new System.Drawing.Point(546, 51);
+            this.CB_Type.Name = "CB_Type";
+            this.CB_Type.Size = new System.Drawing.Size(92, 21);
+            this.CB_Type.TabIndex = 14;
+            this.CB_Type.Text = "OTA Type";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(12, 54);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(73, 13);
+            this.label1.TabIndex = 15;
+            this.label1.Text = "OTA Payload:";
+            // 
+            // DGV_Data
+            // 
+            this.DGV_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.DGV_Data.Location = new System.Drawing.Point(110, 89);
+            this.DGV_Data.Name = "DGV_Data";
+            this.DGV_Data.Size = new System.Drawing.Size(526, 254);
+            this.DGV_Data.TabIndex = 16;
+            // 
+            // BTN_Add
+            // 
+            this.BTN_Add.Location = new System.Drawing.Point(13, 89);
+            this.BTN_Add.Name = "BTN_Add";
+            this.BTN_Add.Size = new System.Drawing.Size(75, 23);
+            this.BTN_Add.TabIndex = 17;
+            this.BTN_Add.Text = "Add";
+            this.BTN_Add.UseVisualStyleBackColor = true;
+            this.BTN_Add.Click += new System.EventHandler(this.BTN_Add_Click);
+            // 
+            // BTN_Remove
+            // 
+            this.BTN_Remove.Location = new System.Drawing.Point(13, 135);
+            this.BTN_Remove.Name = "BTN_Remove";
+            this.BTN_Remove.Size = new System.Drawing.Size(75, 23);
+            this.BTN_Remove.TabIndex = 18;
+            this.BTN_Remove.Text = "Remove";
+            this.BTN_Remove.UseVisualStyleBackColor = true;
+            this.BTN_Remove.Click += new System.EventHandler(this.BTN_Remove_Click);
+            // 
+            // BTN_Clear
+            // 
+            this.BTN_Clear.Location = new System.Drawing.Point(13, 183);
+            this.BTN_Clear.Name = "BTN_Clear";
+            this.BTN_Clear.Size = new System.Drawing.Size(75, 23);
+            this.BTN_Clear.TabIndex = 19;
+            this.BTN_Clear.Text = "Clear";
+            this.BTN_Clear.UseVisualStyleBackColor = true;
+            this.BTN_Clear.Click += new System.EventHandler(this.BTN_Clear_Click);
+            // 
+            // BTN_Save
+            // 
+            this.BTN_Save.Location = new System.Drawing.Point(13, 254);
+            this.BTN_Save.Name = "BTN_Save";
+            this.BTN_Save.Size = new System.Drawing.Size(75, 23);
+            this.BTN_Save.TabIndex = 20;
+            this.BTN_Save.Text = "Save";
+            this.BTN_Save.UseVisualStyleBackColor = true;
+            this.BTN_Save.Click += new System.EventHandler(this.BTN_Save_Click);
+            // 
+            // CB_Variant
+            // 
+            this.CB_Variant.FormattingEnabled = true;
+            this.CB_Variant.Location = new System.Drawing.Point(465, 51);
+            this.CB_Variant.Name = "CB_Variant";
+            this.CB_Variant.Size = new System.Drawing.Size(75, 21);
+            this.CB_Variant.TabIndex = 21;
+            this.CB_Variant.Text = "Node Type";
+            // 
+            // TB_IPDisplay
+            // 
+            this.TB_IPDisplay.Location = new System.Drawing.Point(264, 12);
+            this.TB_IPDisplay.Name = "TB_IPDisplay";
+            this.TB_IPDisplay.ReadOnly = true;
+            this.TB_IPDisplay.Size = new System.Drawing.Size(164, 20);
+            this.TB_IPDisplay.TabIndex = 22;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(160, 15);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(98, 13);
+            this.label2.TabIndex = 23;
+            this.label2.Text = "Current IP Address:";
             // 
             // PayList
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.comboBox1);
+            this.ClientSize = new System.Drawing.Size(677, 379);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.TB_IPDisplay);
+            this.Controls.Add(this.CB_Variant);
+            this.Controls.Add(this.BTN_Save);
+            this.Controls.Add(this.BTN_Clear);
+            this.Controls.Add(this.BTN_Remove);
+            this.Controls.Add(this.BTN_Add);
+            this.Controls.Add(this.DGV_Data);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.CB_Type);
             this.Controls.Add(this.TB_Payload);
             this.Name = "PayList";
             this.Text = "Payload Run List";
+            ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -64,6 +168,15 @@
         #endregion
 
         private System.Windows.Forms.TextBox TB_Payload;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.ComboBox CB_Type;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.DataGridView DGV_Data;
+        private System.Windows.Forms.Button BTN_Add;
+        private System.Windows.Forms.Button BTN_Remove;
+        private System.Windows.Forms.Button BTN_Clear;
+        private System.Windows.Forms.Button BTN_Save;
+        private System.Windows.Forms.ComboBox CB_Variant;
+        private System.Windows.Forms.TextBox TB_IPDisplay;
+        private System.Windows.Forms.Label label2;
     }
 }

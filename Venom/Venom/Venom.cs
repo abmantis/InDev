@@ -9,6 +9,7 @@ using WideBoxLib;
 using WirelessLib;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace VenomNamespace
 {
@@ -22,21 +23,21 @@ namespace VenomNamespace
         public static int WAITTIME = 2000;
         public static int ATTEMPTMAX = 10;
         // Entities used to store log and window data
-        private DataTable results;
-        private BindingSource sbind = new BindingSource();
-        
+        public DataTable results;
+        public BindingSource sbind = new BindingSource();
+
         // Entities used to store the list of targeted IPs and their progress
-        private List<IPData> iplist;
-        private List<string> responses;
-        
-        private string curfilename;
+        public List<IPData> iplist;
+        public List<string> responses;
+
+        public string curfilename;
         public int listindex;
         public PayList plist;
 
         //public delegate void SetTextCallback();
         //public SetTextCallback settextcallback;
 
-        //static object lockObj = new object();   Leaving place holder if multi threading is going to be used
+        static object lockObj = new object();  
 
         public enum OPCODES
         {
@@ -68,6 +69,7 @@ namespace VenomNamespace
             results.Columns.Add("IP Address");
             results.Columns.Add("OTA Payload");
             results.Columns.Add("Delivery Method");
+            results.Columns.Add("OTA Type");
             results.Columns.Add("OTA Result");
 
             // Generate tables
@@ -184,7 +186,10 @@ namespace VenomNamespace
                     // Take data message array and convert to hex string, then to ascii and concatinate to one string
                     //sb = string.Concat(Array.ConvertAll(data.Message, b => Convert.ToChar((Convert.ToUInt32(b.ToString("X2"), 16)))));
                     string sb = System.Text.Encoding.ASCII.GetString(data.Message);
-                    ProcessPayload(sb, data.Source.ToString(), "MQTT Message");
+                    lock (lockObj)
+                    {
+                        ProcessPayload(sb, data.Source.ToString(), "MQTT Message");
+                    }
                     break;
 
                 /* case "iot-2/evt/subscribe/fmt/json":    // Not currently implemented
@@ -208,7 +213,10 @@ namespace VenomNamespace
                     string savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
 
                     if (savedExtractedMessage.Equals("000A035D4983AC0109000502"))
-                        ProcessPayload("Programming", data.Source.ToString(), "MQTT Message");
+                        lock (lockObj)
+                        {
+                            ProcessPayload("Programming", data.Source.ToString(), "MQTT Message");
+                        }
                     break;
                 default:
                     break;
@@ -239,8 +247,10 @@ namespace VenomNamespace
                     string hs = parts[2].Substring(i, 2);
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
-
-                ProcessPayload(sb, data.Source.ToString(), "Trace Message");
+                lock (lockObj)
+                {
+                    ProcessPayload(sb, data.Source.ToString(), "Trace Message");
+                }
             }
         }
 
@@ -348,7 +358,7 @@ namespace VenomNamespace
         }
 
         #endregion
-       private void SetLED(string ip)
+       public void SetLED(string ip)
         {
             System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
             ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
@@ -588,7 +598,7 @@ namespace VenomNamespace
             
         }
 
-        private void SetText(string type, string source)
+        public void SetText(string type, string source)
         {
             // Process each progress entity for each IP added
             foreach (string s in responses)
@@ -600,6 +610,7 @@ namespace VenomNamespace
 
                 // Update window with OTA result
                 results.Rows[listindex]["Delivery Method"] = iplist[listindex].Delivery;
+                results.Rows[listindex]["OTA Type"] = iplist[listindex].Type;
                 results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
 
                 if (type.Equals("status"))
@@ -612,6 +623,7 @@ namespace VenomNamespace
                             iplist[listindex].MAC + "," + source + "," +
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
+                            iplist[listindex].Type + "," +
                             iplist[listindex].Result);
                         }
                     }
@@ -638,11 +650,11 @@ namespace VenomNamespace
                         {                            
                             using (StreamWriter sw = File.CreateText(curfilename))
                             {
-                                sw.WriteLine("Time,IP,MAC,Log Source,Payload,Method,Result");
+                                sw.WriteLine("Time,IP,MAC,Log Source,Payload,Method,Type,Result");
                             }
                         }
                         catch {
-                            MessageBox.Show("The chosen path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
+                            MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;
                         }
@@ -743,18 +755,22 @@ namespace VenomNamespace
 
         void ProcessIP()
         {
-            foreach (IPData ipd in iplist)
+            //foreach (IPData ipd in iplist)
+            Parallel.ForEach(iplist, ipd =>
             {
                 string ip = ipd.IPAddress;
                 string pay = ipd.Payload;
                 string delivery = ipd.Delivery;
-
-                // Enable Trace for IP address in list
-                TraceConnect(ip, pay, delivery);
+                string type = ipd.Type;
+                lock (lockObj)
+                {
+                    // Enable Trace for IP address in list
+                    TraceConnect(ip, pay, type, delivery);
+                }
 
                 //Parse OTA payload into byte array for sending via MQTT
                 byte[] paybytes = Encoding.ASCII.GetBytes(pay);
-                
+
                 //Prepare IP address for sending via MQTT
                 string[] ipad = ip.Split('.');
                 byte[] ipbytes = new byte[4];
@@ -768,10 +784,10 @@ namespace VenomNamespace
                     SendMQTT(ipbytes, paybytes);
 
                 else
-                    SendReveal(ip, paybytes);                
-            }
+                    SendReveal(ip, paybytes);
+            });
         }
-        void TraceConnect(string ip, string pay, string delivery)
+        void TraceConnect(string ip, string pay, string type, string delivery)
         {
             bool mqttresp = false;
             int traceattempt = 0;
@@ -820,7 +836,7 @@ namespace VenomNamespace
 
             if (mqttresp)
                 // Update progress information   
-                responses.Add(ip + "\t" + pay + "\t" + delivery + "\t" + "PENDING");
+                responses.Add(ip + "\t" + pay + "\t" + delivery + "\t" + type + "\t" + "PENDING");
             else
             {
                 MessageBox.Show("Revelation/Trace was not able to start. Restarting connection attempts.", "Error: Unable to start Trace",
@@ -839,7 +855,7 @@ namespace VenomNamespace
 
         }
 
-       void CycleWifi(ConnectedApplianceInfo cai)    //TODO GET THIS WORKING
+        public void CycleWifi(ConnectedApplianceInfo cai)    //TODO GET THIS WORKING
         {
             // Close all WifiBasic connections
             //WifiLocal.CloseAll(true);
@@ -854,7 +870,7 @@ namespace VenomNamespace
 
         private void BTN_Add_Click(object sender, EventArgs e)
         {
-            string localpay = TB_Payload.Text;
+            string localpay = ""; // TB_Payload.Text;
             string localdeliver = "";
             RB_MQTT.Checked = true;         // Disable this when actually using RBs for Revelation and MQTT
             // A delivery method must be selected
@@ -933,9 +949,28 @@ namespace VenomNamespace
         {
             try
             {
-                iplist.RemoveAt(LB_IPs.SelectedIndex);
-                results.Rows.RemoveAt(LB_IPs.SelectedIndex);
-                LB_IPs.Items.Remove(LB_IPs.SelectedItem);
+                /* foreach (DataRow row in results.Rows)
+                 {
+                     if (row["IP Address"].ToString().Equals(TB_IP.Text))
+                         results.Rows.Remove(row);
+                 }*/
+                DialogResult dialogResult = MessageBox.Show("This will clear all payloads for the chosen IP " + LB_IPs.SelectedItem.ToString() + ". Press Yes to Remove or No to Cancel.",
+                                                        "Verify IP Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    
+                    for (int i = results.Rows.Count - 1; i >= 0; i--)
+                    {
+                        DataRow dr = results.Rows[i];
+                        if (dr["IP Address"].ToString() == LB_IPs.SelectedItem.ToString())
+                            results.Rows.Remove(dr);
+                    }
+                    results.AcceptChanges();
+
+                    iplist.RemoveAll(x => x.IPAddress == LB_IPs.SelectedItem.ToString());
+                    LB_IPs.Items.Remove(LB_IPs.SelectedItem);
+                }
+
             }
             catch { }
         }
@@ -968,20 +1003,121 @@ namespace VenomNamespace
 
         private void BTN_MakeList_Click(object sender, EventArgs e)
         {
-            try
-            {                
-               plist.Show();
-            }
-            catch
+            if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
             {
-                plist = new PayList();
-                plist.Show();
-            }
+                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
+
+                // Will only run if IP address is first time added
+                if (cai != null)
+                {
+                    //if (localdeliver.Equals("MQTT") && !cai.IsMqttConnected) // Add back if tracking MQTT or Revelation
+                    if (!cai.IsMqttConnected)
+                    {
+                        DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
+                                                                    " for the entered IP Address of " + TB_IP.Text + " is not currently connected." +
+                                                                    " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
+                                                                    " MQTT connection then try adding the IP Address again.",
+                                                                    "Error: MQTT Delivery but Device is not the MQTT Broker.",
+                                                                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                        if (dialogResult == DialogResult.No)
+                            return;
+                    }
+
+                    try
+                    {
+                        plist.Show();
+                    }
+                    catch
+                    {
+                        plist = new PayList(cai, this);
+                        plist.Show();
+                    }
+
+                }
+                else
+                {
+                    // Else if the IP address is not found in the WifiBasic list                        
+                    MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }   
         }
 
         private void BTN_Import_Click(object sender, EventArgs e)
         {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "csv files (*.csv)|*.csv|All files (*.*)|*.*";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                //Read the contents of the file into a stream
+                var fileStream = ofd.OpenFile();
+                using (StreamReader reader = new StreamReader(fileStream))
+                {
+                    string line = reader.ReadLine();
+                    string[] value = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
+                    int skipped = 0;
+                    var ipskipped = new List<string>();
 
+                    while (!reader.EndOfStream)
+                    {
+                        value = reader.ReadLine().Split(',');
+                        System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                        ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == value[0]);
+
+                        if (cai != null)
+                        {
+                            if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null && !cai.IsMqttConnected)
+                            {
+                                DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
+                                                                            " for the entered IP Address of " + cai.IPAddress + " is not currently connected." +
+                                                                            " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
+                                                                            " MQTT connection then try adding the IP Address again.",
+                                                                            "Error: MQTT Delivery but Device is not the MQTT Broker.",
+                                                                            MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                                if (dialogResult == DialogResult.No)
+                                    return;
+                            }
+
+                            if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null)
+                                LB_IPs.Items.Add(cai.IPAddress);
+
+                            IPData newip = new IPData(cai.IPAddress, value[1], "MQTT"); //Add Revelation logic if supported
+                            iplist.Add(newip);
+                            newip.MAC = cai.MacAddress;
+                            newip.Type = value[2];
+
+                            // Update window for added IP
+                            DataRow dr = results.NewRow();
+                            dr["IP Address"] = newip.IPAddress;
+                            dr["OTA Payload"] = newip.Payload;
+                            dr["Delivery Method"] = newip.Delivery;
+                            dr["OTA Type"] = newip.Type;
+                            dr["OTA Result"] = "PENDING";
+                            results.Rows.Add(dr);
+
+                        }
+                        else
+                        {
+                            skipped++;
+                            if (ipskipped.FirstOrDefault(x => x.ToString() == value[0]) == null)
+                                ipskipped.Add(value[0]);
+                        }
+
+                    }
+
+                    if (skipped > 0)
+                    {
+                        string badips ="";
+                        foreach (string ips in ipskipped)
+                            badips = badips + "  " + ips;
+                        MessageBox.Show("Import skipped a total of " + skipped + " line(s) for IP Address(es) " +
+                             badips + " due to NOT being listed in Wifibasic. Please verify the IP Address(es) " +
+                            "that were skipped are connected and listed in Wifibasic, then retry importing.", "Error: WifiBasic IP Address(es) Not Found",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
         }
     }
 }
