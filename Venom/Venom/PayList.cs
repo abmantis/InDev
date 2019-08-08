@@ -46,7 +46,7 @@ namespace VenomNamespace
             
             try
             {
-                if (parent.iplist.FirstOrDefault(x => x.IPAddress == parent.TB_IP.Text) == null)
+                if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IPDisplay.Text) == null)
                     parent.LB_IPs.Items.Add(cai.IPAddress);
 
                 IPData newip = new IPData(cai.IPAddress, localpay, localdeliver);
@@ -56,6 +56,7 @@ namespace VenomNamespace
 
                 // Update window for added IP
                 DataRow dr = parent.results.NewRow();
+
                 dr["IP Address"] = newip.IPAddress;
                 dr["OTA Payload"] = newip.Payload;
                 dr["Delivery Method"] = newip.Delivery;
@@ -71,10 +72,23 @@ namespace VenomNamespace
 
         private void BTN_Remove_Click(object sender, EventArgs e)
         {
-            try            
-            {
+            try
+            {                
+                int found = 0;
+
+                foreach (DataGridViewRow row in parent.DGV_Data.Rows)
+                {
+                    if (row.Cells[0].Value.ToString().Equals(parent.DGV_Data.Rows[DGV_Data.CurrentCell.RowIndex].Cells[0].Value.ToString()))                    
+                        found++;
+                    if (found > 1)
+                        break;
+                }
+
+                if (found <= 1)                
+                    parent.LB_IPs.Items.RemoveAt(DGV_Data.CurrentCell.RowIndex);
+                
                 parent.iplist.RemoveAt(DGV_Data.CurrentCell.RowIndex);
-                parent.results.Rows.RemoveAt(DGV_Data.CurrentCell.RowIndex);                
+                parent.results.Rows.RemoveAt(DGV_Data.CurrentCell.RowIndex);
             }
             catch { }
         }
@@ -105,14 +119,17 @@ namespace VenomNamespace
                     {
                         using (StreamWriter sw = File.CreateText(curfilename))
                         {
+                            sw.WriteLine("IP\tPayload\tType\tResult");
                             foreach (DataRow row in parent.results.Rows)
                             {
-                                sw.WriteLine(row.ItemArray[0].ToString() + "," +
-                                    row.ItemArray[1].ToString() + "," +
-                                    row.ItemArray[3].ToString() + "," +
+                                sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
+                                    row.ItemArray[1].ToString() + "\t" +
+                                    row.ItemArray[3].ToString() + "\t" +
                                     row.ItemArray[4].ToString());
                             }
                         }
+                        MessageBox.Show("Saved payload list at " + curfilename + ".", "Export: Payload List Saving.",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch
                     {
@@ -122,6 +139,11 @@ namespace VenomNamespace
                     }
                 }
             }
+        }
+
+        private void BTN_Close_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }

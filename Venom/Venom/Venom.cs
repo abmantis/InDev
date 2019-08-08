@@ -759,17 +759,16 @@ namespace VenomNamespace
             Parallel.ForEach(iplist, ipd =>
             {
                 string ip = ipd.IPAddress;
-                string pay = ipd.Payload;
-                string delivery = ipd.Delivery;
-                string type = ipd.Type;
+
                 lock (lockObj)
                 {
                     // Enable Trace for IP address in list
-                    TraceConnect(ip, pay, type, delivery);
+                    TraceConnect(ip, ipd.Payload, ipd.Type, ipd.Delivery);
                 }
 
+
                 //Parse OTA payload into byte array for sending via MQTT
-                byte[] paybytes = Encoding.ASCII.GetBytes(pay);
+                byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
 
                 //Prepare IP address for sending via MQTT
                 string[] ipad = ip.Split('.');
@@ -780,7 +779,7 @@ namespace VenomNamespace
                 }
 
                 // See if sending over MQTT or Revelation
-                if (delivery.Equals("MQTT"))
+                if (ipd.Delivery.Equals("MQTT"))
                     SendMQTT(ipbytes, paybytes);
 
                 else
@@ -1003,45 +1002,42 @@ namespace VenomNamespace
 
         private void BTN_MakeList_Click(object sender, EventArgs e)
         {
-            if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
+
+            // Will only run if IP address is first time added
+            if (cai != null)
             {
-                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-                ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
-
-                // Will only run if IP address is first time added
-                if (cai != null)
+                //if (localdeliver.Equals("MQTT") && !cai.IsMqttConnected) // Add back if tracking MQTT or Revelation
+                if (!cai.IsMqttConnected)
                 {
-                    //if (localdeliver.Equals("MQTT") && !cai.IsMqttConnected) // Add back if tracking MQTT or Revelation
-                    if (!cai.IsMqttConnected)
-                    {
-                        DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
-                                                                    " for the entered IP Address of " + TB_IP.Text + " is not currently connected." +
-                                                                    " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
-                                                                    " MQTT connection then try adding the IP Address again.",
-                                                                    "Error: MQTT Delivery but Device is not the MQTT Broker.",
-                                                                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-                        if (dialogResult == DialogResult.No)
-                            return;
-                    }
-
-                    try
-                    {
-                        plist.Show();
-                    }
-                    catch
-                    {
-                        plist = new PayList(cai, this);
-                        plist.Show();
-                    }
-
+                    DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
+                                                                " for the entered IP Address of " + TB_IP.Text + " is not currently connected." +
+                                                                " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
+                                                                " MQTT connection then try adding the IP Address again.",
+                                                                "Error: MQTT Delivery but Device is not the MQTT Broker.",
+                                                                MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                    if (dialogResult == DialogResult.No)
+                        return;
                 }
-                else
+
+                try
                 {
-                    // Else if the IP address is not found in the WifiBasic list                        
-                    MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    plist.Show();
                 }
-            }   
+                catch
+                {
+                    plist = new PayList(cai, this);
+                    plist.Show();
+                }
+
+            }
+            else
+            {
+                // Else if the IP address is not found in the WifiBasic list                        
+                MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void BTN_Import_Click(object sender, EventArgs e)
@@ -1055,13 +1051,13 @@ namespace VenomNamespace
                 using (StreamReader reader = new StreamReader(fileStream))
                 {
                     string line = reader.ReadLine();
-                    string[] value = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
+                    string[] value; // = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
                     int skipped = 0;
                     var ipskipped = new List<string>();
 
                     while (!reader.EndOfStream)
                     {
-                        value = reader.ReadLine().Split(',');
+                        value = reader.ReadLine().Split('\t');
                         System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                         ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == value[0]);
 
