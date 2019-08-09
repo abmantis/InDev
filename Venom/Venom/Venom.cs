@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -29,11 +30,10 @@ namespace VenomNamespace
         // Entities used to store the list of targeted IPs and their progress
         public List<IPData> iplist;
         public List<string> responses;
-
+        public Queue TaskQ = new Queue();
         public string curfilename;
         public int listindex;
         public PayList plist;
-
         //public delegate void SetTextCallback();
         //public SetTextCallback settextcallback;
 
@@ -63,7 +63,6 @@ namespace VenomNamespace
             //Errors during the construction time are hard to debug because your object are not instantiated yet.
 
             //settextcallback = new SetTextCallback(SetText);
-
             // Build log and window table
             results = new DataTable();
             results.Columns.Add("IP Address");
@@ -84,6 +83,7 @@ namespace VenomNamespace
             // Generate lists
             iplist = new List<IPData>();
             responses = new List<string>();
+
         }
 
         /// <summary>
@@ -752,39 +752,62 @@ namespace VenomNamespace
             while (thread.IsAlive)
                 Application.DoEvents();
         }
+        public void RunTask(string ip)
+        {
+            //if (TaskQ.Peek().ToString().Contains(ip))
+            foreach (IPData ipd in iplist)
+            {
+                if (ipd.IPAddress.Equals(ip))
+                {
+                    //string[] item = TaskQ.Dequeue().ToString().Split('\t');
+                    //Parse OTA payload into byte array for sending via MQTT
+                    byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
 
+                    //Prepare IP address for sending via MQTT
+                    string[] ipad = ipd.IPAddress.Split('.');
+                    byte[] ipbytes = new byte[4];
+                    for (int j = 0; j < 4; j++)
+                    {
+                        ipbytes[j] = byte.Parse(ipad[j]);
+                    }
+                    // Figure out a way to schedule how the threads march through iplist, we already filter on ip so only one thread in at a time
+                    // See if sending over MQTT or Revelation
+                    if (ipd.Delivery.Equals("MQTT"))
+                        SendMQTT(ipbytes, paybytes);
+
+                    else
+                        SendReveal(ipd.IPAddress, paybytes);
+                }
+                else
+                {
+                    continue;
+                }
+            }
+                
+        }
         void ProcessIP()
         {
-            //foreach (IPData ipd in iplist)
-            Parallel.ForEach(iplist, ipd =>
+            TaskQ.Clear();
+            foreach (IPData ipd in iplist)
+            //Parallel.ForEach(iplist, ipd =>
             {
-                string ip = ipd.IPAddress;
-
+                //string taskentry = "";
                 lock (lockObj)
                 {
                     // Enable Trace for IP address in list
-                    TraceConnect(ip, ipd.Payload, ipd.Type, ipd.Delivery);
+                    TraceConnect(ipd.IPAddress, ipd.Payload, ipd.Type, ipd.Delivery);
                 }
+                //taskentry = ipd.IPAddress + "\t" + ipd.Payload + "\t" + ipd.Type + "\t" + ipd.Delivery;
+                //TaskQ.Enqueue(taskentry);
+            }
 
-
-                //Parse OTA payload into byte array for sending via MQTT
-                byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
-
-                //Prepare IP address for sending via MQTT
-                string[] ipad = ip.Split('.');
-                byte[] ipbytes = new byte[4];
-                for (int j = 0; j < 4; j++)
-                {
-                    ipbytes[j] = byte.Parse(ipad[j]);
-                }
-
-                // See if sending over MQTT or Revelation
-                if (ipd.Delivery.Equals("MQTT"))
-                    SendMQTT(ipbytes, paybytes);
-
-                else
-                    SendReveal(ip, paybytes);
-            });
+            for (int i = 0; i < LB_IPs.Items.Count; i++)
+            {
+                string ip = LB_IPs.Items[i].ToString();
+                Thread th = new Thread(() => RunTask(ip));
+                th.Start();
+            }
+           // });
         }
         void TraceConnect(string ip, string pay, string type, string delivery)
         {
@@ -864,7 +887,7 @@ namespace VenomNamespace
            // var cert = new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020);
 
             // Restart Wifi Connection
-            WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+            //WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
         }
 
         private void BTN_Add_Click(object sender, EventArgs e)
