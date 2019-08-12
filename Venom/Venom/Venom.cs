@@ -26,18 +26,19 @@ namespace VenomNamespace
         // Entities used to store log and window data
         public DataTable results;
         public BindingSource sbind = new BindingSource();
-
         // Entities used to store the list of targeted IPs and their progress
         public List<IPData> iplist;
         public List<string> responses;
-        public Queue TaskQ = new Queue();
+        public List<ManualResetEventSlim> signal;
+        //public Queue TaskQ = new Queue();
         public string curfilename;
         public int listindex;
         public PayList plist;
         //public delegate void SetTextCallback();
         //public SetTextCallback settextcallback;
 
-        static object lockObj = new object();  
+        static object lockObj = new object();
+        static object writeobj = new object();
 
         public enum OPCODES
         {
@@ -83,8 +84,9 @@ namespace VenomNamespace
             // Generate lists
             iplist = new List<IPData>();
             responses = new List<string>();
+            signal = new List<ManualResetEventSlim>();
 
-        }
+    }
 
         /// <summary>
         /// Parse message from WideBoxInterface
@@ -186,7 +188,7 @@ namespace VenomNamespace
                     // Take data message array and convert to hex string, then to ascii and concatinate to one string
                     //sb = string.Concat(Array.ConvertAll(data.Message, b => Convert.ToChar((Convert.ToUInt32(b.ToString("X2"), 16)))));
                     string sb = System.Text.Encoding.ASCII.GetString(data.Message);
-                    lock (lockObj)
+                    lock (writeobj)
                     {
                         ProcessPayload(sb, data.Source.ToString(), "MQTT Message");
                     }
@@ -213,7 +215,7 @@ namespace VenomNamespace
                     string savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
 
                     if (savedExtractedMessage.Equals("000A035D4983AC0109000502"))
-                        lock (lockObj)
+                        lock (writeobj)
                         {
                             ProcessPayload("Programming", data.Source.ToString(), "MQTT Message");
                         }
@@ -233,7 +235,6 @@ namespace VenomNamespace
 
         }
 
-        //This command does not come with Lucas's template.  You will have to add it manually.
         public override void parseTraceMessages(ExtendedTracePacket data)
         {   
             // Filter on relevant OTA topics only
@@ -247,7 +248,7 @@ namespace VenomNamespace
                     string hs = parts[2].Substring(i, 2);
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
-                lock (lockObj)
+                lock (writeobj)
                 {
                     ProcessPayload(sb, data.Source.ToString(), "Trace Message");
                 }
@@ -383,14 +384,50 @@ namespace VenomNamespace
             // Locate if OTA payload has been sent and update status
             if (sb.Contains("\"update\""))
             {
-                iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Downloading";
-                SetText("update", source);
+                // Lookup status reason byte pass or fail reason
+
+                foreach (var member in iplist)
+                {
+                    if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                    {
+                        if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
+                            continue;
+                        else if (member.Result.Contains("Programming"))
+                            continue;
+                        else
+                        {
+                            // Write info to widebox window
+                            iplist[member.TabIndex].Result = "Downloading";
+                            SetText("update", source, member.TabIndex);
+                            break;
+                        }
+                    }
+                }
+
+
             }
 
             if (sb.Contains("Programming") || sb.Contains("IAP_MODE"))
             {
-                iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Programming";
-                SetText("update", source);
+                // Lookup status reason byte pass or fail reason
+
+                foreach (var member in iplist)
+                {
+                    if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                    {
+                        if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
+                            continue;
+                        else if (member.Result.Contains("Downloading")) 
+                            continue;
+                        else
+                        {
+                            // Write info to widebox window
+                            iplist[member.TabIndex].Result = "Programming";
+                            SetText("update", source, member.TabIndex);
+                            break;
+                        }
+                    }
+                }
             }
 
             if (sb.Contains("\"progress\"") && source.Equals("MQTT Message"))
@@ -399,12 +436,27 @@ namespace VenomNamespace
                 string[] stats = sb.Split('@');
                 string[] parts = stats[1].Split(',');
                 sb = "";
-                                
-                if (!parts[6].Equals("0"))
-                    iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Programming";
-                else
-                    iplist.FirstOrDefault(x => x.IPAddress == ip).Result = "Downloading";
-                SetText("update", source);
+
+                foreach (var member in iplist)
+                {
+                    if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                    {
+                        if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
+                            continue;
+                        else
+                        {
+                            // Write info to widebox window
+                            if (!parts[6].Equals("0"))
+                                iplist[member.TabIndex].Result = "Programming";
+                            else
+                                iplist[member.TabIndex].Result = "Downloading";
+
+                            SetText("update", source, member.TabIndex);
+                            break;
+                        }
+                    }
+                }
+
             }
 
             //Locate the MQTT status message in the Trace and grab the reason byte immediately after it
@@ -425,10 +477,22 @@ namespace VenomNamespace
                     double statusval = Char.GetNumericValue(Char.Parse(sb));
 
                     // Lookup status reason byte pass or fail reason
-                    iplist.FirstOrDefault(x => x.IPAddress == ip).Result = StatusLookup(statusval);
-
-                    // Write info to widebox window
-                    SetText("status", source);
+                    foreach (var member in iplist)
+                    {
+                        if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                        {
+                            if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
+                                continue;
+                            else
+                            {
+                                // Write info to widebox window
+                                iplist[member.TabIndex].Result = StatusLookup(statusval);
+                                SetText("status", source, member.TabIndex);
+                                iplist[member.TabIndex].Signal.Set();
+                                break;
+                            }
+                        }
+                    }                                                       
 
                 }
                 catch { }
@@ -598,7 +662,7 @@ namespace VenomNamespace
             
         }
 
-        public void SetText(string type, string source)
+        public void SetText(string type, string source, int listindex)
         {
             // Process each progress entity for each IP added
             foreach (string s in responses)
@@ -624,7 +688,7 @@ namespace VenomNamespace
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
                             iplist[listindex].Type + "," +
-                            iplist[listindex].Result);
+                            iplist[listindex].Result);                            
                         }
                     }
                     catch { }
@@ -752,14 +816,19 @@ namespace VenomNamespace
             while (thread.IsAlive)
                 Application.DoEvents();
         }
-        public void RunTask(string ip)
+        public void RunTask(string ip, ManualResetEventSlim sig, int ipindex)
         {
             //if (TaskQ.Peek().ToString().Contains(ip))
             foreach (IPData ipd in iplist)
             {
+                ipd.IPIndex = ipindex;
+                ipd.Signal = sig;
+                ipd.TabIndex = iplist.IndexOf(ipd);
+
                 if (ipd.IPAddress.Equals(ip))
                 {
-                    //string[] item = TaskQ.Dequeue().ToString().Split('\t');
+                    //string[] item = TaskQ.Dequeue().ToString().Split('\t');                                                                       
+
                     //Parse OTA payload into byte array for sending via MQTT
                     byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
 
@@ -777,6 +846,11 @@ namespace VenomNamespace
 
                     else
                         SendReveal(ipd.IPAddress, paybytes);
+
+                    // Spinwait until our result gets updated to a pass or fail
+                    //while (!results.Rows[index][4].ToString().Contains("PASS") || !results.Rows[index][4].ToString().Contains("FAIL")) ;
+                    //SpinWait.SpinUntil(() => isCompleted == true);
+                    sig.Wait();
                 }
                 else
                 {
@@ -785,9 +859,11 @@ namespace VenomNamespace
             }
                 
         }
+
+   
         void ProcessIP()
         {
-            TaskQ.Clear();
+            //TaskQ.Clear();
             foreach (IPData ipd in iplist)
             //Parallel.ForEach(iplist, ipd =>
             {
@@ -804,7 +880,9 @@ namespace VenomNamespace
             for (int i = 0; i < LB_IPs.Items.Count; i++)
             {
                 string ip = LB_IPs.Items[i].ToString();
-                Thread th = new Thread(() => RunTask(ip));
+                ManualResetEventSlim sig = new ManualResetEventSlim();
+                signal.Add(sig);
+                Thread th = new Thread(() => RunTask(ip, sig, i));
                 th.Start();
             }
            // });
@@ -937,7 +1015,7 @@ namespace VenomNamespace
                         
                          // Add IP to list of IPs
                          LB_IPs.Items.Add(cai.IPAddress);
-                         IPData newip = new IPData(cai.IPAddress, localpay, localdeliver);
+                         IPData newip = new IPData(cai.IPAddress, localpay);
                          iplist.Add(newip);
                          newip.MAC = cai.MacAddress;
 
@@ -945,7 +1023,7 @@ namespace VenomNamespace
                          DataRow dr = results.NewRow();
                          dr["IP Address"] = newip.IPAddress;
                          dr["OTA Payload"] = newip.Payload;
-                         dr["Delivery Method"] = newip.Delivery;
+                         dr["Delivery Method"] = localdeliver;
                          dr["OTA Result"] = "PENDING";
                          results.Rows.Add(dr);
                                 
@@ -1076,6 +1154,7 @@ namespace VenomNamespace
                     string line = reader.ReadLine();
                     string[] value; // = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
                     int skipped = 0;
+                    int index = 0;
                     var ipskipped = new List<string>();
 
                     while (!reader.EndOfStream)
@@ -1101,7 +1180,7 @@ namespace VenomNamespace
                             if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null)
                                 LB_IPs.Items.Add(cai.IPAddress);
 
-                            IPData newip = new IPData(cai.IPAddress, value[1], "MQTT"); //Add Revelation logic if supported
+                            IPData newip = new IPData(cai.IPAddress, value[1]); //Add Revelation logic if supported
                             iplist.Add(newip);
                             newip.MAC = cai.MacAddress;
                             newip.Type = value[2];
@@ -1110,11 +1189,11 @@ namespace VenomNamespace
                             DataRow dr = results.NewRow();
                             dr["IP Address"] = newip.IPAddress;
                             dr["OTA Payload"] = newip.Payload;
-                            dr["Delivery Method"] = newip.Delivery;
+                            dr["Delivery Method"] = "MQTT";
                             dr["OTA Type"] = newip.Type;
                             dr["OTA Result"] = "PENDING";
                             results.Rows.Add(dr);
-
+                            index++;
                         }
                         else
                         {

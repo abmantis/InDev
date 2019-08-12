@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace VenomNamespace
 
@@ -48,14 +49,35 @@ namespace VenomNamespace
             get { return _mac; }
             set { _mac = value; }
         }
-        public IPData(string ip, string payload, string delivery)
+        
+        private ManualResetEventSlim _signal;
+        public ManualResetEventSlim Signal
+        {
+            get { return _signal; }
+            set { _signal = value; }
+        }
+        private int _ipindex;
+        public int IPIndex
+        {
+            get { return _ipindex; }
+            set { _ipindex = value; }
+        }
+
+        private int _tabindex;
+        public int TabIndex
+        {
+            get { return _tabindex; }
+            set { _tabindex = value; }
+        }
+        public IPData(string ip, string payload)
         {
             _ipaddress = ip;
             _payload = payload;
-            _delivery = delivery;
+            _delivery = "MQTT";
             _type = "";
             _mac = "";
             _result = "";
+            _ipindex = 0;
         }
 
     }

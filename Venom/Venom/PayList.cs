@@ -49,7 +49,7 @@ namespace VenomNamespace
                 if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IPDisplay.Text) == null)
                     parent.LB_IPs.Items.Add(cai.IPAddress);
 
-                IPData newip = new IPData(cai.IPAddress, localpay, localdeliver);
+                IPData newip = new IPData(cai.IPAddress, localpay);
                 parent.iplist.Add(newip);
                 newip.MAC = cai.MacAddress;
                 newip.Type = CB_Variant.Text + " " + CB_Type.Text;
@@ -59,7 +59,7 @@ namespace VenomNamespace
 
                 dr["IP Address"] = newip.IPAddress;
                 dr["OTA Payload"] = newip.Payload;
-                dr["Delivery Method"] = newip.Delivery;
+                dr["Delivery Method"] = localdeliver;
                 dr["OTA Type"] = newip.Type;
                 dr["OTA Result"] = "PENDING";
                 parent.results.Rows.Add(dr);
