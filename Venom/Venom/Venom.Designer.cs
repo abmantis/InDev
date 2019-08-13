@@ -1,4 +1,7 @@
-﻿namespace VenomNamespace
+﻿
+using System.Windows.Forms;
+
+namespace VenomNamespace
 {
     partial class Venom
     {

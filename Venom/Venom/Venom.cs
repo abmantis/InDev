@@ -32,7 +32,7 @@ namespace VenomNamespace
         public List<ManualResetEventSlim> signal;
         //public Queue TaskQ = new Queue();
         public string curfilename;
-        public int listindex;
+        //public int listindex;
         public PayList plist;
         //public delegate void SetTextCallback();
         //public SetTextCallback settextcallback;
@@ -74,7 +74,7 @@ namespace VenomNamespace
 
             // Generate tables
             sbind.DataSource = results;
-            listindex = 0;
+            //listindex = 0;
             DGV_Data.AutoGenerateColumns = true;
             DGV_Data.DataSource = results;
             DGV_Data.DataSource = sbind;
@@ -87,7 +87,7 @@ namespace VenomNamespace
             signal = new List<ManualResetEventSlim>();
 
     }
-
+        
         /// <summary>
         /// Parse message from WideBoxInterface
         /// </summary>
@@ -388,12 +388,12 @@ namespace VenomNamespace
 
                 foreach (var member in iplist)
                 {
-                    if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                    if (member.IPAddress.ToString().Equals(ip))
                     {
                         if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
                             continue;
                         else if (member.Result.Contains("Programming"))
-                            continue;
+                            break;
                         else
                         {
                             // Write info to widebox window
@@ -413,11 +413,9 @@ namespace VenomNamespace
 
                 foreach (var member in iplist)
                 {
-                    if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                    if (member.IPAddress.ToString().Equals(ip))
                     {
                         if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
-                            continue;
-                        else if (member.Result.Contains("Downloading")) 
                             continue;
                         else
                         {
@@ -439,7 +437,7 @@ namespace VenomNamespace
 
                 foreach (var member in iplist)
                 {
-                    if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                    if (member.IPAddress.ToString().Equals(ip))
                     {
                         if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
                             continue;
@@ -479,7 +477,7 @@ namespace VenomNamespace
                     // Lookup status reason byte pass or fail reason
                     foreach (var member in iplist)
                     {
-                        if (iplist.FirstOrDefault(x => x.IPAddress == ip) != null)
+                        if (member.IPAddress.ToString().Equals(ip))
                         {
                             if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
                                 continue;
@@ -487,7 +485,7 @@ namespace VenomNamespace
                             {
                                 // Write info to widebox window
                                 iplist[member.TabIndex].Result = StatusLookup(statusval);
-                                SetText("status", source, member.TabIndex);
+                                SetText("status", source, member.TabIndex);                                
                                 iplist[member.TabIndex].Signal.Set();
                                 break;
                             }
@@ -669,8 +667,8 @@ namespace VenomNamespace
             {
                 // Seperate on tabs and pull the IP address
                 string[] parts = s.Split('\t');
-                IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
-                listindex = iplist.IndexOf(ipd);
+               // IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
+               // listindex = iplist.IndexOf(ipd);
 
                 // Update window with OTA result
                 results.Rows[listindex]["Delivery Method"] = iplist[listindex].Delivery;
@@ -746,7 +744,7 @@ namespace VenomNamespace
                 //RB_Reveal.Enabled = true;
                 responses.Clear();
             }
-        }
+        } //TODO MAY NEED THREAD BEHAVIOR ON RUNNING STOPPING
 
         public void SendMQTT(byte[] ipbytes, byte[] paybytes)
         {
@@ -773,7 +771,7 @@ namespace VenomNamespace
                 {
                     // Connect revelation
                      WifiLocal.ConnectTo(cai);
-                     Wait();
+                     Wait(2000);
                      revattempt++;
                     
                     // Send Revelation message
@@ -793,7 +791,7 @@ namespace VenomNamespace
                     {
                         WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
                         //WifiLocal.Close(cai);
-                        Wait();
+                        Wait(2000);
                         revattempt = 0;
                     }
 
@@ -806,27 +804,28 @@ namespace VenomNamespace
                 catch { }
             }
         }
-        public void Wait()
+        public void Wait(int timeout)
         {
             Thread thread = new Thread(delegate ()
             {
-                System.Threading.Thread.Sleep(WAITTIME);
+                System.Threading.Thread.Sleep(timeout);
             });
             thread.Start();
             while (thread.IsAlive)
                 Application.DoEvents();
         }
-        public void RunTask(string ip, ManualResetEventSlim sig, int ipindex)
+        
+        public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
             //if (TaskQ.Peek().ToString().Contains(ip))
             foreach (IPData ipd in iplist)
-            {
-                ipd.IPIndex = ipindex;
-                ipd.Signal = sig;
-                ipd.TabIndex = iplist.IndexOf(ipd);
+            {                
 
-                if (ipd.IPAddress.Equals(ip))
+                if (ipd.IPAddress.Equals(ip) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
                 {
+                    ipd.IPIndex = Int32.Parse(ipindex);
+                    ipd.Signal = sig;
+                    ipd.TabIndex = iplist.IndexOf(ipd);
                     //string[] item = TaskQ.Dequeue().ToString().Split('\t');                                                                       
 
                     //Parse OTA payload into byte array for sending via MQTT
@@ -850,7 +849,13 @@ namespace VenomNamespace
                     // Spinwait until our result gets updated to a pass or fail
                     //while (!results.Rows[index][4].ToString().Contains("PASS") || !results.Rows[index][4].ToString().Contains("FAIL")) ;
                     //SpinWait.SpinUntil(() => isCompleted == true);
+                    Console.WriteLine("This is the info before calling this lock " + ipd.Signal.WaitHandle.Handle + " with this thread name " + Thread.CurrentThread.Name +
+                        " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+
                     sig.Wait();
+                    Wait(180000);
+                    Console.WriteLine("Thread " + Thread.CurrentThread.Name + " got here.");
+                    //break;
                 }
                 else
                 {
@@ -858,7 +863,7 @@ namespace VenomNamespace
                 }
             }
                 
-        }
+        } //TODO MAY NEED MANUAL CLOSING OF THREADS?
 
    
         void ProcessIP()
@@ -880,12 +885,25 @@ namespace VenomNamespace
             for (int i = 0; i < LB_IPs.Items.Count; i++)
             {
                 string ip = LB_IPs.Items[i].ToString();
+                string number = "";
                 ManualResetEventSlim sig = new ManualResetEventSlim();
                 signal.Add(sig);
-                Thread th = new Thread(() => RunTask(ip, sig, i));
+                //Console.WriteLine("This is the info on generating the lock " + sig  +
+                //       " and this IP Index (from thread order) " + i + " for this IP Address " + ip + ".");
+
+                Thread th = new Thread(() => RunTask(ip, sig, number));
+                th.Name = i.ToString();
+                number = th.Name;
                 th.Start();
+                //th.Join();   
+                /*new Thread(() =>
+                {
+                    //Thread.CurrentThread.IsBackground = true;
+                    Name = i.ToString();
+                    RunTask(ip, sig, i.ToString());
+                }).Start();*/
             }
-           // });
+            // });
         }
         void TraceConnect(string ip, string pay, string type, string delivery)
         {
@@ -909,14 +927,14 @@ namespace VenomNamespace
                             if (!cai.IsRevelationConnected)
                             {
                                 WifiLocal.ConnectTo(cai);
-                                Wait();
+                                Wait(2000);
                                 traceattempt++;
                             }
                             if (cai.IsRevelationConnected)
                             {
                                 //If Revelation is enabled, enable Trace
                                 WifiLocal.EnableTrace(cai, true);
-                                Wait();
+                                Wait(2000);
                                 traceattempt++;
                             }
                         }
@@ -927,7 +945,7 @@ namespace VenomNamespace
                             {
                                 WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
                                 //WifiLocal.Close(cai);
-                                Wait();
+                                Wait(2000);
                              }
                             mqttresp = true;
                          }
