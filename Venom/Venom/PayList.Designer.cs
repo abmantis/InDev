@@ -129,7 +129,6 @@
             // 
             this.TB_IPDisplay.Location = new System.Drawing.Point(264, 12);
             this.TB_IPDisplay.Name = "TB_IPDisplay";
-            this.TB_IPDisplay.ReadOnly = true;
             this.TB_IPDisplay.Size = new System.Drawing.Size(164, 20);
             this.TB_IPDisplay.TabIndex = 22;
             // 

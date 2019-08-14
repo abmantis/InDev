@@ -7,7 +7,6 @@ using System.Threading;
 namespace VenomNamespace
 
 {
-
     public class IPData
     {
         private string _ipaddress;

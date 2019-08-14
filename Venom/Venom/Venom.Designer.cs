@@ -53,10 +53,12 @@ namespace VenomNamespace
             // 
             // TB_IP
             // 
-            this.TB_IP.Location = new System.Drawing.Point(21, 56);
+            this.TB_IP.Enabled = false;
+            this.TB_IP.Location = new System.Drawing.Point(245, 53);
             this.TB_IP.Name = "TB_IP";
             this.TB_IP.Size = new System.Drawing.Size(100, 20);
             this.TB_IP.TabIndex = 0;
+            this.TB_IP.Visible = false;
             // 
             // DGV_Data
             // 
@@ -66,14 +68,14 @@ namespace VenomNamespace
             this.DGV_Data.Location = new System.Drawing.Point(127, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(487, 249);
+            this.DGV_Data.Size = new System.Drawing.Size(523, 247);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
             // 
             this.TB_LogDir.Location = new System.Drawing.Point(143, 12);
             this.TB_LogDir.Name = "TB_LogDir";
-            this.TB_LogDir.Size = new System.Drawing.Size(383, 20);
+            this.TB_LogDir.Size = new System.Drawing.Size(507, 20);
             this.TB_LogDir.TabIndex = 11;
             // 
             // BTN_LogDir
@@ -99,9 +101,9 @@ namespace VenomNamespace
             // BTN_Add
             // 
             this.BTN_Add.Enabled = false;
-            this.BTN_Add.Location = new System.Drawing.Point(449, 54);
+            this.BTN_Add.Location = new System.Drawing.Point(351, 52);
             this.BTN_Add.Name = "BTN_Add";
-            this.BTN_Add.Size = new System.Drawing.Size(100, 23);
+            this.BTN_Add.Size = new System.Drawing.Size(100, 20);
             this.BTN_Add.TabIndex = 84;
             this.BTN_Add.Text = "Add IP + Payload";
             this.BTN_Add.UseVisualStyleBackColor = true;
@@ -140,7 +142,7 @@ namespace VenomNamespace
             // 
             this.RB_Reveal.AutoSize = true;
             this.RB_Reveal.Enabled = false;
-            this.RB_Reveal.Location = new System.Drawing.Point(555, 35);
+            this.RB_Reveal.Location = new System.Drawing.Point(574, 59);
             this.RB_Reveal.Name = "RB_Reveal";
             this.RB_Reveal.Size = new System.Drawing.Size(76, 17);
             this.RB_Reveal.TabIndex = 90;
@@ -152,7 +154,7 @@ namespace VenomNamespace
             // RB_MQTT
             // 
             this.RB_MQTT.AutoSize = true;
-            this.RB_MQTT.Location = new System.Drawing.Point(555, 12);
+            this.RB_MQTT.Location = new System.Drawing.Point(574, 36);
             this.RB_MQTT.Name = "RB_MQTT";
             this.RB_MQTT.Size = new System.Drawing.Size(56, 17);
             this.RB_MQTT.TabIndex = 91;
@@ -189,9 +191,9 @@ namespace VenomNamespace
             // 
             this.BTN_MQTT.Enabled = false;
             this.BTN_MQTT.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.25F);
-            this.BTN_MQTT.Location = new System.Drawing.Point(555, 53);
+            this.BTN_MQTT.Location = new System.Drawing.Point(457, 49);
             this.BTN_MQTT.Name = "BTN_MQTT";
-            this.BTN_MQTT.Size = new System.Drawing.Size(75, 29);
+            this.BTN_MQTT.Size = new System.Drawing.Size(75, 26);
             this.BTN_MQTT.TabIndex = 95;
             this.BTN_MQTT.Text = "Check MQTT";
             this.BTN_MQTT.UseVisualStyleBackColor = true;
@@ -200,7 +202,7 @@ namespace VenomNamespace
             // 
             // BTN_MakeList
             // 
-            this.BTN_MakeList.Location = new System.Drawing.Point(143, 56);
+            this.BTN_MakeList.Location = new System.Drawing.Point(21, 53);
             this.BTN_MakeList.Name = "BTN_MakeList";
             this.BTN_MakeList.Size = new System.Drawing.Size(97, 23);
             this.BTN_MakeList.TabIndex = 96;
@@ -210,7 +212,7 @@ namespace VenomNamespace
             // 
             // BTN_Import
             // 
-            this.BTN_Import.Location = new System.Drawing.Point(262, 56);
+            this.BTN_Import.Location = new System.Drawing.Point(127, 53);
             this.BTN_Import.Name = "BTN_Import";
             this.BTN_Import.Size = new System.Drawing.Size(92, 23);
             this.BTN_Import.TabIndex = 97;
@@ -221,9 +223,9 @@ namespace VenomNamespace
             // LED_Internet
             // 
             this.LED_Internet.Enabled = false;
-            this.LED_Internet.Location = new System.Drawing.Point(533, 13);
+            this.LED_Internet.Location = new System.Drawing.Point(538, 39);
             this.LED_Internet.Name = "LED_Internet";
-            this.LED_Internet.Size = new System.Drawing.Size(16, 16);
+            this.LED_Internet.Size = new System.Drawing.Size(16, 13);
             this.LED_Internet.TabIndex = 92;
             this.LED_Internet.Visible = false;
             // 
@@ -231,7 +233,7 @@ namespace VenomNamespace
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(626, 364);
+            this.ClientSize = new System.Drawing.Size(678, 365);
             this.Controls.Add(this.BTN_Import);
             this.Controls.Add(this.BTN_MakeList);
             this.Controls.Add(this.BTN_MQTT);

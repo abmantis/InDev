@@ -722,7 +722,7 @@ namespace VenomNamespace
                         }
                     }
                 }
-                BTN_Payload.Text = "Stop Running";
+                BTN_Payload.Text = "Stop Running";      //TODO Decide how this functions
                 LED_Internet.SetColor(Color.DarkGray);
                 BTN_Add.Enabled = false;
                 BTN_Remove.Enabled = false;
@@ -988,7 +988,7 @@ namespace VenomNamespace
 
         private void BTN_Add_Click(object sender, EventArgs e)
         {
-            string localpay = ""; // TB_Payload.Text;
+           /* string localpay = ""; // TB_Payload.Text;
             string localdeliver = "";
             RB_MQTT.Checked = true;         // Disable this when actually using RBs for Revelation and MQTT
             // A delivery method must be selected
@@ -1060,7 +1060,7 @@ namespace VenomNamespace
             }
 
             //RB_MQTT.Checked = false;            //Enable these when actually using RBs for Revelation and MQTT
-            //RB_Reveal.Checked = false;
+            //RB_Reveal.Checked = false;*/
         }
 
         private void BTN_Remove_Click(object sender, EventArgs e)
@@ -1115,48 +1115,23 @@ namespace VenomNamespace
         {
             // Send Subscribe message over MQTT to test MQTT connection
             //WifiLocal.SendMqttMessage(System.Net.IPAddress.Parse(TB_IP.Text), "iot-2/evt/subscribe/fmt/json", Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"));
-            LED_Internet.SetColor(Color.DarkGray);
-            SetLED(TB_IP.Text);
+            //LED_Internet.SetColor(Color.DarkGray);
+            //SetLED(TB_IP.Text);
         }
 
         private void BTN_MakeList_Click(object sender, EventArgs e)
         {
-            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
-
-            // Will only run if IP address is first time added
-            if (cai != null)
+            try
             {
-                //if (localdeliver.Equals("MQTT") && !cai.IsMqttConnected) // Add back if tracking MQTT or Revelation
-                if (!cai.IsMqttConnected)
-                {
-                    DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
-                                                                " for the entered IP Address of " + TB_IP.Text + " is not currently connected." +
-                                                                " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
-                                                                " MQTT connection then try adding the IP Address again.",
-                                                                "Error: MQTT Delivery but Device is not the MQTT Broker.",
-                                                                MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-                    if (dialogResult == DialogResult.No)
-                        return;
-                }
-
-                try
-                {
-                    plist.Show();
-                }
-                catch
-                {
-                    plist = new PayList(cai, this);
-                    plist.Show();
-                }
-
+                plist.Show();
             }
-            else
+            catch
             {
-                // Else if the IP address is not found in the WifiBasic list                        
-                MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                plist = new PayList(this, this.WideLocal, this.WifiLocal);
+                plist.Show();
             }
+
         }
 
         private void BTN_Import_Click(object sender, EventArgs e)
@@ -1172,7 +1147,6 @@ namespace VenomNamespace
                     string line = reader.ReadLine();
                     string[] value; // = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
                     int skipped = 0;
-                    int index = 0;
                     var ipskipped = new List<string>();
 
                     while (!reader.EndOfStream)
@@ -1211,7 +1185,6 @@ namespace VenomNamespace
                             dr["OTA Type"] = newip.Type;
                             dr["OTA Result"] = "PENDING";
                             results.Rows.Add(dr);
-                            index++;
                         }
                         else
                         {
