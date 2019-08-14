@@ -7,13 +7,18 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Venom
+namespace VenomNamespace
 {
     public partial class LED : UserControl
     {
         public LED()
         {
             InitializeComponent();
+        }
+
+        public void SetColor(Color c)
+        {
+            but.BackColor = c;
         }
     }
 }
