@@ -104,6 +104,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cycle.cs" />
+    <Compile Include="Enumeration.cs" />
+    <Compile Include="KeyValue.cs" />
+    <Compile Include="KeyValueProperty.cs" />
     <Compile Include="PayList.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -116,6 +120,12 @@
     </Compile>
     <Compile Include="LED.Designer.cs">
       <DependentUpon>LED.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TabSelect.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TabSelect.designer.cs">
+      <DependentUpon>TabSelect.cs</DependentUpon>
     </Compile>
     <Compile Include="Venom.cs">
       <SubType>Form</SubType>
@@ -140,6 +150,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="TabSelect.resx">
+      <DependentUpon>TabSelect.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Venom.resx">
       <DependentUpon>Venom.cs</DependentUpon>
     </EmbeddedResource>

@@ -5,11 +5,15 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Timers;
+using System.Data.OleDb;
 using System.Windows.Forms;
 using WideBoxLib;
 using WirelessLib;
 using System.IO;
 using System.Threading;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace VenomNamespace
@@ -17,53 +21,66 @@ namespace VenomNamespace
     public partial class Venom : WideInterface
     {
         public const byte API_NUMBER = 0;
-        /// <summary>
-        /// Opcodes parsed by this form
-        /// </summary>
-        /// 
         public static int WAITTIME = 2000;
         public static int ATTEMPTMAX = 10;
+        public static int TMAX = 120* 60000; //OTA max thread time is 2 hours
+
         // Entities used to store log and window data
         public DataTable results;
         public BindingSource sbind = new BindingSource();
+
         // Entities used to store the list of targeted IPs and their progress
         public List<IPData> iplist;
         public List<string> responses;
         public List<ManualResetEventSlim> signal;
-        //public Queue TaskQ = new Queue();
+
         public string curfilename;
-        //public int listindex;
         public PayList plist;
-        //public delegate void SetTextCallback();
-        //public SetTextCallback settextcallback;
 
         static object lockObj = new object();
         static object writeobj = new object();
 
-        public enum OPCODES
-        {
-            //Include your opcodes in here
-            //SET_VALUE = 1
-        }
+        // Used for importing API144 DDM (to identify cycles)
+        public List<KeyValue> keyValues;
+        public List<Enumeration> enumerations;
+        public List<Enumeration> allenums;
+        public List<Cycle> cyclesU;
+        public List<Cycle> cyclesL;
+        public List<Cycle> cyclesM;
+        public List<Cycle> cyclesW;
+        public List<Cycle> cyclesD;
+        public List<List<Cycle>> cycles;
+
+        public int kvapi;
+        public string dm_name;
+        public string implementation;
+        public bool usesCookTimeOp;
+        public string[] categoryList = { "Cooking", "Dish", "Laundry", "Refrigeration", "Small Appliance" };
+        public enum OPCODES { }
 
         //to access wideLocal use base.WideLocal or simple WideLocal
         public Venom(WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
         {
             InitializeComponent();
-            //Add your constructor operations here
             this.Text += " (" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + ")";
-            //AutoSave: Load and Save your CheckBoxes, TextBoxes and ComboBoxes last conditions
-            //Default is true, this line can be removed
             AutoSave = true;
-            //To facilitate the debug of your form you can trace your exception or print messages using LogException function
-            //  LogException("My Error Message");
-            //  or
-            //  try { //your code } catch (Exception ex) { LogException(ex,false); }
-            //Avoid to do a to much operations during the construction time to have a faster open time and avoid opening the form errors.
-            //Errors during the construction time are hard to debug because your object are not instantiated yet.
+            keyValues = new List<KeyValue>();
+            enumerations = new List<Enumeration>();
+            allenums = new List<Enumeration>();
+            kvapi = 144;
+            implementation = "";
+            dm_name = "";
+            usesCookTimeOp = true;
 
-            //settextcallback = new SetTextCallback(SetText);
+            // Set DDM holder entities
+            cycles = new List<List<Cycle>>();
+            cyclesU = new List<Cycle>();
+            cyclesL = new List<Cycle>();
+            cyclesM = new List<Cycle>();
+            cyclesW = new List<Cycle>();
+            cyclesD = new List<Cycle>();
+
             // Build log and window table
             results = new DataTable();
             results.Columns.Add("IP Address");
@@ -74,7 +91,6 @@ namespace VenomNamespace
 
             // Generate tables
             sbind.DataSource = results;
-            //listindex = 0;
             DGV_Data.AutoGenerateColumns = true;
             DGV_Data.DataSource = results;
             DGV_Data.DataSource = sbind;
@@ -184,9 +200,7 @@ namespace VenomNamespace
             switch (data.Topic) 
             {
                 case "iot-2/evt/isp/fmt/json":
-
-                    // Take data message array and convert to hex string, then to ascii and concatinate to one string
-                    //sb = string.Concat(Array.ConvertAll(data.Message, b => Convert.ToChar((Convert.ToUInt32(b.ToString("X2"), 16)))));
+                    // Process OTA-related messages
                     string sb = System.Text.Encoding.ASCII.GetString(data.Message);
                     lock (writeobj)
                     {
@@ -194,22 +208,53 @@ namespace VenomNamespace
                     }
                     break;
 
-                /* case "iot-2/evt/subscribe/fmt/json":    // Not currently implemented
+                 case "iot-2/evt/subscribe/fmt/json":  
+                    // Process connection-related messages
                      if (iplist.Count > 0)
                      {
                          string pay = System.Text.Encoding.ASCII.GetString(data.Message);
-                         if (pay.Contains("version"))
-                         {
-                             string s = "";
-                             s.Replace("\"version\":", "@");
-                             string[] stats = s.Split('@');
-                             if (stats[1].Equals("1"))
-                                 iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 3;
-                             else
-                                 iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()).MQTT = 2;
-                         }
+                        if (pay.Contains("version"))
+                        {
+                            if (iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()) != null)
+                            {                                
+                                string[] stats = pay.Split(':');
+
+                                if (stats[1].Equals("0"))
+                                {
+                                    // Allow a moment for widebox to catch up to the logs
+                                    Wait(1000);
+                                    // Send connection message to the IP that raised the event
+                                    byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+                                    string[] ipad = data.Source.ToString().Split('.');
+                                    byte[] ipbytes = new byte[4];
+                                    for (int j = 0; j < 4; j++)
+                                    {
+                                        ipbytes[j] = byte.Parse(ipad[j]);
+                                    }
+                                    SendMQTT(ipbytes, "iot-2/evt/subscribe/fmt/json", paybytes);
+                                    return;
+                                }
+
+                                /*else
+                                {   // Already connected so see if this thread is waiting for permission to send next OTA payload
+                                    foreach (var member in iplist)
+                                    {
+                                        if (member.IPAddress.ToString().Equals(data.Source.ToString()))
+                                        {
+                                            if (!member.Result.Contains("PENDING"))
+                                                continue;
+                                            else
+                                            {
+                                                member.Signal.Set();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                } */                               
+                            }
+                        }
                      }
-                     break;*/
+                     break;
 
                 case "iot-2/evt/cc_Kvp/fmt/binary":
                     string savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
@@ -746,12 +791,12 @@ namespace VenomNamespace
             }
         } //TODO MAY NEED THREAD BEHAVIOR ON RUNNING STOPPING
 
-        public void SendMQTT(byte[] ipbytes, byte[] paybytes)
+        public void SendMQTT(byte[] ipbytes, string topic, byte[] paybytes)
         {
             System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
 
             //Semd payload
-            WifiLocal.SendMqttMessage(ip, "iot-2/cmd/isp/fmt/json", paybytes);
+            WifiLocal.SendMqttMessage(ip, topic, paybytes);
         }
 
         public void SendReveal(string ips, byte[] paybytes)
@@ -814,7 +859,10 @@ namespace VenomNamespace
             while (thread.IsAlive)
                 Application.DoEvents();
         }
-        
+        private static void EndThread(object source, ElapsedEventArgs args)
+        {
+            Thread.CurrentThread.Abort();
+        }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
             //if (TaskQ.Peek().ToString().Contains(ip))
@@ -826,7 +874,13 @@ namespace VenomNamespace
                     ipd.IPIndex = Int32.Parse(ipindex);
                     ipd.Signal = sig;
                     ipd.TabIndex = iplist.IndexOf(ipd);
-                    //string[] item = TaskQ.Dequeue().ToString().Split('\t');                                                                       
+                    //string[] item = TaskQ.Dequeue().ToString().Split('\t');
+                    
+                    //Force each thread to live only two hours (process somehow got stuck)
+                    System.Timers.Timer timer = new System.Timers.Timer();
+                    timer.Interval = TMAX;
+                    timer.Elapsed += new ElapsedEventHandler(EndThread);
+                    timer.Start();
 
                     //Parse OTA payload into byte array for sending via MQTT
                     byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
@@ -841,7 +895,7 @@ namespace VenomNamespace
                     // Figure out a way to schedule how the threads march through iplist, we already filter on ip so only one thread in at a time
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
-                        SendMQTT(ipbytes, paybytes);
+                        SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes);
 
                     else
                         SendReveal(ipd.IPAddress, paybytes);
@@ -853,7 +907,7 @@ namespace VenomNamespace
                         " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
 
                     sig.Wait();
-                    Wait(180000);
+                    Wait(720000); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
                     Console.WriteLine("Thread " + Thread.CurrentThread.Name + " got here.");
                     //break;
                 }
@@ -864,11 +918,33 @@ namespace VenomNamespace
             }
                 
         } //TODO MAY NEED MANUAL CLOSING OF THREADS?
+        
+        public void BakeThree(string ip)
+        {            
+            //Parse OTA payload into byte array for sending via MQTT
+            string mes = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute
+            //string mes = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)
+            
+            byte[] bytes = new byte[mes.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = byte.Parse(mes.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+            }
 
-   
+            //Prepare IP address for sending via MQTT
+            string[] ipad = ip.Split('.');
+            byte[] ipbytes = new byte[4];
+            for (int j = 0; j < 4; j++)
+            {
+                ipbytes[j] = byte.Parse(ipad[j]);
+            }
+            //byte[] bytes = SetStartDisplay(true, false);
+            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes);
+        }
         void ProcessIP()
         {
             //TaskQ.Clear();
+
             foreach (IPData ipd in iplist)
             //Parallel.ForEach(iplist, ipd =>
             {
@@ -973,6 +1049,45 @@ namespace VenomNamespace
 
         }
 
+        /*private byte[] SetStartDisplay(bool start, bool modify)
+        {
+            try
+            {
+                //string zeroes = "00000000";
+                string startdisp = start ? "02" : "03";
+                startdisp = modify ? "04" : startdisp;
+                string timestartdisp = start ? "02" : "05";
+                int endfunc = CBO_End.SelectedIndex < 0 ? 0 : CBO_End.SelectedIndex;
+
+                string mes = cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].KeyID + cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].Enum.ToString("X2");
+                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Temp" ? mes + tempKey + FtoCx10(TB_Temp.Text) : mes;
+                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Power" ? mes + powKey + int.Parse(TB_Temp.Text).ToString("X2") : mes;
+
+                mes = TB_Time.Enabled && TB_Time.Text != "" ? mes + timeKey + ((int)(double.Parse(TB_Time.Text) * 60)).ToString("X8") : mes;
+                mes = TB_Time.Enabled && TB_Time.Text != "" && !modify && usesCookTimeOp ? mes + timeOpKey + timestartdisp : mes;
+
+                mes = TB_Probe.Enabled && TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + probeAmtKey + FtoCx10(TB_Probe.Text) : mes;
+                mes =  TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex == 2 ? mes + probeAmtKey + int.Parse(TB_Probe.Text.ToString()).ToString("X4") : mes;
+                //mes = CBO_Amt.Enabled && CBO_Amt.SelectedItem != null
+                mes = CBO_End.SelectedItem != null ? mes + cpltKey + endfunc.ToString("X2") : mes;
+
+                mes = TB_Delay.Enabled && TB_Delay.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + delayKey + (int.Parse(TB_Delay.Text) * 60).ToString("X8") : mes;
+                mes = CBO_Doneness.Visible && CBO_Doneness.SelectedItem != null ? mes + doneKey + CBO_Doneness.SelectedIndex.ToString("X2") : mes;
+
+                mes += opKey + startdisp;
+                mes = CBO_Cycles.SelectedItem.ToString().Contains("Sabbath") ? mes += sabKey + "01" : mes;
+
+                byte[] bytes = MakeBytes(mes, true);
+
+                return bytes;
+            }
+            catch
+            {
+                MessageBox.Show("Input contains invalid arguments");
+                return null;
+            }
+
+        }*/
         public void CycleWifi(ConnectedApplianceInfo cai)    //TODO GET THIS WORKING
         {
             // Close all WifiBasic connections
@@ -1208,5 +1323,624 @@ namespace VenomNamespace
                 }
             }
         }
+
+        //Convert string representation of data types into a standard format
+        private string SwitchLength(string type)
+        {
+            string length = "";
+            switch (type)
+            {
+                case "String":
+                    length = "string";
+                    break;
+                case "IntegerUnsigned8Bit":
+                    length = "uint8";
+                    break;
+                case "BEIntegerUnsigned16Bit":
+                    length = "uint16";
+                    break;
+                case "BEIntegerSigned16Bit":
+                    length = "int16";
+                    break;
+                case "BEInteger16Bit":
+                    length = "int16";
+                    break;
+                case "BEIntegerUnsigned32Bit":
+                    length = "uint32";
+                    break;
+                case "BEIntegerSigned32Bit":
+                    length = "int32";
+                    break;
+                case "BEInteger32Bit":
+                    length = "int32";
+                    break;
+                case "IntegerSigned8Bit":
+                    length = "int8";
+                    break;
+                case "Integer8Bit":
+                    length = "int8";
+                    break;
+                case "Boolean":
+                    length = "boolean";
+                    break;
+                case "enum":
+                    length = "uint8";
+                    break;
+                default:
+                    length = "string";
+                    break;
+            }
+            return length;
+        }
+        private bool XLSKeyValues(string filename)
+        {
+            string connectionString = string.Format("Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties='Excel 12.0;HDR=No'", filename);
+            string query;// = string.Format("SELECT * FROM [{0}$]", "Keys");
+            DataTable data = new DataTable();
+            DataTable dt = new DataTable();
+            string[] excelSheets = null;
+            bool loaded = true;
+            //string implementation = "";
+
+            try
+            {
+                using (OleDbConnection con = new OleDbConnection(connectionString))
+                {
+                    con.Open();
+                    dt = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
+                    //OleDbDataAdapter adapter = new OleDbDataAdapter(query, con);
+                    //adapter.Fill(data);
+                    con.Close();
+                }
+
+                excelSheets = new string[dt.Rows.Count];
+                int i = 0;
+
+                // Add the sheet name to the string array.
+                foreach (DataRow row in dt.Rows)
+                {
+                    excelSheets[i] = row["TABLE_NAME"].ToString().Replace("'", "").Replace("$", "");
+                    i++;
+                }
+
+                string selection = "";
+                if (Array.IndexOf(excelSheets, "Definitions") >= 0)
+                {
+                    selection = "Definitions";
+                }
+                else
+                {
+                    TabSelect ts = new TabSelect("Select the tab containing the KVP definitions", excelSheets);
+                    ts.ShowDialog();
+                    selection = ts.SelectedTab;
+                }
+
+                query = string.Format("SELECT * FROM [{0}$]", selection);
+
+                using (OleDbConnection con = new OleDbConnection(connectionString))
+                {
+                    con.Open();
+                    //dt = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(query, con);
+                    adapter.Fill(data);
+                    con.Close();
+                }
+
+                keyValues.Clear();
+
+                if (selection == "Keys")
+                {
+                    bool start = false;
+
+                    foreach (DataRow d in data.Rows)
+                    {
+                        if (start && d[0].ToString() != "")
+                        {
+                            KeyValue kv = new KeyValue(d[0].ToString(), "", "", "", d[2].ToString(), d[10].ToString(), d[7].ToString().Substring(2), kvapi, "", "");
+                            keyValues.Add(kv);
+                        }
+                        if (d[0].ToString() == "Class")
+                        {
+                            start = true;
+                        }
+                    }
+                }
+                else
+                {
+                    int instanceCol = -1;
+                    int lengthCol = -1;
+                    int keyCol = -1;
+                    int platCol = 0;
+                    int descCol = 0;
+                    for (int j = 0; j < data.Columns.Count; j++)
+                    {
+                        if (data.Rows[0][j].ToString() == "Instance") { instanceCol = j; }
+                        if (data.Rows[0][j].ToString() == "Payload Data Type") { lengthCol = j; }
+                        if (data.Rows[1][j].ToString() == "Hex") { keyCol = j; }
+                        if (data.Rows[0][j].ToString() == "Implementation") { platCol = j; }
+                        if (data.Rows[0][j].ToString() == "Description") { descCol = j; }
+                    }
+
+                    if (instanceCol > 0 && lengthCol > 0 && keyCol > 0)
+                    {
+                        if (platCol > 0)
+                        {
+                            string[] plats = new string[data.Columns.Count - platCol];
+                            //plats[0] = "All";
+                            for (int m = 0; m < plats.Length; m++)
+                            {
+                                plats[m] = data.Rows[1][platCol + m].ToString().Replace("\n", "");
+                            }
+
+                            TabSelect ts1 = new TabSelect("Select the platform implementation", plats);
+                            ts1.ShowDialog();
+                            implementation = ts1.SelectedTab;
+
+                            if (!(implementation == "All" || implementation == ""))
+                            {
+                                platCol = platCol + ts1.SelectedIndex;
+                            }
+                            else
+                            {
+                                platCol = 0;
+                            }
+                        }
+
+                        for (int k = 2; k < data.Rows.Count; k++)
+                        {
+                            if (data.Rows[k][lengthCol].ToString() != ""/* && (data.Rows[k][platCol].ToString() == "X" || platCol == 0)*/)
+                            {
+                                KeyValue kv = new KeyValue(selection, data.Rows[k][instanceCol - 2].ToString(), data.Rows[k][instanceCol - 1].ToString(), data.Rows[k][instanceCol].ToString(), data.Rows[k][instanceCol].ToString() + "_" + data.Rows[k][instanceCol + 1].ToString(), SwitchLength(data.Rows[k][lengthCol].ToString()), data.Rows[k][keyCol].ToString().Substring(2), kvapi, data.Rows[k][descCol].ToString(), data.Rows[k][descCol - 1].ToString());
+                                if (kv.KeyID != "00000000")
+                                {
+                                    kv.isSet = data.Rows[k][keyCol + 2].ToString() == "TRUE" || data.Rows[k][keyCol + 2].ToString() == "1" ? true : false;
+                                    keyValues.Add(kv);
+                                    kv.IsUsed = data.Rows[k][platCol].ToString() == "X" ? true : false;
+                                    kv.IsState = data.Rows[k][descCol - 2].ToString() == "TRUE" || data.Rows[k][descCol - 2].ToString() == "1" ? true : false;
+                                    if (kv.KeyID == "030D0002")
+                                    {
+                                        usesCookTimeOp = kv.IsUsed;
+                                    }
+                                }
+                            }
+                        }
+
+
+
+                    }
+                    else
+                    {
+                        MessageBox.Show("Unable to load key values from selected file");
+                        loaded = false;
+                    }
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Unable to load key values from selected file.  Make sure the Data Model file has not been modified and you have either Microsoft Excel or the Office System Driver (found in the Help link) installed.");
+                loaded = false;
+            }
+
+            if (loaded)
+            {
+                string selection2 = "";
+                if (Array.IndexOf(excelSheets, "Enumerations") >= 0)
+                {
+                    selection2 = "Enumerations";
+                }
+                else
+                {
+                    TabSelect ts2 = new TabSelect("Select the tab containing the Enumerations", excelSheets);
+                    ts2.ShowDialog();
+                    selection2 = ts2.SelectedTab;
+                }
+
+                query = string.Format("SELECT * FROM [{0}$]", selection2);
+                DataTable data2 = new DataTable();
+
+                try
+                {
+                    using (OleDbConnection con = new OleDbConnection(connectionString))
+                    {
+                        con.Open();
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(query, con);
+                        adapter.Fill(data2);
+                    }
+
+                    int platCol = -1;
+                    if (!(implementation == "All" || implementation == ""))
+                    {
+                        for (int i = 0; i < data2.Columns.Count; i++)
+                        {
+                            if (data2.Rows[1][i].ToString().Replace("\n", "") == implementation)
+                            {
+                                platCol = i;
+                                i = data2.Columns.Count;
+                            }
+                        }
+                    }
+
+                    enumerations.Clear();
+
+                    if (kvapi == 144 || kvapi == 147)
+                    {
+                        string curEntity = "";
+                        string curAtt = "";
+                        string fixedname = "";
+                        Enumeration curEnum = new Enumeration();
+                        Enumeration cloneEnum = new Enumeration();
+
+                        for (int j = 2; j < data2.Rows.Count; j++)
+                        {
+                            if (data2.Rows[j][0].ToString() != "")
+                            {
+                                curEntity = data2.Rows[j][0].ToString();
+                            }
+                            if (data2.Rows[j][1].ToString() != "")
+                            {
+                                curAtt = data2.Rows[j][1].ToString();
+                                /*foreach (KeyValue kv in keyValues)
+                                {
+                                    if (kv.Entity == curEntity && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
+                                    {
+                                        kv.EnumName = curEnum;
+                                        curEnum.UsedBy += curEntity + "." + curAtt + ";";
+                                        cloneEnum.UsedBy += curEntity + "." + curAtt + ";";
+                                    }
+                                }*/
+                            }
+                            if (!(data2.Rows[j][2].ToString() == ""))
+                            {
+                                //curEnum.Name = data2.Rows[j][2].ToString();
+                                bool found = false;
+
+                                foreach (Enumeration e in enumerations)
+                                {
+                                    fixedname = data2.Rows[j][2].ToString().IndexOf(':') > 0 ? data2.Rows[j][2].ToString().Substring(0, data2.Rows[j][2].ToString().IndexOf(':')) : data2.Rows[j][2].ToString();
+                                    if (e.Name == curEntity + "." + fixedname)
+                                    {
+                                        found = true;
+                                        curEnum = e;
+                                        cloneEnum = allenums[enumerations.IndexOf(e)];
+                                        curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                        cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                        //if (platCol < 0 || data2.Rows[j][platCol].ToString() == "X")
+                                        {
+                                            curEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
+                                            curEnum.enableEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][platCol].ToString() == "X");
+                                        }
+                                        foreach (KeyValue kv in keyValues)
+                                        {
+                                            if ((kv.Entity == curEntity || kv.Instance == curEntity) && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
+                                            {
+                                                kv.EnumName = curEnum;
+                                                //curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                                //cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                            }
+                                        }
+                                    }
+                                }
+                                if (!found)
+                                {
+                                    curEnum = new Enumeration(curEntity + "." + data2.Rows[j][2].ToString());
+                                    cloneEnum = new Enumeration(curEntity + "." + data2.Rows[j][2].ToString());
+                                    //if (platCol < 0 || data2.Rows[j][platCol].ToString() == "X")
+                                    {
+                                        curEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
+                                        curEnum.enableEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][platCol].ToString() == "X");
+                                        foreach (KeyValue kv in keyValues)
+                                        {
+                                            if ((kv.Entity == curEntity || kv.Instance == curEntity) && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
+                                            {
+                                                kv.EnumName = curEnum;
+                                                curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                                cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                            }
+                                        }
+                                    }
+                                    cloneEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
+                                    enumerations.Add(curEnum);
+                                    allenums.Add(cloneEnum);
+                                }
+                            }
+                            else
+                            {
+                                if (data2.Rows[j][3].ToString() != "")
+                                {
+                                    // if (platCol < 0 || data2.Rows[j][platCol].ToString() == "X")
+                                    {
+                                        curEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
+                                        curEnum.enableEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][platCol].ToString() == "X");
+                                        foreach (KeyValue kv in keyValues)
+                                        {
+                                            if ((kv.Entity == curEntity || kv.Instance == curEntity) && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
+                                            {
+                                                kv.EnumName = curEnum;
+                                                curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                                cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
+                                            }
+                                        }
+                                    }
+                                    cloneEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
+                                }
+
+                            }
+
+                        }
+                    }
+                    else
+                    {
+                        bool start = false;
+                        Enumeration en;
+                        for (int col = 0; col < data2.Columns.Count; col += 3)
+                        {
+                            en = new Enumeration();
+                            start = true;
+                            for (int row = 0; row < data2.Rows.Count; row++)
+                            {
+                                if (data2.Rows[row][col].ToString() == "")
+                                {
+                                    start = true;
+                                    if (en.Enums.Count > 0 && en.Name != null)
+                                    {
+                                        enumerations.Add(en);
+                                    }
+                                    en = new Enumeration();
+                                }
+                                else
+                                {
+                                    if (start)
+                                    {
+                                        en.Name = data2.Rows[row][col].ToString();
+                                        start = false;
+                                    }
+                                    else
+                                    {
+                                        en.insertEnum(int.Parse(data2.Rows[row][col].ToString().Substring(2, 2), NumberStyles.AllowHexSpecifier), data2.Rows[row][col + 1].ToString());
+                                        if (row == data2.Rows.Count - 1)// if this enumeration goes to the bottom of the file
+                                        {
+                                            enumerations.Add(en);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    CorrectEnums();
+
+                }
+                catch
+                {
+                    MessageBox.Show("Could not load Enumerations from selected file");
+                }
+            }
+            return loaded;
+        }
+
+        private void JSONKeyValues(string filename)
+        {
+            string ddm = new StreamReader(filename).ReadToEnd();
+            ddm = ddm.Replace("\"", "");
+            ddm = ddm.Replace(" ", "");
+            ddm = ddm.Replace("\n", "");
+            int id = ddm.IndexOf("_id:") + "_id:".Length;
+            implementation = ddm.Substring(id, ddm.IndexOf(",", id) - id);
+            implementation = Regex.Match(implementation, @"(?!_)[^_]*_[^_]*$").Value;
+            id = ddm.IndexOf("Category:") + "Category:".Length;
+            dm_name = System.Threading.Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(ddm.Substring(id, ddm.IndexOf(",", id) - id).ToLower());
+            ddm = ddm.Substring(ddm.IndexOf("attributes:[") + "attributes:[".Length);
+            int level = 0;
+            char[] chars = ddm.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (chars[i] == '{')
+                {
+                    level++;
+                    if (level > 1)
+                    {
+                        chars[i] = '[';
+                    }
+                }
+                if (chars[i] == '}')
+                {
+                    level--;
+                    if (level > 0)
+                    {
+                        chars[i] = ']';
+                    }
+                }
+
+            }
+            ddm = new string(chars);
+            ddm = ddm.Replace("},", "`");
+            string[] keys = ddm.Split('`');
+            foreach (string a in keys)
+            {
+                string b = a.Substring(1);
+                if (b.Contains("["))
+                {
+                    while (b.IndexOf(':', b.IndexOf("[")) > 0 && (b.IndexOf(':', b.IndexOf("["))) < b.IndexOf(']'))
+                    {
+                        try
+                        {
+                            int c = b.IndexOf(':', b.IndexOf("["));
+                            b = b.Remove(c, 1);
+                            b = b.Insert(c, ";");
+                            c = b.IndexOf(',', b.IndexOf("["));
+                            if (c < b.IndexOf(']'))
+                            {
+                                b = b.Remove(c, 1);
+                                b = b.Insert(c, ";");
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                string[] attributes = b.Split(',');
+                Dictionary<string, string> attdict = new Dictionary<string, string>();
+                foreach (string att in attributes)
+                {
+                    try
+                    {
+                        string[] pair = att.Split(':');
+                        attdict.Add(pair[0], pair[1]);
+                    }
+                    catch { }
+                }
+
+                try
+                {
+                    if (attdict["Key"] != "0x00000000")
+                    {
+                        KeyValue k = new KeyValue("Definitions", attdict["M2MAttributeName"].Substring(0, attdict["M2MAttributeName"].IndexOf("_")), "", attdict["Instance"], attdict["Instance"] + "_" + attdict["AttributeName"], SwitchLength(attdict["DataType"]), attdict["Key"].Substring(2), 144, "", "");
+                        k.isSet = attdict["DeviceIO"] == "RW" || attdict["DeviceIO"] == "WO";
+                        k.IsUsed = true;
+                        if (attdict["DataType"] == "enum")
+                        {
+                            string[] enums = attdict["EnumValues"].Substring(1, attdict["EnumValues"].Length - 2).Split(';');
+                            if (enums[0] != "")
+                            {
+                                Enumeration e = new Enumeration();
+                                for (int i = 0; i < enums.Length; i += 2)
+                                {
+                                    e.insertEnum(int.Parse(enums[i]), enums[i + 1]);
+                                    e.enableEnum(int.Parse(enums[i]), true);
+                                }
+                                enumerations.Add(e);
+                                k.EnumName = e;
+                            }
+                        }
+                        keyValues.Add(k);
+                    }
+                }
+                catch { }
+            }
+            CorrectEnums();
+        }
+
+        //For key values with multiple possible enum sets, cycle through the one currently assigned to it and see if any are used, otherwise swap it with an enum that is used
+        private void CorrectEnums()
+        {
+            bool swapped = false;
+            for (int i = 0; i < keyValues.Count; i++)
+            {
+                if (keyValues[i].IsUsed && keyValues[i].EnumName != null)
+                {
+                    bool used = false;
+                    foreach (bool b in keyValues[i].EnumName.IsUsed)
+                    {
+                        if (b || swapped)
+                        {
+                            used = true;
+                            swapped = false;
+                            break;
+                        }
+                    }
+                    if (!used)
+                    {
+                        foreach (Enumeration en in enumerations)
+                        {
+                            if (en.UsedBy.Contains(keyValues[i].AttributeName) && keyValues[i].EnumName != en)
+                            {
+                                keyValues[i].EnumName = en;
+                                i--;
+                                swapped = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (keyValues[i].EnumName != null)
+                {
+                    keyValues[i].EnumName.TrimEnums();
+                }
+            }
+        }
+        private void BTN_Auto_Click(object sender, EventArgs e)
+        {
+            DialogResult dialogResult = MessageBox.Show("This will automatically create a new test plan run from the current payload list. " +
+                "This will then clear the current payload list and update the table accordingly. " +
+                "Press Yes to Create or No to Cancel.", "Verify Full Clear and Auto Generation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (dialogResult == DialogResult.Yes)
+            {
+                /*foreach (IPData ipd in iplist)
+                {
+                    if (ipd.Type.Equals("HMI")) ;
+
+                    if (ipd.Type.Equals("ACU")) ;
+
+                    if (ipd.Type.Equals("WiFi")) ;
+
+                    if (ipd.Type.Equals("Multi")) ;
+
+                }*/
+
+                /* OpenFileDialog ofd = new OpenFileDialog();
+                 ofd.Filter = "Data Model/DDM Definitions (*.xlsx, *.json)|*.xlsx; *.json";
+                 ofd.ShowDialog();
+                 if (ofd.FileName != "")
+                 {
+                     keyValues.Clear();
+                     enumerations.Clear();
+                     //settings.Clear();
+                     //setLabels.Clear();
+                     cyclesL.Clear();
+                     cyclesM.Clear();
+                     cyclesU.Clear();
+                    // PAN_Settings.Controls.Clear();
+                     kvapi = 144;
+                     bool loaded = true;
+                     if (ofd.FileName.EndsWith("xlsx"))
+                     {
+                         loaded = XLSKeyValues(ofd.FileName);
+                         try
+                         {
+                             dm_name = ofd.SafeFileName.Substring(0, ofd.SafeFileName.LastIndexOf(' ')).Replace("API 144 Data Model Definition - ", "");
+                         }
+                         catch
+                         {
+                             dm_name = "";
+                         }
+                     }
+                     else
+                     {
+                         JSONKeyValues(ofd.FileName);
+                     }
+                     if (loaded)
+                     {                        
+                         //xc = new XCategory(keyValues, this);
+
+                         if (Array.IndexOf(categoryList, dm_name) < 0)
+                         {
+                             TabSelect dm = new TabSelect("Please select Data Model category", categoryList);
+                             dm.ShowDialog();
+                             dm_name = dm.SelectedTab;
+                         }
+
+                         //TB_Cap.Text = dm_name + " - " + implementation;
+                         switch (dm_name)
+                         {
+                             case "Laundry":
+                                 cycles.Add(cyclesW);
+                                 cycles.Add(cyclesD);
+                                 break;
+                             default:
+                                 cycles.Add(cyclesU);
+                                 cycles.Add(cyclesL);
+                                 cycles.Add(cyclesM);
+                                 break;
+                         }*/
+
+                /*SetupLabels();
+                CyclesFromDM(keyValues);
+                SettingsLabels();
+                SwitchCycles(0);
+            }
+
+            }*/
+               
+            }
+        }
+
     }
 }
