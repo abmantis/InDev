@@ -52,9 +52,9 @@
             this.label13 = new System.Windows.Forms.Label();
             this.label14 = new System.Windows.Forms.Label();
             this.BTN_Gen = new System.Windows.Forms.Button();
-            this.RB_NAR_C = new System.Windows.Forms.RadioButton();
-            this.RB_EMEA_C = new System.Windows.Forms.RadioButton();
-            this.RB_Laundry = new System.Windows.Forms.RadioButton();
+            this.CB_Variant = new System.Windows.Forms.ComboBox();
+            this.TB_Other = new System.Windows.Forms.TextBox();
+            this.label15 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -240,16 +240,16 @@
             // label14
             // 
             this.label14.AutoSize = true;
+            this.label14.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label14.Location = new System.Drawing.Point(232, 14);
             this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(430, 13);
+            this.label14.Size = new System.Drawing.Size(398, 13);
             this.label14.TabIndex = 23;
-            this.label14.Text = "Tests will be generated based upon the desired Node targets.  MUST have two Paylo" +
-    "ads.";
+            this.label14.Text = "Tests generated based upon the desired Node targets.  MUST have two Payloads.";
             // 
             // BTN_Gen
             // 
-            this.BTN_Gen.Location = new System.Drawing.Point(235, 45);
+            this.BTN_Gen.Location = new System.Drawing.Point(86, 41);
             this.BTN_Gen.Name = "BTN_Gen";
             this.BTN_Gen.Size = new System.Drawing.Size(94, 23);
             this.BTN_Gen.TabIndex = 24;
@@ -257,50 +257,41 @@
             this.BTN_Gen.UseVisualStyleBackColor = true;
             this.BTN_Gen.Click += new System.EventHandler(this.BTN_Gen_Click);
             // 
-            // RB_NAR_C
+            // CB_Variant
             // 
-            this.RB_NAR_C.AutoSize = true;
-            this.RB_NAR_C.Location = new System.Drawing.Point(385, 48);
-            this.RB_NAR_C.Name = "RB_NAR_C";
-            this.RB_NAR_C.Size = new System.Drawing.Size(90, 17);
-            this.RB_NAR_C.TabIndex = 25;
-            this.RB_NAR_C.TabStop = true;
-            this.RB_NAR_C.Text = "NAR Cooking";
-            this.RB_NAR_C.UseVisualStyleBackColor = true;
-            this.RB_NAR_C.CheckedChanged += new System.EventHandler(this.RB_NAR_C_CheckedChanged);
+            this.CB_Variant.FormattingEnabled = true;
+            this.CB_Variant.Location = new System.Drawing.Point(386, 44);
+            this.CB_Variant.Name = "CB_Variant";
+            this.CB_Variant.Size = new System.Drawing.Size(158, 21);
+            this.CB_Variant.TabIndex = 25;
+            this.CB_Variant.SelectedValueChanged += new System.EventHandler(this.CB_Variant_SelectedValueChanged);
             // 
-            // RB_EMEA_C
+            // TB_Other
             // 
-            this.RB_EMEA_C.AutoSize = true;
-            this.RB_EMEA_C.Location = new System.Drawing.Point(497, 48);
-            this.RB_EMEA_C.Name = "RB_EMEA_C";
-            this.RB_EMEA_C.Size = new System.Drawing.Size(97, 17);
-            this.RB_EMEA_C.TabIndex = 26;
-            this.RB_EMEA_C.TabStop = true;
-            this.RB_EMEA_C.Text = "EMEA Cooking";
-            this.RB_EMEA_C.UseVisualStyleBackColor = true;
-            this.RB_EMEA_C.CheckedChanged += new System.EventHandler(this.RB_EMEA_C_CheckedChanged);
+            this.TB_Other.Enabled = false;
+            this.TB_Other.Location = new System.Drawing.Point(566, 44);
+            this.TB_Other.Name = "TB_Other";
+            this.TB_Other.Size = new System.Drawing.Size(159, 20);
+            this.TB_Other.TabIndex = 26;
+            this.TB_Other.Visible = false;
             // 
-            // RB_Laundry
+            // label15
             // 
-            this.RB_Laundry.AutoSize = true;
-            this.RB_Laundry.Location = new System.Drawing.Point(611, 48);
-            this.RB_Laundry.Name = "RB_Laundry";
-            this.RB_Laundry.Size = new System.Drawing.Size(63, 17);
-            this.RB_Laundry.TabIndex = 27;
-            this.RB_Laundry.TabStop = true;
-            this.RB_Laundry.Text = "Laundry";
-            this.RB_Laundry.UseVisualStyleBackColor = true;
-            this.RB_Laundry.CheckedChanged += new System.EventHandler(this.RB_Laundry_CheckedChanged);
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(245, 47);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(135, 13);
+            this.label15.TabIndex = 27;
+            this.label15.Text = "MQTT Payload Cycle Type";
             // 
             // AutoGen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 500);
-            this.Controls.Add(this.RB_Laundry);
-            this.Controls.Add(this.RB_EMEA_C);
-            this.Controls.Add(this.RB_NAR_C);
+            this.ClientSize = new System.Drawing.Size(800, 509);
+            this.Controls.Add(this.label15);
+            this.Controls.Add(this.TB_Other);
+            this.Controls.Add(this.CB_Variant);
             this.Controls.Add(this.BTN_Gen);
             this.Controls.Add(this.label14);
             this.Controls.Add(this.label12);
@@ -358,8 +349,8 @@
         private System.Windows.Forms.Label label13;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.Button BTN_Gen;
-        private System.Windows.Forms.RadioButton RB_NAR_C;
-        private System.Windows.Forms.RadioButton RB_EMEA_C;
-        private System.Windows.Forms.RadioButton RB_Laundry;
+        private System.Windows.Forms.ComboBox CB_Variant;
+        private System.Windows.Forms.TextBox TB_Other;
+        private System.Windows.Forms.Label label15;
     }
 }
