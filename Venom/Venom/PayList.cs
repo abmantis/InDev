@@ -10,12 +10,14 @@ using System.Windows.Forms;
 using WideBoxLib;
 using WirelessLib;
 using System.IO;
+using System.Globalization;
 
 namespace VenomNamespace
 {
     public partial class PayList : WideInterface
     {
         public Venom parent;
+        public AutoGen auto;
         private BindingSource sbind = new BindingSource();
         public PayList(Venom ParentForm, WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
@@ -162,9 +164,26 @@ namespace VenomNamespace
             }
         }
 
+       
         private void BTN_Close_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void BTN_Auto_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                auto.Show();
+            }
+            catch
+            {
+
+                auto = new AutoGen(parent, this.WideLocal, this.WifiLocal);
+                auto.Show();
+            }
+
+            
         }
     }
 }

@@ -35,6 +35,13 @@ namespace VenomNamespace
             get { return _type; }
             set { _type = value; }
         }
+        private string _cycle;
+        public string Cycle
+        {
+            get { return _cycle; }
+            set { _cycle = value; }
+        }
+
         private string _result;
         public string Result
         {
@@ -77,6 +84,7 @@ namespace VenomNamespace
             _mac = "";
             _result = "";
             _ipindex = 0;
+            _cycle = "";
         }
 
     }

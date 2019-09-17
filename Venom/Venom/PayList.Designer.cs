@@ -40,6 +40,7 @@
             this.TB_IPDisplay = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.BTN_Close = new System.Windows.Forms.Button();
+            this.BTN_Auto = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -151,11 +152,22 @@
             this.BTN_Close.UseVisualStyleBackColor = true;
             this.BTN_Close.Click += new System.EventHandler(this.BTN_Close_Click);
             // 
+            // BTN_Auto
+            // 
+            this.BTN_Auto.Location = new System.Drawing.Point(546, 13);
+            this.BTN_Auto.Name = "BTN_Auto";
+            this.BTN_Auto.Size = new System.Drawing.Size(90, 23);
+            this.BTN_Auto.TabIndex = 25;
+            this.BTN_Auto.Text = "Auto Test Plan";
+            this.BTN_Auto.UseVisualStyleBackColor = true;
+            this.BTN_Auto.Click += new System.EventHandler(this.BTN_Auto_Click);
+            // 
             // PayList
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(677, 379);
+            this.Controls.Add(this.BTN_Auto);
             this.Controls.Add(this.BTN_Close);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.TB_IPDisplay);
@@ -181,7 +193,6 @@
         private System.Windows.Forms.TextBox TB_Payload;
         private System.Windows.Forms.ComboBox CB_Type;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.DataGridView DGV_Data;
         private System.Windows.Forms.Button BTN_Add;
         private System.Windows.Forms.Button BTN_Remove;
         private System.Windows.Forms.Button BTN_Clear;
@@ -190,5 +201,7 @@
         private System.Windows.Forms.TextBox TB_IPDisplay;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button BTN_Close;
+        private System.Windows.Forms.Button BTN_Auto;
+        public System.Windows.Forms.DataGridView DGV_Data;
     }
 }

@@ -46,6 +46,8 @@ namespace VenomNamespace
             this.BTN_MakeList = new System.Windows.Forms.Button();
             this.BTN_Import = new System.Windows.Forms.Button();
             this.BTN_Auto = new System.Windows.Forms.Button();
+            this.TB_Loop = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.LED_Internet = new VenomNamespace.LED();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
@@ -181,7 +183,7 @@ namespace VenomNamespace
             this.BTN_MakeList.Name = "BTN_MakeList";
             this.BTN_MakeList.Size = new System.Drawing.Size(97, 23);
             this.BTN_MakeList.TabIndex = 96;
-            this.BTN_MakeList.Text = "Edit Pay List";
+            this.BTN_MakeList.Text = "Edit Test List";
             this.BTN_MakeList.UseVisualStyleBackColor = true;
             this.BTN_MakeList.Click += new System.EventHandler(this.BTN_MakeList_Click);
             // 
@@ -191,7 +193,7 @@ namespace VenomNamespace
             this.BTN_Import.Name = "BTN_Import";
             this.BTN_Import.Size = new System.Drawing.Size(92, 23);
             this.BTN_Import.TabIndex = 97;
-            this.BTN_Import.Text = "Import Pay List";
+            this.BTN_Import.Text = "Import Test List";
             this.BTN_Import.UseVisualStyleBackColor = true;
             this.BTN_Import.Click += new System.EventHandler(this.BTN_Import_Click);
             // 
@@ -199,14 +201,31 @@ namespace VenomNamespace
             // 
             this.BTN_Auto.Enabled = false;
             this.BTN_Auto.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
-            this.BTN_Auto.Location = new System.Drawing.Point(230, 53);
+            this.BTN_Auto.Location = new System.Drawing.Point(122, 341);
             this.BTN_Auto.Name = "BTN_Auto";
             this.BTN_Auto.Size = new System.Drawing.Size(92, 22);
             this.BTN_Auto.TabIndex = 98;
-            this.BTN_Auto.Text = "AutoGen. Tests";
+            this.BTN_Auto.Text = "AutoGen. Test";
             this.BTN_Auto.UseVisualStyleBackColor = true;
             this.BTN_Auto.Visible = false;
             this.BTN_Auto.Click += new System.EventHandler(this.BTN_Auto_Click);
+            // 
+            // TB_Loop
+            // 
+            this.TB_Loop.Location = new System.Drawing.Point(604, 56);
+            this.TB_Loop.Name = "TB_Loop";
+            this.TB_Loop.Size = new System.Drawing.Size(46, 20);
+            this.TB_Loop.TabIndex = 99;
+            this.TB_Loop.Text = "0";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(570, 59);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(34, 13);
+            this.label1.TabIndex = 100;
+            this.label1.Text = "Loop:";
             // 
             // LED_Internet
             // 
@@ -222,6 +241,8 @@ namespace VenomNamespace
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(678, 365);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.TB_Loop);
             this.Controls.Add(this.BTN_Auto);
             this.Controls.Add(this.BTN_Import);
             this.Controls.Add(this.BTN_MakeList);
@@ -263,6 +284,8 @@ namespace VenomNamespace
         public System.Windows.Forms.DataGridView DGV_Data;
         public System.Windows.Forms.TextBox TB_LogDir;
         private Button BTN_Auto;
+        private TextBox TB_Loop;
+        private Label label1;
     }
 }
 

@@ -863,84 +863,82 @@ namespace VenomNamespace
         {
             Thread.CurrentThread.Abort();
         }
+        public void RunCycle(IPData ipd)
+        {
+
+        }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
-            //if (TaskQ.Peek().ToString().Contains(ip))
-            foreach (IPData ipd in iplist)
-            {                
-
-                if (ipd.IPAddress.Equals(ip) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
+            for (int i = 0; i < int.Parse(TB_Loop.Text); i++)
+            {
+                //if (TaskQ.Peek().ToString().Contains(ip))
+                foreach (IPData ipd in iplist)
                 {
-                    ipd.IPIndex = Int32.Parse(ipindex);
-                    ipd.Signal = sig;
-                    ipd.TabIndex = iplist.IndexOf(ipd);
-                    //string[] item = TaskQ.Dequeue().ToString().Split('\t');
-                    
-                    //Force each thread to live only two hours (process somehow got stuck)
-                    System.Timers.Timer timer = new System.Timers.Timer();
-                    timer.Interval = TMAX;
-                    timer.Elapsed += new ElapsedEventHandler(EndThread);
-                    timer.Start();
+                    int looptestREMOVE = 0;
 
-                    //Parse OTA payload into byte array for sending via MQTT
-                    byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
-
-                    //Prepare IP address for sending via MQTT
-                    string[] ipad = ipd.IPAddress.Split('.');
-                    byte[] ipbytes = new byte[4];
-                    for (int j = 0; j < 4; j++)
+                    if (ipd.IPAddress.Equals(ip) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
                     {
-                        ipbytes[j] = byte.Parse(ipad[j]);
+                        ipd.IPIndex = Int32.Parse(ipindex);
+                        ipd.Signal = sig;
+                        ipd.TabIndex = iplist.IndexOf(ipd);
+                        //string[] item = TaskQ.Dequeue().ToString().Split('\t');
+
+                        //Force each thread to live only two hours (process somehow got stuck)
+                        System.Timers.Timer timer = new System.Timers.Timer();
+                        timer.Interval = TMAX;
+                        timer.Elapsed += new ElapsedEventHandler(EndThread);
+                        timer.Start();
+
+                        //Parse OTA payload into byte array for sending via MQTT
+                        byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+
+                        //Prepare IP address for sending via MQTT
+                        string[] ipad = ipd.IPAddress.Split('.');
+                        byte[] ipbytes = new byte[4];
+                        for (int j = 0; j < 4; j++)
+                        {
+                            ipbytes[j] = byte.Parse(ipad[j]);
+                        }
+                        // Figure out a way to schedule how the threads march through iplist, we already filter on ip so only one thread in at a time
+                        // See if sending over MQTT or Revelation
+                        if (ipd.Delivery.Equals("MQTT"))
+                        {
+                            string lcycle = "";
+                            if (!String.IsNullOrEmpty(ipd.Cycle))
+                            {
+                                lcycle = ipd.Cycle;
+                                RunCycle(ipd);
+                            }
+                            else
+                                lcycle = "iot-2/cmd/isp/fmt/json";
+                            SendMQTT(ipbytes, lcycle, paybytes);
+                        }
+
+                        else
+                            SendReveal(ipd.IPAddress, paybytes);
+
+                        // Spinwait until our result gets updated to a pass or fail
+                        //while (!results.Rows[index][4].ToString().Contains("PASS") || !results.Rows[index][4].ToString().Contains("FAIL")) ;
+                        //SpinWait.SpinUntil(() => isCompleted == true);
+                        Console.WriteLine("This is the info before calling this lock " + ipd.Signal.WaitHandle.Handle + " with this thread name " + Thread.CurrentThread.Name +
+                            " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+
+                        sig.Wait();
+                        Wait(720000); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
+                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " got here.");
+                        //break;
                     }
-                    // Figure out a way to schedule how the threads march through iplist, we already filter on ip so only one thread in at a time
-                    // See if sending over MQTT or Revelation
-                    if (ipd.Delivery.Equals("MQTT"))
-                        SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes);
-
                     else
-                        SendReveal(ipd.IPAddress, paybytes);
+                    {
+                        continue;
+                    }
 
-                    // Spinwait until our result gets updated to a pass or fail
-                    //while (!results.Rows[index][4].ToString().Contains("PASS") || !results.Rows[index][4].ToString().Contains("FAIL")) ;
-                    //SpinWait.SpinUntil(() => isCompleted == true);
-                    Console.WriteLine("This is the info before calling this lock " + ipd.Signal.WaitHandle.Handle + " with this thread name " + Thread.CurrentThread.Name +
-                        " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
-
-                    sig.Wait();
-                    Wait(720000); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
-                    Console.WriteLine("Thread " + Thread.CurrentThread.Name + " got here.");
-                    //break;
+                    looptestREMOVE++;
+                    Console.WriteLine("Loop count is " + looptestREMOVE + " out of " + TB_Loop.Text + ".");
                 }
-                else
-                {
-                    continue;
-                }
-            }
-                
+            }   
         } //TODO MAY NEED MANUAL CLOSING OF THREADS?
         
-        public void BakeThree(string ip)
-        {            
-            //Parse OTA payload into byte array for sending via MQTT
-            string mes = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute
-            //string mes = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)
-            
-            byte[] bytes = new byte[mes.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = byte.Parse(mes.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
-            }
-
-            //Prepare IP address for sending via MQTT
-            string[] ipad = ip.Split('.');
-            byte[] ipbytes = new byte[4];
-            for (int j = 0; j < 4; j++)
-            {
-                ipbytes[j] = byte.Parse(ipad[j]);
-            }
-            //byte[] bytes = SetStartDisplay(true, false);
-            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes);
-        }
         void ProcessIP()
         {
             //TaskQ.Clear();
@@ -1858,7 +1856,7 @@ namespace VenomNamespace
         }
         private void BTN_Auto_Click(object sender, EventArgs e)
         {
-            DialogResult dialogResult = MessageBox.Show("This will automatically create a new test plan run from the current payload list. " +
+            DialogResult dialogResult = MessageBox.Show("This will automatically create a new test plan run from the current IP list. " +
                 "This will then clear the current payload list and update the table accordingly. " +
                 "Press Yes to Create or No to Cancel.", "Verify Full Clear and Auto Generation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (dialogResult == DialogResult.Yes)
@@ -1938,7 +1936,7 @@ namespace VenomNamespace
             }
 
             }*/
-               
+
             }
         }
 
