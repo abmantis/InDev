@@ -113,56 +113,56 @@
             // 
             this.TB_HMI_UP.Location = new System.Drawing.Point(195, 85);
             this.TB_HMI_UP.Name = "TB_HMI_UP";
-            this.TB_HMI_UP.Size = new System.Drawing.Size(530, 20);
+            this.TB_HMI_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_HMI_UP.TabIndex = 7;
             // 
             // TB_HMI_DWN
             // 
             this.TB_HMI_DWN.Location = new System.Drawing.Point(195, 132);
             this.TB_HMI_DWN.Name = "TB_HMI_DWN";
-            this.TB_HMI_DWN.Size = new System.Drawing.Size(530, 20);
+            this.TB_HMI_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_HMI_DWN.TabIndex = 8;
             // 
             // TB_ACU_DWN
             // 
             this.TB_ACU_DWN.Location = new System.Drawing.Point(195, 244);
             this.TB_ACU_DWN.Name = "TB_ACU_DWN";
-            this.TB_ACU_DWN.Size = new System.Drawing.Size(530, 20);
+            this.TB_ACU_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_ACU_DWN.TabIndex = 10;
             // 
             // TB_ACU_UP
             // 
             this.TB_ACU_UP.Location = new System.Drawing.Point(195, 194);
             this.TB_ACU_UP.Name = "TB_ACU_UP";
-            this.TB_ACU_UP.Size = new System.Drawing.Size(530, 20);
+            this.TB_ACU_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_ACU_UP.TabIndex = 9;
             // 
             // TB_WIFI_DWN
             // 
             this.TB_WIFI_DWN.Location = new System.Drawing.Point(195, 359);
             this.TB_WIFI_DWN.Name = "TB_WIFI_DWN";
-            this.TB_WIFI_DWN.Size = new System.Drawing.Size(530, 20);
+            this.TB_WIFI_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_WIFI_DWN.TabIndex = 12;
             // 
             // TB_WIFI_UP
             // 
             this.TB_WIFI_UP.Location = new System.Drawing.Point(195, 312);
             this.TB_WIFI_UP.Name = "TB_WIFI_UP";
-            this.TB_WIFI_UP.Size = new System.Drawing.Size(530, 20);
+            this.TB_WIFI_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_WIFI_UP.TabIndex = 11;
             // 
             // TB_EXP_DWN
             // 
             this.TB_EXP_DWN.Location = new System.Drawing.Point(195, 471);
             this.TB_EXP_DWN.Name = "TB_EXP_DWN";
-            this.TB_EXP_DWN.Size = new System.Drawing.Size(530, 20);
+            this.TB_EXP_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_EXP_DWN.TabIndex = 14;
             // 
             // TB_EXP_UP
             // 
             this.TB_EXP_UP.Location = new System.Drawing.Point(195, 428);
             this.TB_EXP_UP.Name = "TB_EXP_UP";
-            this.TB_EXP_UP.Size = new System.Drawing.Size(530, 20);
+            this.TB_EXP_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_EXP_UP.TabIndex = 13;
             // 
             // label6
@@ -241,15 +241,16 @@
             // 
             this.label14.AutoSize = true;
             this.label14.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label14.Location = new System.Drawing.Point(232, 14);
+            this.label14.Location = new System.Drawing.Point(219, 15);
             this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(398, 13);
+            this.label14.Size = new System.Drawing.Size(560, 13);
             this.label14.TabIndex = 23;
-            this.label14.Text = "Tests generated based upon the desired Node targets.  MUST have two Payloads.";
+            this.label14.Text = "Generation based upon the desired Node targets. Start Nodes on Downgrade version " +
+    "and MUST have two Payloads.";
             // 
             // BTN_Gen
             // 
-            this.BTN_Gen.Location = new System.Drawing.Point(86, 41);
+            this.BTN_Gen.Location = new System.Drawing.Point(195, 44);
             this.BTN_Gen.Name = "BTN_Gen";
             this.BTN_Gen.Size = new System.Drawing.Size(94, 23);
             this.BTN_Gen.TabIndex = 24;
@@ -260,7 +261,7 @@
             // CB_Variant
             // 
             this.CB_Variant.FormattingEnabled = true;
-            this.CB_Variant.Location = new System.Drawing.Point(386, 44);
+            this.CB_Variant.Location = new System.Drawing.Point(440, 44);
             this.CB_Variant.Name = "CB_Variant";
             this.CB_Variant.Size = new System.Drawing.Size(158, 21);
             this.CB_Variant.TabIndex = 25;
@@ -269,7 +270,7 @@
             // TB_Other
             // 
             this.TB_Other.Enabled = false;
-            this.TB_Other.Location = new System.Drawing.Point(566, 44);
+            this.TB_Other.Location = new System.Drawing.Point(620, 44);
             this.TB_Other.Name = "TB_Other";
             this.TB_Other.Size = new System.Drawing.Size(159, 20);
             this.TB_Other.TabIndex = 26;
@@ -278,7 +279,7 @@
             // label15
             // 
             this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(245, 47);
+            this.label15.Location = new System.Drawing.Point(299, 47);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(135, 13);
             this.label15.TabIndex = 27;

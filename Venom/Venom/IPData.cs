@@ -35,13 +35,18 @@ namespace VenomNamespace
             get { return _type; }
             set { _type = value; }
         }
-        private string _cycle;
-        public string Cycle
+        private bool _cycle;
+        public bool Cycle
         {
             get { return _cycle; }
             set { _cycle = value; }
         }
-
+        private string _mqttpay;
+        public string MQTTPay
+        {
+            get { return _mqttpay; }
+            set { _mqttpay = value; }
+        }
         private string _result;
         public string Result
         {
@@ -55,7 +60,21 @@ namespace VenomNamespace
             get { return _mac; }
             set { _mac = value; }
         }
-        
+
+        private string _node;
+        public string Node
+        {
+            get { return _node; }
+            set { _node = value; }
+        }
+
+        private string _name;
+        public string Name
+        { 
+            get { return _name; }
+            set { _name = value; }
+        }
+
         private ManualResetEventSlim _signal;
         public ManualResetEventSlim Signal
         {
@@ -75,6 +94,13 @@ namespace VenomNamespace
             get { return _tabindex; }
             set { _tabindex = value; }
         }
+
+        private int _wait;
+        public int Wait
+        {
+            get { return _wait; }
+            set { _wait = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -84,7 +110,11 @@ namespace VenomNamespace
             _mac = "";
             _result = "";
             _ipindex = 0;
-            _cycle = "";
+            _cycle = false;
+            _mqttpay = "";
+            _wait = 0;
+            _node = "";
+            _name = "";
         }
 
     }

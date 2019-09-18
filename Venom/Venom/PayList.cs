@@ -24,6 +24,7 @@ namespace VenomNamespace
         {
             InitializeComponent();
             parent = ParentForm;
+            ResetForm();
             CB_Type.Items.AddRange(new object[] {"Upgrade",
                         "Downgrade"});
             CB_Variant.Items.AddRange(new object[] {"HMI",
@@ -36,6 +37,13 @@ namespace VenomNamespace
             DGV_Data.DataSource = sbind;
         }
         
+        private void ResetForm()
+        {
+            TB_IPDisplay.Text = "";
+            TB_Payload.Text = "";
+            CB_Type.ResetText();
+            CB_Variant.ResetText();
+        }
         private void BTN_Add_Click(object sender, EventArgs e)
         {
             string localpay = TB_Payload.Text;
@@ -67,8 +75,9 @@ namespace VenomNamespace
                     IPData newip = new IPData(cai.IPAddress, localpay);
                     parent.iplist.Add(newip);
                     newip.MAC = cai.MacAddress;
-                    newip.Type = CB_Variant.Text + " " + CB_Type.Text;
-
+                    newip.Type =  CB_Type.Text;
+                    newip.Node = CB_Variant.Text;
+                    newip.Name = "User Input";
                     // Update window for added IP
                     DataRow dr = parent.results.NewRow();
 
@@ -76,6 +85,8 @@ namespace VenomNamespace
                     dr["OTA Payload"] = newip.Payload;
                     dr["Delivery Method"] = localdeliver;
                     dr["OTA Type"] = newip.Type;
+                    dr["Node"] = newip.Node;
+                    dr["Name"] = newip.Name;
                     dr["OTA Result"] = "PENDING";
                     parent.results.Rows.Add(dr);
 
@@ -142,13 +153,15 @@ namespace VenomNamespace
                     {
                         using (StreamWriter sw = File.CreateText(curfilename))
                         {
-                            sw.WriteLine("IP\tPayload\tType\tResult");
+                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName");
                             foreach (DataRow row in parent.results.Rows)
                             {
                                 sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
-                                    row.ItemArray[1].ToString() + "\t" +
-                                    row.ItemArray[3].ToString() + "\t" +
-                                    row.ItemArray[4].ToString());
+                                             row.ItemArray[1].ToString() + "\t" + 
+                                             row.ItemArray[4].ToString() + "\t" +
+                                             row.ItemArray[3].ToString() + "\t" +
+                                             "NA"+ "\t" +
+                                             row.ItemArray[5].ToString());
                             }
                         }
                         MessageBox.Show("Saved payload list at " + curfilename + ".", "Export: Payload List Saving.",

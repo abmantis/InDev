@@ -109,6 +109,8 @@
             this.CB_Raw = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.LED_Internet = new LED();
+            this.LED_Router = new LED();
             this.BTN_LoadLog = new System.Windows.Forms.Button();
             this.BTN_Script = new System.Windows.Forms.Button();
             this.TAB_Platform_Laundry = new System.Windows.Forms.TabControl();
@@ -148,8 +150,6 @@
             this.CBO_Laundry_Cycles = new System.Windows.Forms.ComboBox();
             this.tabPage5 = new System.Windows.Forms.TabPage();
             this.BTN_Capability = new System.Windows.Forms.Button();
-            this.LED_Internet = new SymbIOT.LED();
-            this.LED_Router = new SymbIOT.LED();
             this.TAB_Platform_Cooking.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.PAN_TabControls.SuspendLayout();
@@ -215,7 +215,6 @@
             // 
             this.PAN_TabControls.Controls.Add(this.CBO_Amt);
             this.PAN_TabControls.Controls.Add(this.CBO_Doneness);
-            this.PAN_TabControls.Controls.Add(this.TAB_Platform_Laundry);
             this.PAN_TabControls.Controls.Add(this.LBL_SetProbeF);
             this.PAN_TabControls.Controls.Add(this.LBL_SetProbe);
             this.PAN_TabControls.Controls.Add(this.TB_Probe);
@@ -963,6 +962,20 @@
             this.label3.TabIndex = 82;
             this.label3.Text = "Internet";
             // 
+            // LED_Internet
+            // 
+            this.LED_Internet.Location = new System.Drawing.Point(350, 40);
+            this.LED_Internet.Name = "LED_Internet";
+            this.LED_Internet.Size = new System.Drawing.Size(16, 16);
+            this.LED_Internet.TabIndex = 80;
+            // 
+            // LED_Router
+            // 
+            this.LED_Router.Location = new System.Drawing.Point(350, 18);
+            this.LED_Router.Name = "LED_Router";
+            this.LED_Router.Size = new System.Drawing.Size(16, 16);
+            this.LED_Router.TabIndex = 79;
+            // 
             // BTN_LoadLog
             // 
             this.BTN_LoadLog.Enabled = false;
@@ -989,7 +1002,7 @@
             // 
             this.TAB_Platform_Laundry.Controls.Add(this.tabPage4);
             this.TAB_Platform_Laundry.Controls.Add(this.tabPage5);
-            this.TAB_Platform_Laundry.Location = new System.Drawing.Point(9, 82);
+            this.TAB_Platform_Laundry.Location = new System.Drawing.Point(0, 63);
             this.TAB_Platform_Laundry.Name = "TAB_Platform_Laundry";
             this.TAB_Platform_Laundry.SelectedIndex = 0;
             this.TAB_Platform_Laundry.Size = new System.Drawing.Size(282, 334);
@@ -1393,26 +1406,13 @@
             this.BTN_Capability.UseVisualStyleBackColor = true;
             this.BTN_Capability.Click += new System.EventHandler(this.BTN_Capability_Click);
             // 
-            // LED_Internet
-            // 
-            this.LED_Internet.Location = new System.Drawing.Point(350, 40);
-            this.LED_Internet.Name = "LED_Internet";
-            this.LED_Internet.Size = new System.Drawing.Size(16, 16);
-            this.LED_Internet.TabIndex = 80;
-            // 
-            // LED_Router
-            // 
-            this.LED_Router.Location = new System.Drawing.Point(350, 18);
-            this.LED_Router.Name = "LED_Router";
-            this.LED_Router.Size = new System.Drawing.Size(16, 16);
-            this.LED_Router.TabIndex = 79;
-            // 
             // SymbIOT
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(578, 572);
             this.Controls.Add(this.BTN_Capability);
+            this.Controls.Add(this.TAB_Platform_Laundry);
             this.Controls.Add(this.BTN_Script);
             this.Controls.Add(this.BTN_LoadLog);
             this.Controls.Add(this.label3);

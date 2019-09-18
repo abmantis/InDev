@@ -87,6 +87,8 @@ namespace VenomNamespace
             results.Columns.Add("OTA Payload");
             results.Columns.Add("Delivery Method");
             results.Columns.Add("OTA Type");
+            results.Columns.Add("Node");
+            results.Columns.Add("Name");
             results.Columns.Add("OTA Result");
 
             // Generate tables
@@ -716,8 +718,9 @@ namespace VenomNamespace
                // listindex = iplist.IndexOf(ipd);
 
                 // Update window with OTA result
-                results.Rows[listindex]["Delivery Method"] = iplist[listindex].Delivery;
-                results.Rows[listindex]["OTA Type"] = iplist[listindex].Type;
+                //results.Rows[listindex]["Delivery Method"] = iplist[listindex].Delivery;
+                //results.Rows[listindex]["OTA Type"] = iplist[listindex].Type;
+                //results.Rows[listindex]["Node"] = iplist[listindex].Node;
                 results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
 
                 if (type.Equals("status"))
@@ -731,6 +734,8 @@ namespace VenomNamespace
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
                             iplist[listindex].Type + "," +
+                            iplist[listindex].Node + "," + 
+                            iplist[listindex].Name + "," +
                             iplist[listindex].Result);                            
                         }
                     }
@@ -863,9 +868,11 @@ namespace VenomNamespace
         {
             Thread.CurrentThread.Abort();
         }
-        public void RunCycle(IPData ipd)
+        public void RunCycle(IPData ipd, byte[] ipbytes)
         {
-
+            byte[] paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);
+            SendMQTT(ipbytes, "iot-2/evt/cc_Kvp/fmt/binary", paybytes);
+            Wait(ipd.Wait);
         }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
@@ -889,7 +896,7 @@ namespace VenomNamespace
                         timer.Elapsed += new ElapsedEventHandler(EndThread);
                         timer.Start();
 
-                        //Parse OTA payload into byte array for sending via MQTT
+                        //Parse payload into byte array
                         byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
 
                         //Prepare IP address for sending via MQTT
@@ -899,32 +906,36 @@ namespace VenomNamespace
                         {
                             ipbytes[j] = byte.Parse(ipad[j]);
                         }
+
                         // Figure out a way to schedule how the threads march through iplist, we already filter on ip so only one thread in at a time
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
-                            string lcycle = "";
-                            if (!String.IsNullOrEmpty(ipd.Cycle))
+                            if (ipd.Cycle)
                             {
-                                lcycle = ipd.Cycle;
-                                RunCycle(ipd);
+                                RunCycle(ipd, ipbytes);
+                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes);
                             }
+
                             else
-                                lcycle = "iot-2/cmd/isp/fmt/json";
-                            SendMQTT(ipbytes, lcycle, paybytes);
+                            
+                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes);                            
                         }
 
                         else
+                        {
                             SendReveal(ipd.IPAddress, paybytes);
+                        }
 
                         // Spinwait until our result gets updated to a pass or fail
                         //while (!results.Rows[index][4].ToString().Contains("PASS") || !results.Rows[index][4].ToString().Contains("FAIL")) ;
                         //SpinWait.SpinUntil(() => isCompleted == true);
                         Console.WriteLine("This is the info before calling this lock " + ipd.Signal.WaitHandle.Handle + " with this thread name " + Thread.CurrentThread.Name +
                             " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
-
+                        // Set wait signal to be unlocked by thread after job is complete (result seen from log)
                         sig.Wait();
-                        Wait(720000); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
+                        if (!ipd.Cycle)
+                            Wait(720000); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " got here.");
                         //break;
                     }
@@ -1288,7 +1299,10 @@ namespace VenomNamespace
                             IPData newip = new IPData(cai.IPAddress, value[1]); //Add Revelation logic if supported
                             iplist.Add(newip);
                             newip.MAC = cai.MacAddress;
-                            newip.Type = value[2];
+                            newip.Node = value[2];
+                            newip.Type = value[3];
+                            newip.MQTTPay = value[4];
+                            newip.Name = value[5];
 
                             // Update window for added IP
                             DataRow dr = results.NewRow();
@@ -1296,6 +1310,8 @@ namespace VenomNamespace
                             dr["OTA Payload"] = newip.Payload;
                             dr["Delivery Method"] = "MQTT";
                             dr["OTA Type"] = newip.Type;
+                            dr["Node"] = newip.Node;
+                            dr["Name"] = newip.Name;
                             dr["OTA Result"] = "PENDING";
                             results.Rows.Add(dr);
                         }
@@ -1313,9 +1329,11 @@ namespace VenomNamespace
                         string badips ="";
                         foreach (string ips in ipskipped)
                             badips = badips + "  " + ips;
+                        if (String.IsNullOrWhiteSpace(badips))
+                            badips = "EMPTY LINES";
                         MessageBox.Show("Import skipped a total of " + skipped + " line(s) for IP Address(es) " +
-                             badips + " due to NOT being listed in Wifibasic. Please verify the IP Address(es) " +
-                            "that were skipped are connected and listed in Wifibasic, then retry importing.", "Error: WifiBasic IP Address(es) Not Found",
+                             badips + " due to NOT being listed in Wifibasic OR the import file having EMPTY lines. Please verify the IP Address(es) or empty lines " +
+                            "that were skipped are connected and listed in Wifibasic or expected, then retry importing.", "Error: WifiBasic IP Address(es) Not Found or File Has Empty Lines",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }

@@ -18,23 +18,42 @@ namespace VenomNamespace
     {
         public Venom parent;
         public PayList plist;
-        private BindingSource sbind = new BindingSource();
+        public int TESTCASEMAX = 8;
+        //private BindingSource sbind = new BindingSource();
+        List<IPData> iplist = new List<IPData>();
 
         public AutoGen(Venom ParentForm, WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
-        {
+        {          
             InitializeComponent();
             parent = ParentForm;
+            ResetForm();
             CB_Variant.Items.AddRange(new object[] {"NAR Cooking",
-                                                    "EMEA Cooking", "NAR Laundry", "Other (any remote cycle)"});            
+                                                    "EMEA Cooking", "NAR Laundry", "Other (any remote cycle)"});
+
+        }
+
+        private void ResetForm()
+        {
+            TB_ACU_DWN.Text = "";
+            TB_ACU_UP.Text = "";
+            TB_EXP_DWN.Text = "";
+            TB_EXP_UP.Text = "";
+            TB_HMI_DWN.Text = "";
+            TB_HMI_UP.Text = "";
+            TB_IP.Text = "";
+            TB_Other.Text = "";
+            TB_WIFI_DWN.Text = "";
+            TB_WIFI_UP.Text = "";
+            CB_Variant.ResetText();
         }
         public void CB_Variant_SelectedValueChanged(object sender, EventArgs e)
         {
             if (CB_Variant.Text.Equals("Other (any remote cycle)"))
             {
                 TB_Other.Enabled = true;
-                TB_Other.Visible = true;
                 TB_Other.Text = "Paste MQTT Payload Here";
+                TB_Other.Visible = true;
             }
             else
             {
@@ -48,12 +67,12 @@ namespace VenomNamespace
         }
         private void BTN_Gen_Click(object sender, EventArgs e)
         {
-            DialogResult dialogResult = MessageBox.Show("This will automatically create a new test plan run from the current IP. " +
-                "This will then clear the current payload list and update the table accordingly. " +
-                "Press Yes to Create or No to Cancel.", "Verify Full Clear and Auto Generation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+          //  DialogResult dialogResult = MessageBox.Show("This will automatically create a new test plan run from the current IP. " +
+              //  "This will then clear the current payload list and update the table accordingly. " +
+              //  "Press Yes to Create or No to Cancel.", "Verify Full Clear and Auto Generation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             
-            if (dialogResult == DialogResult.Yes)
-            {
+            //if (dialogResult == DialogResult.Yes)
+           // {
                 bool check = false;
                 List<string> types = new List<string>();
                 List<string> sources = new List<string>();
@@ -63,7 +82,7 @@ namespace VenomNamespace
                     if (!TB_HMI_DWN.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("HMI");
+                        types.Add("HMI\tUpgrade");
                         sources.Add(TB_HMI_UP.Text);
                     }
                     else
@@ -75,7 +94,7 @@ namespace VenomNamespace
                     if (!TB_HMI_UP.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("HMI");
+                        types.Add("HMI\tDowngrade");
                         sources.Add(TB_HMI_DWN.Text);
                     }
                     else
@@ -87,7 +106,7 @@ namespace VenomNamespace
                     if (!TB_ACU_DWN.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("ACU");
+                        types.Add("ACU\tUpgrade");
                         sources.Add(TB_ACU_UP.Text);
                     }
                     else
@@ -99,7 +118,7 @@ namespace VenomNamespace
                     if (!TB_ACU_UP.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("ACU");
+                        types.Add("ACU\tDowngrade");
                         sources.Add(TB_ACU_DWN.Text);
                     }
                     else
@@ -111,7 +130,7 @@ namespace VenomNamespace
                     if (!TB_WIFI_DWN.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("Wifi");
+                        types.Add("Wifi\tUpgrade");
                         sources.Add(TB_WIFI_UP.Text);
                     }
                     else
@@ -123,7 +142,7 @@ namespace VenomNamespace
                     if (!TB_WIFI_UP.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("Wifi");
+                        types.Add("Wifi\tDowngrade");
                         sources.Add(TB_WIFI_DWN.Text);
                     }
                     else
@@ -135,7 +154,7 @@ namespace VenomNamespace
                     if (!TB_EXP_DWN.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("Expansion");
+                        types.Add("Expansion\tUpgrade");
                         sources.Add(TB_EXP_UP.Text);
                     }
                     else
@@ -147,7 +166,7 @@ namespace VenomNamespace
                     if (!TB_EXP_UP.Text.Equals(""))
                     {
                         check = true;
-                        types.Add("Expansion");
+                        types.Add("Expansion\tDowngrade");
                         sources.Add(TB_EXP_DWN.Text);
                     }
                     else
@@ -163,11 +182,11 @@ namespace VenomNamespace
                     return;
                 }
 
-                parent.results.Clear();
-                parent.responses.Clear();
-                parent.iplist.Clear();
-                parent.LB_IPs.Items.Clear();
-                parent.DGV_Data.Refresh();
+                //parent.results.Clear();
+               // parent.responses.Clear();
+               // parent.iplist.Clear();
+               // parent.LB_IPs.Items.Clear();
+               // parent.DGV_Data.Refresh();
                 //plist.DGV_Data.Refresh();
 
                 //Set MQTT payload to start standard bake 350 for whatever product or allow user to input one
@@ -187,36 +206,189 @@ namespace VenomNamespace
 
                 try
                 {
-                    if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
-                        parent.LB_IPs.Items.Add(cai.IPAddress);
+                    //if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
+                        //parent.LB_IPs.Items.Add(cai.IPAddress);
 
-                    int count = 0;
+                    int listindex = 0;
                     foreach (String type in types)
                     {
-                        IPData newip = new IPData(cai.IPAddress, sources[count]);
-                        parent.iplist.Add(newip);
+                        IPData newip = new IPData(cai.IPAddress, sources[listindex]);
+                        string[] parts = type.Split('\t');
                         newip.MAC = cai.MacAddress;
-                        newip.Type = CB_Variant.Text + " " + type;
-                        newip.Cycle = mqttpay;
+                        newip.Node = parts[0];
+                        newip.Type = parts[1];
+                        newip.MQTTPay = mqttpay;
+                        iplist.Add(newip);
 
-                        // Update window for added IP
-                        DataRow dr = parent.results.NewRow();
+                    /* Update window for added IP
+                    DataRow dr = parent.results.NewRow();
 
-                        dr["IP Address"] = newip.IPAddress;
-                        dr["OTA Payload"] = sources[count];
-                        dr["Delivery Method"] = "MQTT";
-                        dr["OTA Type"] = type;
-                        dr["OTA Result"] = "PENDING";
-                        parent.results.Rows.Add(dr);
-                        count++;
+                    dr["IP Address"] = newip.IPAddress;
+                    dr["OTA Payload"] = sources[count];
+                    dr["Delivery Method"] = "MQTT";
+                    dr["OTA Type"] = type;
+                    dr["OTA Result"] = "PENDING";
+                    parent.results.Rows.Add(dr);*/
+                        listindex++;
                     }
-                    MessageBox.Show("AutoGeneration has been completed for " + TB_IP.Text + ".", "AutoGenerate: Generation Complete.",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    //Write info to log
+                    if (!File.Exists(parent.TB_LogDir.Text + "\\" + "AUTOGEN_Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
+                    {
+                        
+                            // Verify directory exists, if not, throw exception
+                            string curfilename = parent.TB_LogDir.Text + "\\" + "AUTOGEN_Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+                            try
+                            {
+                                using (StreamWriter sw = File.CreateText(curfilename))
+                                {
+                                    string content = "";
+                                    listindex = 0;
+                                    sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName");
+                                /* foreach (IPData ipd in iplist)
+                                 {
+                                     sw.WriteLine(ipd.IPAddress + "\t" +
+                                                  ipd.Payload + "\t" +
+                                                  ipd.Node + "\t" +
+                                                  ipd.Type + "\t" +
+                                                  ipd.MQTTPay);
+                                 }*/
+                                    for (int i = 0; i < (sources.Count / 2); i++)
+                                    {
+                                        for (int count = 0; count < TESTCASEMAX; count++)
+                                    {
+
+                                        switch (count)
+                                        {
+                                            //Start of - 131812 - OTA : Generic : Forced Update : Unit in Idle State
+                                            //Set OTA upgrade
+                                            case 0:
+                                                content = iplist[listindex].IPAddress + "\t" +
+                                                          iplist[listindex].Payload + "\t" +
+                                                          iplist[listindex].Node + "\t" +
+                                                          iplist[listindex].Type + "\t" +
+                                                          "NA" + "\t" + //Not a cycle do not save
+                                                          "131812 - OTA : Generic : Forced Update : Unit in Idle State" + "\t" +
+                                                          iplist[listindex].MAC;
+                                                break;
+                                            //Set OTA  downgrade (return to SOP)
+                                            case 1:
+                                                content = iplist[listindex + 1].IPAddress + "\t" +
+                                                          iplist[listindex + 1].Payload + "\t" +
+                                                          iplist[listindex + 1].Node + "\t" +
+                                                          iplist[listindex + 1].Type + "\t" +
+                                                          "NA" + "\t" + //Not a cycle do not save
+                                                          "131812 - OTA : Generic : Forced Update : Unit in Idle State" + "\t" +
+                                                          iplist[listindex].MAC;
+                                                break;
+                                            //End of - 131812 - OTA : Generic : Forced Update : Unit in Idle State
+
+                                            //Start of - 131813 - OTA : Generic : Forced Update : Unit in Programming State
+                                            //Set Programming state -TODOGET THIS WORKING
+                                            /*case 2: 
+                                                content = iplist[listindex].IPAddress + "\t" +
+                                                          "No OTA Payload - Non-OTA Cycle" + "\t" + //Not a ota do not save
+                                                          iplist[listindex].Node + "\t" +
+                                                          "Cycle" + "\t" +
+                                                          iplist[listindex].MQTTPay + "\t" +
+                                                          "131813 - OTA : Generic : Forced Update : Unit in Programming State" + "\t" +
+                                                          iplist[listindex].MAC;;
+                                                break;
+
+                                            //Set OTA upgrade
+                                            case 3:
+                                                content = iplist[listindex].IPAddress + "\t" +
+                                                          iplist[listindex].Payload + "\t" +
+                                                          iplist[listindex].Node + "\t" +
+                                                          iplist[listindex].Type + "\t" +
+                                                          "NA" + "\t" + //Not a cycle do not save
+                                                          "131813 - OTA : Generic : Forced Update : Unit in Programming State" + "\t" +
+                                                          iplist[listindex].MAC;
+                                                break;
+                                            //Set OTA  downgrade (return to SOP)
+                                            case 4:
+                                                content = iplist[listindex+1].IPAddress + "\t" +
+                                                          iplist[listindex+1].Payload + "\t" +
+                                                          iplist[listindex+1].Node + "\t" +
+                                                          iplist[listindex+1].Type + "\t" +
+                                                          "NA" + "\t" + //Not a cycle do not save
+                                                          "131813 - OTA : Generic : Forced Update : Unit in Programming State" + "\t" +
+                                                          iplist[listindex].MAC;
+                                                break;
+                                            //End of - 131813 - OTA : Generic : Forced Update : Unit in Programming State
+                                            */
+                                            //Start of - 131814 - OTA : Generic : Forced Update : Unit in Running State
+                                            //Set OTA downgrade (return to SOP)
+                                            case 5:
+                                                content = iplist[listindex].IPAddress + "\t" +
+                                                          "No OTA Payload - Non-OTA Cycle" + "\t" + //Not a ota do not save
+                                                          iplist[listindex].Node + "\t" +
+                                                          "Cycle" + "\t" +
+                                                          iplist[listindex].MQTTPay + "\t" +
+                                                          "131814 - OTA : Generic : Forced Update : Unit in Running State" + "\t" +
+                                                          iplist[listindex].MAC;
+                                                break;
+
+                                            //Set OTA upgrade
+                                            case 6:
+                                                content = iplist[listindex].IPAddress + "\t" +
+                                                          iplist[listindex].Payload + "\t" +
+                                                          iplist[listindex].Node + "\t" +
+                                                          iplist[listindex].Type + "\t" +
+                                                          "NA" + "\t" + //Not a cycle do not save
+                                                          "131814 - OTA : Generic : Forced Update : Unit in Running State" + "\t" +
+                                                          iplist[listindex].MAC;
+                                                break;
+                                            //Set OTA  downgrade (return to SOP)
+                                            case 7:
+                                                content = iplist[listindex + 1].IPAddress + "\t" +
+                                                          iplist[listindex + 1].Payload + "\t" +
+                                                          iplist[listindex + 1].Node + "\t" +
+                                                          iplist[listindex + 1].Type + "\t" +
+                                                          "NA" + "\t" + //Not a cycle do not save
+                                                          "131814 - OTA : Generic : Forced Update : Unit in Running State" + "\t" +
+                                                          iplist[listindex].MAC;
+                                                break;
+                                            //End of - 131814 - OTA : Generic : Forced Update : Unit in Running State
+
+
+                                            default:
+                                                content = null;
+                                                break;
+
+                                        }
+
+
+                                        sw.WriteLine(content);
+
+                                    }
+
+                                    //Bound checking to control max possible bundle sources is iterated max number of node times
+                                    if ((listindex / 2) + 1 < sources.Count / 2)
+                                        listindex += 2;
+                                }
+
+                            }
+
+                            MessageBox.Show("AutoGeneration has been completed for " + TB_IP.Text + " with the payload list was saved at " + curfilename + ".", "AutoGenerate: Generation Complete.",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    }
+                    catch
+                            {
+                                MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                return;
+                            }
+                        
+                    }
+
+
+
                 }
                 catch
                 {
                 }
-            }
+            //}
         }
 
        
