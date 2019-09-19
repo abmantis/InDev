@@ -210,7 +210,7 @@ namespace VenomNamespace
                     }
                     break;
 
-                 case "iot-2/evt/subscribe/fmt/json":  
+                 /*case "iot-2/evt/subscribe/fmt/json":  
                     // Process connection-related messages
                      if (iplist.Count > 0)
                      {
@@ -237,7 +237,7 @@ namespace VenomNamespace
                                     return;
                                 }
 
-                                /*else
+                                else
                                 {   // Already connected so see if this thread is waiting for permission to send next OTA payload
                                     foreach (var member in iplist)
                                     {
@@ -252,11 +252,11 @@ namespace VenomNamespace
                                             }
                                         }
                                     }
-                                } */                               
+                                }                                
                             }
                         }
                      }
-                     break;
+                     break;*/
 
                 case "iot-2/evt/cc_Kvp/fmt/binary":
                     string savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
@@ -750,7 +750,7 @@ namespace VenomNamespace
 
         private void BTN_Payload_Click(object sender, EventArgs e)
         {
-            if (BTN_Payload.Text == "Send Payload")
+            if (BTN_Payload.Text == "Run Test List")
             {
                 //Write info to log
                 if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
@@ -786,7 +786,7 @@ namespace VenomNamespace
             }
             else
             {
-                BTN_Payload.Text = "Send Payload";
+                BTN_Payload.Text = "Run Test List";
                 BTN_Add.Enabled = true;
                 BTN_Remove.Enabled = true;
                 BTN_Clr.Enabled = true;
@@ -854,6 +854,7 @@ namespace VenomNamespace
                 catch { }
             }
         }
+        //Wait 
         public void Wait(int timeout)
         {
             Thread thread = new Thread(delegate ()
@@ -870,18 +871,35 @@ namespace VenomNamespace
         }
         public void RunCycle(IPData ipd, byte[] ipbytes)
         {
-            byte[] paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);
-            SendMQTT(ipbytes, "iot-2/evt/cc_Kvp/fmt/binary", paybytes);
-            Wait(ipd.Wait);
+            //Send subscribe message before sending cycle
+            byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes);
+            Wait(5000);
+
+            //paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);for (int i = 0; i < bytes.Length; i++)
+
+            byte[] bytes = new byte[ipd.MQTTPay.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+                
+            }
+                        
+            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes);
+            //Wait(ipd.Wait);
         }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
-            for (int i = 0; i < int.Parse(TB_Loop.Text); i++)
+            int loop = int.Parse(TB_Loop.Text);
+            if (loop < 1)
+                loop = 1;
+
+            for (int i = 0; i < loop; i++)
             {
+                int looptestREMOVE = 0;
                 //if (TaskQ.Peek().ToString().Contains(ip))
                 foreach (IPData ipd in iplist)
                 {
-                    int looptestREMOVE = 0;
 
                     if (ipd.IPAddress.Equals(ip) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
                     {
@@ -911,12 +929,10 @@ namespace VenomNamespace
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
-                            if (ipd.Cycle)
-                            {
+                            if (ipd.Type.Equals("Cycle"))
+                                
                                 RunCycle(ipd, ipbytes);
-                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes);
-                            }
-
+                            
                             else
                             
                                 SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes);                            
@@ -934,7 +950,7 @@ namespace VenomNamespace
                             " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
                         // Set wait signal to be unlocked by thread after job is complete (result seen from log)
                         sig.Wait();
-                        if (!ipd.Cycle)
+                        if (!ipd.Type.Equals("Cycle"))
                             Wait(720000); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " got here.");
                         //break;
@@ -944,9 +960,10 @@ namespace VenomNamespace
                         continue;
                     }
 
-                    looptestREMOVE++;
-                    Console.WriteLine("Loop count is " + looptestREMOVE + " out of " + TB_Loop.Text + ".");
                 }
+                
+                looptestREMOVE++;
+                Console.WriteLine("Loop count is " + looptestREMOVE + " out of " + loop + ".");
             }   
         } //TODO MAY NEED MANUAL CLOSING OF THREADS?
         
@@ -1003,7 +1020,9 @@ namespace VenomNamespace
                 //If an appliance with the specified IP address is found in the list...
                 while (!mqttresp && (traceattempt < ATTEMPTMAX))
                 {
-                    if (cai != null)
+                    try
+                    {
+                        if (cai != null)
                     {
                         mqttresp = cai.IsTraceOn; //check if Trace is currently enabled
                         if (!cai.IsTraceOn)
@@ -1023,18 +1042,27 @@ namespace VenomNamespace
                                 traceattempt++;
                             }
                         }
-                         else
-                         {
+                        else
+                        {
                             //If the Trace is enabled and Revelation is also connected, close the Revelation connection
                             if (cai.IsRevelationConnected)
                             {
                                 WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
                                 //WifiLocal.Close(cai);
                                 Wait(2000);
-                             }
+                            }
                             mqttresp = true;
-                         }
-                    }                      
+                        }
+                    }
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Trace was not able to start.  Please verify the socket can be " +
+                                        "opened and it is not in use (UITracer is not running). Closing Wifi" +
+                                        ", you will need to press 'Data Start' in Wifibasic again.", "Error: Unable to start Trace",
+                        MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    WifiLocal.CloseAll(true);
+                }
                 }
 
             if (mqttresp)
@@ -1303,6 +1331,7 @@ namespace VenomNamespace
                             newip.Type = value[3];
                             newip.MQTTPay = value[4];
                             newip.Name = value[5];
+                            newip.Wait = int.Parse(value[7]);
 
                             // Update window for added IP
                             DataRow dr = results.NewRow();
@@ -1958,5 +1987,9 @@ namespace VenomNamespace
             }
         }
 
+        private void Venom_Load(object sender, EventArgs e)
+        {
+            TB_Loop.Text = "0";
+        }
     }
 }

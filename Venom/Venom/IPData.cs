@@ -35,12 +35,7 @@ namespace VenomNamespace
             get { return _type; }
             set { _type = value; }
         }
-        private bool _cycle;
-        public bool Cycle
-        {
-            get { return _cycle; }
-            set { _cycle = value; }
-        }
+
         private string _mqttpay;
         public string MQTTPay
         {
@@ -110,7 +105,6 @@ namespace VenomNamespace
             _mac = "";
             _result = "";
             _ipindex = 0;
-            _cycle = false;
             _mqttpay = "";
             _wait = 0;
             _node = "";

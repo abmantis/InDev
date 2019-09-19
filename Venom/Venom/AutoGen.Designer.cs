@@ -319,6 +319,7 @@
             this.Controls.Add(this.TB_IP);
             this.Name = "AutoGen";
             this.Text = "AutoGen";
+            this.Load += new System.EventHandler(this.AutoGen_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -202,6 +202,7 @@
             this.Controls.Add(this.TB_Payload);
             this.Name = "PayList";
             this.Text = "Payload Run List";
+            this.Load += new System.EventHandler(this.PayList_Load);
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

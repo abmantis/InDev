@@ -24,7 +24,6 @@ namespace VenomNamespace
         {
             InitializeComponent();
             parent = ParentForm;
-            ResetForm();
             CB_Type.Items.AddRange(new object[] {"Upgrade",
                         "Downgrade"});
             CB_Variant.Items.AddRange(new object[] {"HMI",
@@ -197,6 +196,11 @@ namespace VenomNamespace
             }
 
             
+        }
+
+        private void PayList_Load(object sender, EventArgs e)
+        {
+            //ResetForm();   ENABLE WHEN UPLOADING TO STORE
         }
     }
 }

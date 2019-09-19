@@ -95,7 +95,7 @@ namespace VenomNamespace
             this.BTN_Payload.Name = "BTN_Payload";
             this.BTN_Payload.Size = new System.Drawing.Size(100, 35);
             this.BTN_Payload.TabIndex = 14;
-            this.BTN_Payload.Text = "Send Payload";
+            this.BTN_Payload.Text = "Run Test List";
             this.BTN_Payload.UseVisualStyleBackColor = true;
             this.BTN_Payload.Click += new System.EventHandler(this.BTN_Payload_Click);
             // 
@@ -261,6 +261,7 @@ namespace VenomNamespace
             this.Controls.Add(this.TB_IP);
             this.Name = "Venom";
             this.Text = "Venom";
+            this.Load += new System.EventHandler(this.Venom_Load);
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
