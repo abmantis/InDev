@@ -1007,7 +1007,7 @@ namespace VenomNamespace
             }
             // });
         }
-        void TraceConnect(string ip, string pay, string type, string delivery)
+        void TraceConnect(string ip, string pay, string type, string delivery) //TODO FIX REVELATION RECONNECT LOGIC should the end if/else be part of while loop?
         {
             bool mqttresp = false;
             int traceattempt = 0;
@@ -1022,7 +1022,7 @@ namespace VenomNamespace
                 {
                     try
                     {
-                        if (cai != null)
+                    if (cai != null)
                     {
                         mqttresp = cai.IsTraceOn; //check if Trace is currently enabled
                         if (!cai.IsTraceOn)
@@ -1054,7 +1054,7 @@ namespace VenomNamespace
                             mqttresp = true;
                         }
                     }
-                    }
+                }
                     catch
                     {
                         MessageBox.Show("Trace was not able to start.  Please verify the socket can be " +
@@ -1062,7 +1062,8 @@ namespace VenomNamespace
                                         ", you will need to press 'Data Start' in Wifibasic again.", "Error: Unable to start Trace",
                         MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     WifiLocal.CloseAll(true);
-                }
+                    return;
+                    }
                 }
 
             if (mqttresp)
@@ -1125,16 +1126,20 @@ namespace VenomNamespace
             }
 
         }*/
-        public void CycleWifi(ConnectedApplianceInfo cai)    //TODO GET THIS WORKING
+        public void CycleWifi(ConnectedApplianceInfo cai)
         {
             // Close all WifiBasic connections
             //WifiLocal.CloseAll(true);
             WifiLocal.Close(cai);
 
             // Get new cert to restart WifiBasic connections
-           // var cert = new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020);
-
+            CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
+            
             // Restart Wifi Connection
+            if (certMgr.IsLocalValid)
+            {
+                WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+            }
             //WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
         }
 
@@ -1306,7 +1311,7 @@ namespace VenomNamespace
                         value = reader.ReadLine().Split('\t');
                         System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                         ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == value[0]);
-
+                        //CycleWifi(cai);
                         if (cai != null)
                         {
                             if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null && !cai.IsMqttConnected)
@@ -1331,7 +1336,7 @@ namespace VenomNamespace
                             newip.Type = value[3];
                             newip.MQTTPay = value[4];
                             newip.Name = value[5];
-                            newip.Wait = int.Parse(value[7]);
+                           // newip.Wait = int.Parse(value[7]);
 
                             // Update window for added IP
                             DataRow dr = results.NewRow();
