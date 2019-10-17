@@ -339,7 +339,7 @@ namespace VenomNamespace
                                         //Set OTA downgrade (return to SOP)
                                         case 5:
                                             content = iplist[listindex].IPAddress + "\t" +
-                                                      "No OTA Payload - Non-OTA Cycle" + "\t" + //Not a ota do not save
+                                                      "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
                                                       iplist[listindex].Node + "\t" +
                                                       "Cycle" + "\t" +
                                                       iplist[listindex].MQTTPay + "\t" +

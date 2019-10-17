@@ -759,41 +759,76 @@ namespace VenomNamespace
                         // Verify directory exists, if not, throw exception
                         curfilename = TB_LogDir.Text + "\\" + "OTALog_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
                         try
-                        {                            
+                        {
                             using (StreamWriter sw = File.CreateText(curfilename))
                             {
                                 sw.WriteLine("Time,IP,MAC,Log Source,Payload,Method,Type,Result");
                             }
                         }
-                        catch {
+                        catch
+                        {
                             MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;
                         }
                     }
                 }
-                BTN_Payload.Text = "Stop Running";      //TODO Decide how this functions
-                LED_Internet.SetColor(Color.DarkGray);
-                BTN_Add.Enabled = false;
-                BTN_Remove.Enabled = false;
-                BTN_Clr.Enabled = false;
-               // RB_MQTT.Enabled = false;
-                //RB_Reveal.Enabled = false;
-
                 // Begin processing all IPs on list
-                if (LB_IPs.Items.Count > 0)                
-                    ProcessIP();                
+                if (LB_IPs.Items.Count > 0)
+                {
+                    BTN_Payload.Text = "Stop Running";      //TODO Decide how this functions
+                    LED_Internet.SetColor(Color.DarkGray);
+                    BTN_Add.Enabled = false;
+                    BTN_Remove.Enabled = false;
+                    BTN_Clr.Enabled = false;
+                    TB_LogDir.Enabled = false;
+                    TB_Loop.Enabled = false;
+                    LB_IPs.Enabled = false;
+                    BTN_Import.Enabled = false;
+                    BTN_MakeList.Enabled = false;
+                    BTN_LogDir.Enabled = false;
+                    // RB_MQTT.Enabled = false;
+                    //RB_Reveal.Enabled = false;
+                    ProcessIP();
+                }
+
+                else
+                {
+                    MessageBox.Show("No IP Address in IP List. Please populate list and try again.", "Error: No IP in List",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
             }
             else
             {
-                BTN_Payload.Text = "Run Test List";
-                BTN_Add.Enabled = true;
-                BTN_Remove.Enabled = true;
-                BTN_Clr.Enabled = true;
-               // RB_MQTT.Enabled = true;
-                //RB_Reveal.Enabled = true;
-                responses.Clear();
-            }
+                DialogResult dialogResult = MessageBox.Show("This will dispose of all running threads and end the OTA list execution. Are you sure you want to exit?",
+                                                        "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    BTN_Payload.Text = "Run Test List";
+                    BTN_Add.Enabled = true;
+                    BTN_Remove.Enabled = true;
+                    BTN_Clr.Enabled = true;
+                    TB_LogDir.Enabled = true;
+                    TB_Loop.Enabled = true;
+                    LB_IPs.Enabled = true;
+                    BTN_Import.Enabled = true;
+                    BTN_MakeList.Enabled = true;
+                    BTN_LogDir.Enabled = true;
+                    // RB_MQTT.Enabled = true;
+                    //RB_Reveal.Enabled = true;
+                    responses.Clear();
+                    foreach (var member in iplist)
+                    {
+                        Console.WriteLine("Thread with corresponding lock " + iplist[member.TabIndex].Signal.WaitHandle.Handle + " closed.");
+                        iplist[member.TabIndex].Signal.Dispose();
+                    }
+                }
+                else
+                    return;
+            }               
+                
         } //TODO MAY NEED THREAD BEHAVIOR ON RUNNING STOPPING
 
         public void SendMQTT(byte[] ipbytes, string topic, byte[] paybytes)
@@ -996,6 +1031,7 @@ namespace VenomNamespace
                 Thread th = new Thread(() => RunTask(ip, sig, number));
                 th.Name = i.ToString();
                 number = th.Name;
+                th.IsBackground = true;
                 th.Start();
                 //th.Join();   
                 /*new Thread(() =>
@@ -1996,5 +2032,6 @@ namespace VenomNamespace
         {
             TB_Loop.Text = "0";
         }
+
     }
 }

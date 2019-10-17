@@ -221,11 +221,11 @@ namespace VenomNamespace
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(570, 59);
+            this.label1.Location = new System.Drawing.Point(553, 59);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(34, 13);
+            this.label1.Size = new System.Drawing.Size(45, 13);
             this.label1.TabIndex = 100;
-            this.label1.Text = "Loop:";
+            this.label1.Text = "Repeat:";
             // 
             // LED_Internet
             // 
