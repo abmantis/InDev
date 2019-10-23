@@ -23,7 +23,8 @@ namespace VenomNamespace
         public const byte API_NUMBER = 0;
         public static int WAITTIME = 2000;
         public static int ATTEMPTMAX = 10;
-        public static int TMAX = 120* 60000; //OTA max thread time is 2 hours
+        public static int TMAX = 120 * 60000; //OTA max thread time is 2 hours
+        public static int REBMAX = 12 * 60000;
 
         // Entities used to store log and window data
         public DataTable results;
@@ -36,9 +37,11 @@ namespace VenomNamespace
 
         public string curfilename;
         public PayList plist;
+        public bool cancel_request = false;
 
         static object lockObj = new object();
         static object writeobj = new object();
+        static object cancelobj = new object();
 
         // Used for importing API144 DDM (to identify cycles)
         public List<KeyValue> keyValues;
@@ -96,7 +99,10 @@ namespace VenomNamespace
             DGV_Data.AutoGenerateColumns = true;
             DGV_Data.DataSource = results;
             DGV_Data.DataSource = sbind;
-
+            //DataGridViewColumn column = DGV_Data.Columns[2];
+            //column.Width = 60;
+            //DataGridViewColumn column2 = DGV_Data.Columns[4];
+            //column2.Width = 40;
             TB_LogDir.Text = Directory.GetCurrentDirectory();
 
             // Generate lists
@@ -283,7 +289,8 @@ namespace VenomNamespace
         }
 
         public override void parseTraceMessages(ExtendedTracePacket data)
-        {   
+        {           
+
             // Filter on relevant OTA topics only
             if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:"))
             {
@@ -729,14 +736,16 @@ namespace VenomNamespace
                     {
                         using (StreamWriter sw = File.AppendText(curfilename))
                         {
-                            sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
+                            //sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
+                            sw.WriteLine(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + "By thread with lock " + iplist[listindex].Signal.WaitHandle.Handle + "," + parts[0] + "," +
                             iplist[listindex].MAC + "," + source + "," +
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
                             iplist[listindex].Type + "," +
-                            iplist[listindex].Node + "," + 
+                            iplist[listindex].Node + "," +
                             iplist[listindex].Name + "," +
-                            iplist[listindex].Result);                            
+                            iplist[listindex].Result);    
+                            
                         }
                     }
                     catch { }
@@ -745,9 +754,17 @@ namespace VenomNamespace
 
             // Push result update
             DGV_Data.Refresh();
-
+            //responses.Clear();
+        }
+        public void DisableWhileRunning()
+        {
         }
 
+        public void EnableWhileRunning()
+        {
+            
+
+        }
         private void BTN_Payload_Click(object sender, EventArgs e)
         {
             if (BTN_Payload.Text == "Run Test List")
@@ -775,8 +792,11 @@ namespace VenomNamespace
                 }
                 // Begin processing all IPs on list
                 if (LB_IPs.Items.Count > 0)
+
+                //DisableWhileRunning();
                 {
-                    BTN_Payload.Text = "Stop Running";      //TODO Decide how this functions
+
+                    BTN_Payload.Text = "Stop Running";
                     LED_Internet.SetColor(Color.DarkGray);
                     BTN_Add.Enabled = false;
                     BTN_Remove.Enabled = false;
@@ -789,8 +809,10 @@ namespace VenomNamespace
                     BTN_LogDir.Enabled = false;
                     // RB_MQTT.Enabled = false;
                     //RB_Reveal.Enabled = false;
+                    cancel_request = false;
                     ProcessIP();
                 }
+                
 
                 else
                 {
@@ -819,24 +841,71 @@ namespace VenomNamespace
                     // RB_MQTT.Enabled = true;
                     //RB_Reveal.Enabled = true;
                     responses.Clear();
+                    cancel_request = true;
+                    //Console.WriteLine("Thread with corresponding lock " + Thread.CurrentThread.Name + " closed.");
+                    //return;
+                    //IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
+                    //int listindex = iplist.IndexOf(ipd);
                     foreach (var member in iplist)
                     {
+                        //if (iplist[member.TabIndex].Signal.)
+                        //{
                         Console.WriteLine("Thread with corresponding lock " + iplist[member.TabIndex].Signal.WaitHandle.Handle + " closed.");
-                        iplist[member.TabIndex].Signal.Dispose();
+                        iplist[member.TabIndex].Signal.Set();
+
+                        //return;
+                        // }
+                        //Thread.CurrentThread.Interrupt();
                     }
+                    //Console.WriteLine("Thread with corresponding lock " + Thread.CurrentThread.Name + " closed.");
+                    return;
+                    //EnableWhileRunning();
+                    //return;
                 }
                 else
                     return;
             }               
                 
-        } //TODO MAY NEED THREAD BEHAVIOR ON RUNNING STOPPING
+        } 
 
-        public void SendMQTT(byte[] ipbytes, string topic, byte[] paybytes)
+        public void SendMQTT(byte[] ipbytes, string topic, byte[] paybytes, string mac)
         {
             System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
 
-            //Semd payload
-            WifiLocal.SendMqttMessage(ip, topic, paybytes);
+            // From byte array to string
+            string ips = Encoding.UTF8.GetString(ipbytes, 0, ipbytes.Length);
+
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
+            
+            //If IP Address exists, send to that IP
+           // if (cai != null)
+                //Semd payload
+                WifiLocal.SendMqttMessage(ip, topic, paybytes);
+            /*else
+            {
+                //Otherwise IP changed, use MAC address to map to new IP
+                ConnectedApplianceInfo cai_m = cio.FirstOrDefault(x => x.MacAddress == mac);
+                if (cai != null)
+                {
+                    string[] ipad = cai_m.IPAddress.Split('.');
+                    byte[] n_ipbytes = new byte[4];
+                    for (int j = 0; j < 4; j++)
+                    {
+                        n_ipbytes[j] = byte.Parse(ipad[j]);
+                    }
+                    System.Net.IPAddress n_ip = new System.Net.IPAddress(n_ipbytes);
+                    WifiLocal.SendMqttMessage(n_ip, topic, paybytes);
+                }
+                else
+                {
+                    MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
+                        "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    Thread.CurrentThread.Abort();
+                    return;
+                }
+            }*/
+
         }
 
         public void SendReveal(string ips, byte[] paybytes)
@@ -902,13 +971,15 @@ namespace VenomNamespace
         }
         private static void EndThread(object source, ElapsedEventArgs args)
         {
-            Thread.CurrentThread.Abort();
+            Thread.CurrentThread.Interrupt();
+            //EnableWhileRunning();
+            Console.WriteLine("End Thread was called."); 
         }
         public void RunCycle(IPData ipd, byte[] ipbytes)
         {
             //Send subscribe message before sending cycle
             byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
-            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes);
+            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, ipd.MAC);
             Wait(5000);
 
             //paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);for (int i = 0; i < bytes.Length; i++)
@@ -920,16 +991,16 @@ namespace VenomNamespace
                 
             }
                         
-            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes);
+            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes, ipd.MAC);
             //Wait(ipd.Wait);
         }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
             int loop = int.Parse(TB_Loop.Text);
-            if (loop < 1)
-                loop = 1;
+            //if (loop < 1)
+                //loop = 1;
 
-            for (int i = 0; i < loop; i++)
+            for (int i = 0; i <= loop; i++)
             {
                 int looptestREMOVE = 0;
                 //if (TaskQ.Peek().ToString().Contains(ip))
@@ -970,7 +1041,7 @@ namespace VenomNamespace
                             
                             else
                             
-                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes);                            
+                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, ipd.MAC);                            
                         }
 
                         else
@@ -985,9 +1056,24 @@ namespace VenomNamespace
                             " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
                         // Set wait signal to be unlocked by thread after job is complete (result seen from log)
                         sig.Wait();
+                        lock (cancelobj)
+                        {
+                            if (cancel_request)
+                            {
+                                Console.WriteLine("Thread with corresponding lock " + ipd.Signal.WaitHandle.Handle + " and name "
+                                                 + Thread.CurrentThread.Name + " closed.");
+                                //Thread.CurrentThread.Abort();
+                                return;
+                            }
+                        }
                         if (!ipd.Type.Equals("Cycle"))
-                            Wait(720000); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " got here.");
+                        {
+                            Wait(60000);
+                            byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+                            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", subbytes, ipd.MAC);
+                            Wait(REBMAX); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
+                        }
+                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " ran to conclusion.");
                         //break;
                     }
                     else
@@ -997,10 +1083,10 @@ namespace VenomNamespace
 
                 }
                 
-                looptestREMOVE++;
                 Console.WriteLine("Loop count is " + looptestREMOVE + " out of " + loop + ".");
+                looptestREMOVE++;
             }   
-        } //TODO MAY NEED MANUAL CLOSING OF THREADS?
+        } 
         
         void ProcessIP()
         {

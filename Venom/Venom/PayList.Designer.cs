@@ -48,15 +48,15 @@
             // 
             // TB_Payload
             // 
-            this.TB_Payload.Location = new System.Drawing.Point(86, 50);
+            this.TB_Payload.Location = new System.Drawing.Point(110, 50);
             this.TB_Payload.Name = "TB_Payload";
-            this.TB_Payload.Size = new System.Drawing.Size(368, 20);
+            this.TB_Payload.Size = new System.Drawing.Size(304, 20);
             this.TB_Payload.TabIndex = 13;
             // 
             // CB_Type
             // 
             this.CB_Type.FormattingEnabled = true;
-            this.CB_Type.Location = new System.Drawing.Point(665, 50);
+            this.CB_Type.Location = new System.Drawing.Point(624, 50);
             this.CB_Type.Name = "CB_Type";
             this.CB_Type.Size = new System.Drawing.Size(92, 21);
             this.CB_Type.TabIndex = 14;
@@ -64,7 +64,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 53);
+            this.label1.Location = new System.Drawing.Point(31, 53);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(73, 13);
             this.label1.TabIndex = 15;
@@ -72,10 +72,14 @@
             // 
             // DGV_Data
             // 
+            this.DGV_Data.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.DGV_Data.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.DGV_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.DGV_Data.Location = new System.Drawing.Point(110, 89);
             this.DGV_Data.Name = "DGV_Data";
-            this.DGV_Data.Size = new System.Drawing.Size(647, 254);
+            this.DGV_Data.Size = new System.Drawing.Size(606, 254);
             this.DGV_Data.TabIndex = 16;
             // 
             // BTN_Add
@@ -121,14 +125,14 @@
             // CB_Variant
             // 
             this.CB_Variant.FormattingEnabled = true;
-            this.CB_Variant.Location = new System.Drawing.Point(527, 50);
+            this.CB_Variant.Location = new System.Drawing.Point(486, 50);
             this.CB_Variant.Name = "CB_Variant";
             this.CB_Variant.Size = new System.Drawing.Size(75, 21);
             this.CB_Variant.TabIndex = 21;
             // 
             // TB_IPDisplay
             // 
-            this.TB_IPDisplay.Location = new System.Drawing.Point(361, 12);
+            this.TB_IPDisplay.Location = new System.Drawing.Point(320, 12);
             this.TB_IPDisplay.Name = "TB_IPDisplay";
             this.TB_IPDisplay.Size = new System.Drawing.Size(164, 20);
             this.TB_IPDisplay.TabIndex = 22;
@@ -136,7 +140,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(257, 15);
+            this.label2.Location = new System.Drawing.Point(216, 15);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(98, 13);
             this.label2.TabIndex = 23;
@@ -154,7 +158,7 @@
             // 
             // BTN_Auto
             // 
-            this.BTN_Auto.Location = new System.Drawing.Point(665, 12);
+            this.BTN_Auto.Location = new System.Drawing.Point(626, 12);
             this.BTN_Auto.Name = "BTN_Auto";
             this.BTN_Auto.Size = new System.Drawing.Size(90, 23);
             this.BTN_Auto.TabIndex = 25;
@@ -165,7 +169,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(608, 53);
+            this.label3.Location = new System.Drawing.Point(567, 53);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(56, 13);
             this.label3.TabIndex = 26;
@@ -174,7 +178,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(465, 53);
+            this.label4.Location = new System.Drawing.Point(424, 53);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(60, 13);
             this.label4.TabIndex = 27;
@@ -184,7 +188,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(785, 371);
+            this.ClientSize = new System.Drawing.Size(747, 371);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.BTN_Auto);

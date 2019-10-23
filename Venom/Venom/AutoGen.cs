@@ -18,7 +18,7 @@ namespace VenomNamespace
     {
         public Venom parent;
         public PayList plist;
-        public int TESTCASEMAX = 8;
+        public int TESTCASEMAX = 5;
         //private BindingSource sbind = new BindingSource();
         List<IPData> iplist = new List<IPData>();
 
@@ -281,7 +281,7 @@ namespace VenomNamespace
                                                       iplist[listindex].Node + "\t" +
                                                       iplist[listindex].Type + "\t" +
                                                       "NA" + "\t" + //Not a cycle do not save
-                                                      "131812 - OTA : Generic : Forced Update : Unit in Idle State" + "\t" +
+                                                      "RQM 131812 - OTA : Generic : Forced Update : Unit in Idle State - Part 1" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "0";
                                             break;
@@ -292,7 +292,7 @@ namespace VenomNamespace
                                                       iplist[listindex + 1].Node + "\t" +
                                                       iplist[listindex + 1].Type + "\t" +
                                                       "NA" + "\t" + //Not a cycle do not save
-                                                      "131812 - OTA : Generic : Forced Update : Unit in Idle State" + "\t" +
+                                                      "RQM 131812 - OTA : Generic : Forced Update : Unit in Idle State - Part 2" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "0";
                                             break;
@@ -306,7 +306,7 @@ namespace VenomNamespace
                                                       iplist[listindex].Node + "\t" +
                                                       "Cycle" + "\t" +
                                                       iplist[listindex].MQTTPay + "\t" +
-                                                      "131813 - OTA : Generic : Forced Update : Unit in Programming State" + "\t" +
+                                                      "RQM 131813 - OTA : Generic : Forced Update : Unit in Programming State - Part 1" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "60";
                                             break;
@@ -318,7 +318,7 @@ namespace VenomNamespace
                                                       iplist[listindex].Node + "\t" +
                                                       iplist[listindex].Type + "\t" +
                                                       "NA" + "\t" + //Not a cycle do not save
-                                                      "131813 - OTA : Generic : Forced Update : Unit in Programming State" + "\t" +
+                                                      "RQM 131813 - OTA : Generic : Forced Update : Unit in Programming State - Part 2" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "0";
                                             break;
@@ -329,7 +329,7 @@ namespace VenomNamespace
                                                       iplist[listindex+1].Node + "\t" +
                                                       iplist[listindex+1].Type + "\t" +
                                                       "NA" + "\t" + //Not a cycle do not save
-                                                      "131813 - OTA : Generic : Forced Update : Unit in Programming State" + "\t" +
+                                                      "RQM 131813 - OTA : Generic : Forced Update : Unit in Programming State - Part 3" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "0";
                                             break;
@@ -337,36 +337,36 @@ namespace VenomNamespace
                                         */
                                         //Start of - 131814 - OTA : Generic : Forced Update : Unit in Running State
                                         //Set OTA downgrade (return to SOP)
-                                        case 5:
+                                        case 2:
                                             content = iplist[listindex].IPAddress + "\t" +
                                                       "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
                                                       iplist[listindex].Node + "\t" +
                                                       "Cycle" + "\t" +
                                                       iplist[listindex].MQTTPay + "\t" +
-                                                      "131814 - OTA : Generic : Forced Update : Unit in Running State" + "\t" +
+                                                      "RQM 131814 - OTA : Generic : Forced Update : Unit in Running State - Part 1" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "60";
                                             break;
 
                                         //Set OTA upgrade
-                                        case 6:
+                                        case 3:
                                             content = iplist[listindex].IPAddress + "\t" +
                                                       iplist[listindex].Payload + "\t" +
                                                       iplist[listindex].Node + "\t" +
                                                       iplist[listindex].Type + "\t" +
                                                       "NA" + "\t" + //Not a cycle do not save
-                                                      "131814 - OTA : Generic : Forced Update : Unit in Running State" + "\t" +
+                                                      "RQM 131814 - OTA : Generic : Forced Update : Unit in Running State - Part 2" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "0";
                                             break;
                                         //Set OTA  downgrade (return to SOP)
-                                        case 7:
+                                        case 4:
                                             content = iplist[listindex + 1].IPAddress + "\t" +
                                                       iplist[listindex + 1].Payload + "\t" +
                                                       iplist[listindex + 1].Node + "\t" +
                                                       iplist[listindex + 1].Type + "\t" +
                                                       "NA" + "\t" + //Not a cycle do not save
-                                                      "131814 - OTA : Generic : Forced Update : Unit in Running State" + "\t" +
+                                                      "RQM 131814 - OTA : Generic : Forced Update : Unit in Running State  - Part 3" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "0";
                                             break;

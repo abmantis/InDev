@@ -65,18 +65,22 @@ namespace VenomNamespace
             // 
             this.DGV_Data.AllowUserToAddRows = false;
             this.DGV_Data.AllowUserToDeleteRows = false;
+            this.DGV_Data.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.DGV_Data.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.DGV_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.DGV_Data.Location = new System.Drawing.Point(127, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(523, 247);
+            this.DGV_Data.Size = new System.Drawing.Size(546, 247);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
             // 
             this.TB_LogDir.Location = new System.Drawing.Point(143, 12);
             this.TB_LogDir.Name = "TB_LogDir";
-            this.TB_LogDir.Size = new System.Drawing.Size(507, 20);
+            this.TB_LogDir.Size = new System.Drawing.Size(530, 20);
             this.TB_LogDir.TabIndex = 11;
             // 
             // BTN_LogDir
@@ -183,7 +187,7 @@ namespace VenomNamespace
             this.BTN_MakeList.Name = "BTN_MakeList";
             this.BTN_MakeList.Size = new System.Drawing.Size(97, 23);
             this.BTN_MakeList.TabIndex = 96;
-            this.BTN_MakeList.Text = "Edit Test List";
+            this.BTN_MakeList.Text = "Test List Control";
             this.BTN_MakeList.UseVisualStyleBackColor = true;
             this.BTN_MakeList.Click += new System.EventHandler(this.BTN_MakeList_Click);
             // 
@@ -212,7 +216,7 @@ namespace VenomNamespace
             // 
             // TB_Loop
             // 
-            this.TB_Loop.Location = new System.Drawing.Point(604, 56);
+            this.TB_Loop.Location = new System.Drawing.Point(627, 55);
             this.TB_Loop.Name = "TB_Loop";
             this.TB_Loop.Size = new System.Drawing.Size(46, 20);
             this.TB_Loop.TabIndex = 99;
@@ -221,7 +225,7 @@ namespace VenomNamespace
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(553, 59);
+            this.label1.Location = new System.Drawing.Point(576, 58);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(45, 13);
             this.label1.TabIndex = 100;
@@ -240,7 +244,7 @@ namespace VenomNamespace
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(678, 365);
+            this.ClientSize = new System.Drawing.Size(693, 361);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.TB_Loop);
             this.Controls.Add(this.BTN_Auto);
