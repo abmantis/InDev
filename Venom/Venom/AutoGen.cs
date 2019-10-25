@@ -415,7 +415,7 @@ namespace VenomNamespace
 
         private void AutoGen_Load(object sender, EventArgs e)
         {
-            //ResetForm(); ENABLE WHEN UPLOADING TO STORE
+            ResetForm(); //ENABLE WHEN UPLOADING TO STORE
         }
     }
 }

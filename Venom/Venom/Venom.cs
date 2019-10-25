@@ -15,6 +15,9 @@ using System.Threading;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Net;
+using System.Net.Sockets;
+using System.Net.NetworkInformation;
 
 namespace VenomNamespace
 {
@@ -24,7 +27,9 @@ namespace VenomNamespace
         public static int WAITTIME = 2000;
         public static int ATTEMPTMAX = 10;
         public static int TMAX = 120 * 60000; //OTA max thread time is 2 hours
-        public static int REBMAX = 12 * 60000;
+        public static int REBMAX = 2 * 60000;
+        public static int RECONWAIT = 10 * 60000;
+        public static int CYCLEWAIT = 1 * 60000;
 
         // Entities used to store log and window data
         public DataTable results;
@@ -737,7 +742,7 @@ namespace VenomNamespace
                         using (StreamWriter sw = File.AppendText(curfilename))
                         {
                             //sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
-                            sw.WriteLine(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + "By thread with lock " + iplist[listindex].Signal.WaitHandle.Handle + "," + parts[0] + "," +
+                            sw.WriteLine(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + "," + "By thread with lock " + iplist[listindex].Signal.WaitHandle.Handle + "," + parts[0] + "," +
                             iplist[listindex].MAC + "," + source + "," +
                             iplist[listindex].Payload + "," +
                             iplist[listindex].Delivery + "," +
@@ -756,15 +761,7 @@ namespace VenomNamespace
             DGV_Data.Refresh();
             //responses.Clear();
         }
-        public void DisableWhileRunning()
-        {
-        }
-
-        public void EnableWhileRunning()
-        {
-            
-
-        }
+       
         private void BTN_Payload_Click(object sender, EventArgs e)
         {
             if (BTN_Payload.Text == "Run Test List")
@@ -846,21 +843,31 @@ namespace VenomNamespace
                     //return;
                     //IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
                     //int listindex = iplist.IndexOf(ipd);
-                    foreach (var member in iplist)
+                    try
                     {
-                        //if (iplist[member.TabIndex].Signal.)
-                        //{
-                        Console.WriteLine("Thread with corresponding lock " + iplist[member.TabIndex].Signal.WaitHandle.Handle + " closed.");
-                        iplist[member.TabIndex].Signal.Set();
+                        foreach (var member in iplist)
+                        {
+                            //if (iplist[member.TabIndex].Signal.)
+                            //{
+                            Console.WriteLine("Thread with corresponding lock " + iplist[member.TabIndex].Signal.WaitHandle.Handle + " closed.");
+                            iplist[member.TabIndex].Signal.Set();
 
+                            //return;
+                            // }
+                            //Thread.CurrentThread.Interrupt();
+                        }
+                        //Console.WriteLine("Thread with corresponding lock " + Thread.CurrentThread.Name + " closed.");
+                        return;
+                        //EnableWhileRunning();
                         //return;
-                        // }
-                        //Thread.CurrentThread.Interrupt();
                     }
-                    //Console.WriteLine("Thread with corresponding lock " + Thread.CurrentThread.Name + " closed.");
-                    return;
-                    //EnableWhileRunning();
-                    //return;
+
+                    catch
+                    {
+                        return;
+                    }
+
+
                 }
                 else
                     return;
@@ -908,7 +915,7 @@ namespace VenomNamespace
 
         }
 
-        public void SendReveal(string ips, byte[] paybytes)
+        public void SendRevelation(string ips, byte[] paybytes)
         {
             int revattempt = 0;
             bool revconnect = false;
@@ -971,9 +978,9 @@ namespace VenomNamespace
         }
         private static void EndThread(object source, ElapsedEventArgs args)
         {
-            Thread.CurrentThread.Interrupt();
+            Console.WriteLine("End Thread was called by " + Thread.CurrentThread.Name;
+            //Thread.CurrentThread.Interrupt();
             //EnableWhileRunning();
-            Console.WriteLine("End Thread was called."); 
         }
         public void RunCycle(IPData ipd, byte[] ipbytes)
         {
@@ -993,6 +1000,7 @@ namespace VenomNamespace
                         
             SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes, ipd.MAC);
             //Wait(ipd.Wait);
+            Wait(CYCLEWAIT);
         }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
@@ -1046,7 +1054,7 @@ namespace VenomNamespace
 
                         else
                         {
-                            SendReveal(ipd.IPAddress, paybytes);
+                            SendRevelation(ipd.IPAddress, paybytes);
                         }
 
                         // Spinwait until our result gets updated to a pass or fail
@@ -1068,7 +1076,7 @@ namespace VenomNamespace
                         }
                         if (!ipd.Type.Equals("Cycle"))
                         {
-                            Wait(60000);
+                            Wait(RECONWAIT); //Wait one minute for cycle to run
                             byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
                             SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", subbytes, ipd.MAC);
                             Wait(REBMAX); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
@@ -1095,12 +1103,17 @@ namespace VenomNamespace
             foreach (IPData ipd in iplist)
             //Parallel.ForEach(iplist, ipd =>
             {
+                if (cancel_request)
+                    return;
+                // Enable Trace for IP address in list
+                if (!TraceConnect(ipd.IPAddress, ipd.Payload, ipd.Type, ipd.Delivery))
+                    return;
                 //string taskentry = "";
-                lock (lockObj)
-                {
-                    // Enable Trace for IP address in list
-                    TraceConnect(ipd.IPAddress, ipd.Payload, ipd.Type, ipd.Delivery);
-                }
+                //lock (lockObj)
+                //{
+
+
+                //}
                 //taskentry = ipd.IPAddress + "\t" + ipd.Payload + "\t" + ipd.Type + "\t" + ipd.Delivery;
                 //TaskQ.Enqueue(taskentry);
             }
@@ -1129,24 +1142,21 @@ namespace VenomNamespace
             }
             // });
         }
-        void TraceConnect(string ip, string pay, string type, string delivery) //TODO FIX REVELATION RECONNECT LOGIC should the end if/else be part of while loop?
+
+        bool RevelationConnect(ConnectedApplianceInfo cai)
         {
-            bool mqttresp = false;
             int traceattempt = 0;
-            //gets the list of appliances from WifiBasic
-            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
 
-            //Selects the appliance based on IP address
-            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
-
-                //If an appliance with the specified IP address is found in the list...
-                while (!mqttresp && (traceattempt < ATTEMPTMAX))
+            while (traceattempt < ATTEMPTMAX)
+            {
+                try
                 {
-                    try
-                    {
+                    if (cancel_request)
+                        return false;
+
+                    traceattempt++;
                     if (cai != null)
                     {
-                        mqttresp = cai.IsTraceOn; //check if Trace is currently enabled
                         if (!cai.IsTraceOn)
                         {
                             //if it's not and Revelation is also not enabled, enable Revelation
@@ -1154,14 +1164,12 @@ namespace VenomNamespace
                             {
                                 WifiLocal.ConnectTo(cai);
                                 Wait(2000);
-                                traceattempt++;
                             }
                             if (cai.IsRevelationConnected)
                             {
                                 //If Revelation is enabled, enable Trace
                                 WifiLocal.EnableTrace(cai, true);
                                 Wait(2000);
-                                traceattempt++;
                             }
                         }
                         else
@@ -1173,96 +1181,105 @@ namespace VenomNamespace
                                 //WifiLocal.Close(cai);
                                 Wait(2000);
                             }
-                            mqttresp = true;
+                            return true;
                         }
+
                     }
-                }
-                    catch
+                    else
                     {
                         MessageBox.Show("Trace was not able to start.  Please verify the socket can be " +
-                                        "opened and it is not in use (UITracer is not running). Closing Wifi" +
-                                        ", you will need to press 'Data Start' in Wifibasic again.", "Error: Unable to start Trace",
-                        MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    WifiLocal.CloseAll(true);
-                    return;
+                                "opened and it is not in use (UITracer is not running). You may need to close" +
+                                "Widebox and try again.", "Error: Unable to start Trace",
+                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        //WifiLocal.CloseAll(true);
+                        return false;
                     }
+
                 }
 
-            if (mqttresp)
-                // Update progress information   
-                responses.Add(ip + "\t" + pay + "\t" + delivery + "\t" + type + "\t" + "PENDING");
-            else
-            {
-                MessageBox.Show("Revelation/Trace was not able to start. Restarting connection attempts.", "Error: Unable to start Trace",
-                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                CycleWifi(cai);
-                traceattempt = 0;
 
-                /*if (!CycleWifi(System.Net.IPAddress.Parse(cai.IPAddress)))
+                catch
                 {
-                    MessageBox.Show("Revelation/Trace was not able to start even after retry. Please close Venom and WideBox and try again.", "Error: WideBox issue prevents running Plugin",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }*/
-
+                    MessageBox.Show("Trace was not able to start.  Please verify the socket can be " +
+                                    "opened and it is not in use (UITracer is not running). You may need to close" +
+                                "Widebox and try again.", "Error: Unable to start Trace",
+                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    //WifiLocal.CloseAll(true);
+                    return false;
+                }
             }
 
+
+            return false;
         }
 
-        /*private byte[] SetStartDisplay(bool start, bool modify)
+        bool TraceConnect(string ip, string pay, string type, string delivery) 
         {
+            //gets the list of appliances from WifiBasic
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+
+            //Selects the appliance based on IP address
+            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
+            //CycleWifi(cai);
+            Wait(2000);
+            //If an appliance with the specified IP address is found in the list
+            if (!RevelationConnect(cai))
+            {
+                if (cancel_request)
+                    return false;
+                //First round of attempts failed, close data / open data and try again
+                CycleWifi(cai);
+
+                if (!RevelationConnect(cai))
+                {
+                    MessageBox.Show("Revelation/Trace was not able to start even after retry. Please close Venom and WideBox and try again.",
+                                    "Error: WideBox issue prevents running Plugin", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+            }
+
+
+            responses.Add(ip + "\t" + pay + "\t" + delivery + "\t" + type + "\t" + "PENDING");
+
+            return true;
+
+        }
+       
+        public bool CycleWifi(ConnectedApplianceInfo cai)
+        {
+            /*using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            {
+                socket.Connect("8.8.8.8", 65530);
+                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                localIP = endPoint.Address.ToString();
+            }*/
+            string localIP = WifiLocal.Localhost.ToString();
             try
             {
-                //string zeroes = "00000000";
-                string startdisp = start ? "02" : "03";
-                startdisp = modify ? "04" : startdisp;
-                string timestartdisp = start ? "02" : "05";
-                int endfunc = CBO_End.SelectedIndex < 0 ? 0 : CBO_End.SelectedIndex;
+                // Close all WifiBasic connections
+                WifiLocal.CloseAll(true);
+                //WifiLocal.Close(cai);
+                Wait(2000);
+                // Get new cert to restart WifiBasic connections
+                CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
 
-                string mes = cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].KeyID + cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].Enum.ToString("X2");
-                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Temp" ? mes + tempKey + FtoCx10(TB_Temp.Text) : mes;
-                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Power" ? mes + powKey + int.Parse(TB_Temp.Text).ToString("X2") : mes;
-
-                mes = TB_Time.Enabled && TB_Time.Text != "" ? mes + timeKey + ((int)(double.Parse(TB_Time.Text) * 60)).ToString("X8") : mes;
-                mes = TB_Time.Enabled && TB_Time.Text != "" && !modify && usesCookTimeOp ? mes + timeOpKey + timestartdisp : mes;
-
-                mes = TB_Probe.Enabled && TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + probeAmtKey + FtoCx10(TB_Probe.Text) : mes;
-                mes =  TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex == 2 ? mes + probeAmtKey + int.Parse(TB_Probe.Text.ToString()).ToString("X4") : mes;
-                //mes = CBO_Amt.Enabled && CBO_Amt.SelectedItem != null
-                mes = CBO_End.SelectedItem != null ? mes + cpltKey + endfunc.ToString("X2") : mes;
-
-                mes = TB_Delay.Enabled && TB_Delay.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + delayKey + (int.Parse(TB_Delay.Text) * 60).ToString("X8") : mes;
-                mes = CBO_Doneness.Visible && CBO_Doneness.SelectedItem != null ? mes + doneKey + CBO_Doneness.SelectedIndex.ToString("X2") : mes;
-
-                mes += opKey + startdisp;
-                mes = CBO_Cycles.SelectedItem.ToString().Contains("Sabbath") ? mes += sabKey + "01" : mes;
-
-                byte[] bytes = MakeBytes(mes, true);
-
-                return bytes;
+                // Restart Wifi Connection
+                if (certMgr.IsLocalValid)
+                {
+                    WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+                    Wait(5000);
+                    return true;
+                }
             }
+
             catch
             {
-                MessageBox.Show("Input contains invalid arguments");
-                return null;
+                //WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+                return false;
             }
 
-        }*/
-        public void CycleWifi(ConnectedApplianceInfo cai)
-        {
-            // Close all WifiBasic connections
-            //WifiLocal.CloseAll(true);
-            WifiLocal.Close(cai);
-
-            // Get new cert to restart WifiBasic connections
-            CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
+            return false;
             
-            // Restart Wifi Connection
-            if (certMgr.IsLocalValid)
-            {
-                WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
-            }
-            //WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
         }
 
         private void BTN_Add_Click(object sender, EventArgs e)
@@ -2118,6 +2135,46 @@ namespace VenomNamespace
         {
             TB_Loop.Text = "0";
         }
+
+        /*private byte[] SetStartDisplay(bool start, bool modify)
+        {
+            try
+            {
+                //string zeroes = "00000000";
+                string startdisp = start ? "02" : "03";
+                startdisp = modify ? "04" : startdisp;
+                string timestartdisp = start ? "02" : "05";
+                int endfunc = CBO_End.SelectedIndex < 0 ? 0 : CBO_End.SelectedIndex;
+
+                string mes = cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].KeyID + cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].Enum.ToString("X2");
+                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Temp" ? mes + tempKey + FtoCx10(TB_Temp.Text) : mes;
+                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Power" ? mes + powKey + int.Parse(TB_Temp.Text).ToString("X2") : mes;
+
+                mes = TB_Time.Enabled && TB_Time.Text != "" ? mes + timeKey + ((int)(double.Parse(TB_Time.Text) * 60)).ToString("X8") : mes;
+                mes = TB_Time.Enabled && TB_Time.Text != "" && !modify && usesCookTimeOp ? mes + timeOpKey + timestartdisp : mes;
+
+                mes = TB_Probe.Enabled && TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + probeAmtKey + FtoCx10(TB_Probe.Text) : mes;
+                mes =  TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex == 2 ? mes + probeAmtKey + int.Parse(TB_Probe.Text.ToString()).ToString("X4") : mes;
+                //mes = CBO_Amt.Enabled && CBO_Amt.SelectedItem != null
+                mes = CBO_End.SelectedItem != null ? mes + cpltKey + endfunc.ToString("X2") : mes;
+
+                mes = TB_Delay.Enabled && TB_Delay.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + delayKey + (int.Parse(TB_Delay.Text) * 60).ToString("X8") : mes;
+                mes = CBO_Doneness.Visible && CBO_Doneness.SelectedItem != null ? mes + doneKey + CBO_Doneness.SelectedIndex.ToString("X2") : mes;
+
+                mes += opKey + startdisp;
+                mes = CBO_Cycles.SelectedItem.ToString().Contains("Sabbath") ? mes += sabKey + "01" : mes;
+
+                byte[] bytes = MakeBytes(mes, true);
+
+                return bytes;
+            }
+            catch
+            {
+                MessageBox.Show("Input contains invalid arguments");
+                return null;
+            }
+
+        }*/
 
     }
 }
