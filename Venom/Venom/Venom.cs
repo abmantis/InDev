@@ -978,7 +978,7 @@ namespace VenomNamespace
         }
         private static void EndThread(object source, ElapsedEventArgs args)
         {
-            Console.WriteLine("End Thread was called by " + Thread.CurrentThread.Name;
+            Console.WriteLine("End Thread was called by " + Thread.CurrentThread.Name);
             //Thread.CurrentThread.Interrupt();
             //EnableWhileRunning();
         }
