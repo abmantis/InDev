@@ -6,5 +6,5 @@
       classname="Name of the form that will be open"
       dllname="Name of the DLL that this project will create"/>
   -->
-  <CustomInterface name="AutoPinger" classname="AutoPinger" dllname="AutoPinger.dll"/>
+  <CustomInterface name="MQTT_URL" classname="MQTT_URL" dllname="MQTT_URL.dll"/>
 </APIManifest>

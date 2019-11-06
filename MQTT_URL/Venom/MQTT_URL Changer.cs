@@ -487,8 +487,13 @@ namespace VenomNamespace
 
                 catch
                 {
-                    MessageBox.Show("Revelation connection failed. You may need to close" +
+                    if (sent == "trace")
+                        MessageBox.Show("Connection failed. Verify that UITracer is NOT RUNNING and is Closed. You may need to close" +
                                 "Widebox and try again.", "Error: Unable to connect.",
+                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    else
+                        MessageBox.Show("Revelation connection failed. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
+                                        " and that the IP Address is listed within WifiBasic.", "Error: Unable to connect.",
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     return false;
                 }
@@ -701,7 +706,7 @@ namespace VenomNamespace
                         Wait(2000);
                     }
                     //if (CB_Org.Checked)
-                    dialogurl = MessageBox.Show("The MQTT URl for " + TB_IP.Text + " is currently " + mqtt_url + ".", "Current MQTT URL",
+                    dialogurl = MessageBox.Show("The MQTT URL for " + TB_IP.Text + " is currently " + mqtt_url + ".", "Current MQTT URL",
                                                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                     BTN_GET.Text = "Get";
                     Reset(false);
