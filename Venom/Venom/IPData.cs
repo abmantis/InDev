@@ -69,7 +69,12 @@ namespace VenomNamespace
             get { return _name; }
             set { _name = value; }
         }
-
+        private string _waittype;
+        public string WaitType
+        {
+            get { return _waittype; }
+            set { _waittype = value; }
+        }
         private ManualResetEventSlim _signal;
         public ManualResetEventSlim Signal
         {
@@ -109,6 +114,7 @@ namespace VenomNamespace
             _wait = 0;
             _node = "";
             _name = "";
+            _waittype = "";
         }
 
     }

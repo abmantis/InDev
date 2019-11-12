@@ -849,7 +849,7 @@ namespace VenomNamespace
                         {
                             //if (iplist[member.TabIndex].Signal.)
                             //{
-                            Console.WriteLine("Thread with corresponding lock " + iplist[member.TabIndex].Signal.WaitHandle.Handle + " closed.");
+                            //Console.WriteLine("Thread with corresponding lock " + iplist[member.TabIndex].Signal.WaitHandle.Handle + " closed.");
                             iplist[member.TabIndex].Signal.Set();
 
                             //return;
@@ -999,8 +999,8 @@ namespace VenomNamespace
             }
                         
             SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes, ipd.MAC);
-            //Wait(ipd.Wait);
-            Wait(CYCLEWAIT);
+            Wait(ipd.Wait*1000);
+            //Wait(CYCLEWAIT);
         }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
@@ -1020,6 +1020,7 @@ namespace VenomNamespace
                         ipd.IPIndex = Int32.Parse(ipindex);
                         ipd.Signal = sig;
                         ipd.TabIndex = iplist.IndexOf(ipd);
+                        bool thread_waits = true;
                         //string[] item = TaskQ.Dequeue().ToString().Split('\t');
 
                         //Force each thread to live only two hours (process somehow got stuck)
@@ -1039,20 +1040,35 @@ namespace VenomNamespace
                             ipbytes[j] = byte.Parse(ipad[j]);
                         }
 
-                        // Figure out a way to schedule how the threads march through iplist, we already filter on ip so only one thread in at a time
-                        // See if sending over MQTT or Revelation
-                        if (ipd.Delivery.Equals("MQTT"))
+                        if (iplist[ipd.TabIndex].WaitType == "Downloading")
+                            while (iplist[ipd.TabIndex].Result != "Downloading") ;
+
+                        if (iplist[ipd.TabIndex].WaitType == "Programming")
+                            while (iplist[ipd.TabIndex].Result != "Programming") ;
+
+                            // See if sending over MQTT or Revelation
+                            if (ipd.Delivery.Equals("MQTT"))
                         {
                             if (ipd.Type.Equals("Cycle"))
-                                
+                            {
                                 RunCycle(ipd, ipbytes);
-                            
+                                thread_waits = false;
+                            }
+
+                            else if (ipd.Type.Equals("Wait"))
+                            {
+                                Wait(ipd.Wait * 1000);
+                                thread_waits = false;
+                            }
+
                             else
-                            
-                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, ipd.MAC);                            
+                            {
+                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, ipd.MAC);
+                                thread_waits = true;
+                            }
                         }
 
-                        else
+                        else //TODO IF USE REVELATION MUST COPY ABOVE LOGIC FOR AUTOGEN (CYCLE, WAIT, ETC.)
                         {
                             SendRevelation(ipd.IPAddress, paybytes);
                         }
@@ -1062,8 +1078,12 @@ namespace VenomNamespace
                         //SpinWait.SpinUntil(() => isCompleted == true);
                         Console.WriteLine("This is the info before calling this lock " + ipd.Signal.WaitHandle.Handle + " with this thread name " + Thread.CurrentThread.Name +
                             " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+
                         // Set wait signal to be unlocked by thread after job is complete (result seen from log)
-                        sig.Wait();
+                        if (thread_waits)
+                            sig.Wait();
+
+                        // Check to see if thread should be cancelled
                         lock (cancelobj)
                         {
                             if (cancel_request)
@@ -1074,14 +1094,15 @@ namespace VenomNamespace
                                 return;
                             }
                         }
-                        if (!ipd.Type.Equals("Cycle"))
+
+                        if (thread_waits)
                         {
-                            Wait(RECONWAIT); //Wait one minute for cycle to run
-                            byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+                            Wait(RECONWAIT); //Wait one minute for MQTT to come back on after reboout out of IAP
+                            byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"); //Force reclaim
                             SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", subbytes, ipd.MAC);
                             Wait(REBMAX); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
                         }
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " ran to conclusion.");
+                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished the task.");
                         //break;
                     }
                     else
@@ -1220,21 +1241,24 @@ namespace VenomNamespace
 
             //Selects the appliance based on IP address
             ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
-            //CycleWifi(cai);
-            Wait(2000);
-            //If an appliance with the specified IP address is found in the list
-            if (!RevelationConnect(cai))
+            if (!cai.IsTraceOn)
             {
-                if (cancel_request)
-                    return false;
-                //First round of attempts failed, close data / open data and try again
-                CycleWifi(cai);
-
+                //CycleWifi(cai);
+                Wait(2000);
+                //If an appliance with the specified IP address is found in the list
                 if (!RevelationConnect(cai))
                 {
-                    MessageBox.Show("Revelation/Trace was not able to start even after retry. Please close Venom and WideBox and try again.",
-                                    "Error: WideBox issue prevents running Plugin", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return false;
+                    if (cancel_request)
+                        return false;
+                    //First round of attempts failed, close data / open data and try again
+                    CycleWifi(cai);
+
+                    if (!RevelationConnect(cai))
+                    {
+                        MessageBox.Show("Revelation/Trace was not able to start even after retry. Please close Venom and WideBox and try again.",
+                                        "Error: WideBox issue prevents running Plugin", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return false;
+                    }
                 }
             }
 
@@ -1436,80 +1460,93 @@ namespace VenomNamespace
             ofd.Filter = "csv files (*.csv)|*.csv|All files (*.*)|*.*";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                //Read the contents of the file into a stream
-                var fileStream = ofd.OpenFile();
-                using (StreamReader reader = new StreamReader(fileStream))
+                try
                 {
-                    string line = reader.ReadLine();
-                    string[] value; // = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
-                    int skipped = 0;
-                    var ipskipped = new List<string>();
 
-                    while (!reader.EndOfStream)
+                    //Read the contents of the file into a stream
+                    var fileStream = ofd.OpenFile();
+                    using (StreamReader reader = new StreamReader(fileStream))
                     {
-                        value = reader.ReadLine().Split('\t');
-                        System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-                        ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == value[0]);
-                        //CycleWifi(cai);
-                        if (cai != null)
+                        string line = reader.ReadLine();
+                        string[] value; // = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
+                        int skipped = 0;
+                        var ipskipped = new List<string>();
+
+                        while (!reader.EndOfStream)
                         {
-                            if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null && !cai.IsMqttConnected)
+                            value = reader.ReadLine().Split('\t');
+                            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == value[0]);
+                            //CycleWifi(cai);
+                            if (cai != null)
                             {
-                                DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
-                                                                            " for the entered IP Address of " + cai.IPAddress + " is not currently connected." +
-                                                                            " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
-                                                                            " MQTT connection then try adding the IP Address again.",
-                                                                            "Error: MQTT Delivery but Device is not the MQTT Broker.",
-                                                                            MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-                                if (dialogResult == DialogResult.No)
-                                    return;
+                                if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null && !cai.IsMqttConnected)
+                                {
+                                    DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
+                                                                                " for the entered IP Address of " + cai.IPAddress + " is not currently connected." +
+                                                                                " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
+                                                                                " MQTT connection then try adding the IP Address again.",
+                                                                                "Error: MQTT Delivery but Device is not the MQTT Broker.",
+                                                                                MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                                    if (dialogResult == DialogResult.No)
+                                        return;
+                                }
+
+                                if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null)
+                                    LB_IPs.Items.Add(cai.IPAddress);
+
+                                IPData newip = new IPData(cai.IPAddress, value[1]); //MQTT Forced as type at value[1] add Revelation logic if supported
+                                iplist.Add(newip);
+                                newip.Node = value[2];
+                                newip.Type = value[3];
+                                newip.MQTTPay = value[4];
+                                newip.Name = value[5];
+                                newip.MAC = cai.MacAddress; //value[6]
+                                newip.Wait = int.Parse(value[7]);
+                                newip.WaitType = value[8];
+
+                                // Update window for added IP
+                                DataRow dr = results.NewRow();
+                                dr["IP Address"] = newip.IPAddress;
+                                dr["OTA Payload"] = newip.Payload;
+                                dr["Delivery Method"] = "MQTT";
+                                dr["OTA Type"] = newip.Type;
+                                dr["Node"] = newip.Node;
+                                dr["Name"] = newip.Name;
+                                dr["OTA Result"] = "PENDING";
+                                results.Rows.Add(dr);
+                            }
+                            else
+                            {
+                                skipped++;
+                                if (ipskipped.FirstOrDefault(x => x.ToString() == value[0]) == null)
+                                    ipskipped.Add(value[0]);
                             }
 
-                            if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null)
-                                LB_IPs.Items.Add(cai.IPAddress);
-
-                            IPData newip = new IPData(cai.IPAddress, value[1]); //Add Revelation logic if supported
-                            iplist.Add(newip);
-                            newip.MAC = cai.MacAddress;
-                            newip.Node = value[2];
-                            newip.Type = value[3];
-                            newip.MQTTPay = value[4];
-                            newip.Name = value[5];
-                           // newip.Wait = int.Parse(value[7]);
-
-                            // Update window for added IP
-                            DataRow dr = results.NewRow();
-                            dr["IP Address"] = newip.IPAddress;
-                            dr["OTA Payload"] = newip.Payload;
-                            dr["Delivery Method"] = "MQTT";
-                            dr["OTA Type"] = newip.Type;
-                            dr["Node"] = newip.Node;
-                            dr["Name"] = newip.Name;
-                            dr["OTA Result"] = "PENDING";
-                            results.Rows.Add(dr);
                         }
-                        else
+
+                        if (skipped > 0)
                         {
-                            skipped++;
-                            if (ipskipped.FirstOrDefault(x => x.ToString() == value[0]) == null)
-                                ipskipped.Add(value[0]);
+                            string badips = "";
+                            foreach (string ips in ipskipped)
+                                badips = badips + "  " + ips;
+                            if (String.IsNullOrWhiteSpace(badips))
+                                badips = "EMPTY LINES";
+                            MessageBox.Show("Import skipped a total of " + skipped + " line(s) for IP Address(es) " +
+                                 badips + " due to NOT being listed in Wifibasic OR the import file having EMPTY lines. Please verify the IP Address(es) or empty lines " +
+                                "that were skipped are connected and listed in Wifibasic or expected, then retry importing.", "Error: WifiBasic IP Address(es) Not Found or File Has Empty Lines",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
-
-                    }
-
-                    if (skipped > 0)
-                    {
-                        string badips ="";
-                        foreach (string ips in ipskipped)
-                            badips = badips + "  " + ips;
-                        if (String.IsNullOrWhiteSpace(badips))
-                            badips = "EMPTY LINES";
-                        MessageBox.Show("Import skipped a total of " + skipped + " line(s) for IP Address(es) " +
-                             badips + " due to NOT being listed in Wifibasic OR the import file having EMPTY lines. Please verify the IP Address(es) or empty lines " +
-                            "that were skipped are connected and listed in Wifibasic or expected, then retry importing.", "Error: WifiBasic IP Address(es) Not Found or File Has Empty Lines",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+                catch
+                {
+                    MessageBox.Show("Import failed due to unkown error. Verify the import file has not been corrupted then retry importing. Clearing list.", "Error: Import Failed",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    iplist.Clear();
+                    LB_IPs.Items.Clear();
+                }
+                
             }
         }
 
