@@ -257,7 +257,7 @@ namespace VenomNamespace
                         {
                             string content = "";
                             listindex = 0;
-                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tCycle_Wait\tWait_Type");
+                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tMAC\tCycle_Wait\tWait_Type");
                             /* foreach (IPData ipd in iplist)
                              {
                                  sw.WriteLine(ipd.IPAddress + "\t" +
@@ -341,7 +341,6 @@ namespace VenomNamespace
                                         //End of - 131813 - OTA : Generic : Forced Update : Unit in Programming State
 
                                         //Start of - 131814 - OTA : Generic : Forced Update : Unit in Running State
-                                        //Set OTA downgrade (return to SOP)
                                         case 5:
                                             content = iplist[listindex].IPAddress + "\t" +
                                                       "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
@@ -381,7 +380,6 @@ namespace VenomNamespace
                                         //End of - 131814 - OTA : Generic : Forced Update : Unit in Running State
 
                                         //Start of - 131815 - OTA : Generic : Forced Update : Unit in Post-Cycle Running State
-                                        //Set OTA downgrade (return to SOP)
                                         case 8:
                                             content = iplist[listindex].IPAddress + "\t" +
                                                       "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
@@ -422,7 +420,6 @@ namespace VenomNamespace
 
 
                                         //Start of - 131816 - OTA : Generic : Forced Update : Unit in Non-Running Complete State
-                                        //Set OTA downgrade (return to SOP)
                                         case 11:
                                             content = iplist[listindex].IPAddress + "\t" +
                                                       "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
@@ -463,13 +460,12 @@ namespace VenomNamespace
 
 
                                         //Start of - 131817 - OTA : Generic : Forced Update : Unit in Low Power Idle State
-                                        //Set OTA downgrade (return to SOP)
                                         case 14:
                                             content = iplist[listindex].IPAddress + "\t" +
                                                       "No OTA Payload - Wait Till Low Power Idle State" + "\t" + //Not an ota do not save
                                                       iplist[listindex].Node + "\t" +
                                                       "Wait" + "\t" +
-                                                      iplist[listindex].MQTTPay + "\t" +
+                                                      "NA" + "\t" +
                                                       "RQM 131817 - OTA : Generic : Forced Update : Unit in Low Power Idle State - Part 1" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "360" + "\t" +
@@ -568,38 +564,60 @@ namespace VenomNamespace
                                             break;
                                         //End of - 131822 - OTA : Generic : Forced Update : ACU Update
 
-                                        //Start of - 131822 - OTA : Generic : Forced Update : ACU Update
+                                        //Start of - 131835 - OTA : Downloading : Forced Update : User starts cycle from App
                                         //Set OTA upgrade
                                         case 21:
-                                            if (!TB_ACU_UP.Text.Equals(""))
-                                                content = iplist[listindex].IPAddress + "\t" +
-                                                      TB_ACU_UP.Text + "\t" +
-                                                      "ACU" + "\t" +
+                                            content = iplist[listindex].IPAddress + "\t" +
+                                                      iplist[listindex].Payload + "\t" +
+                                                      iplist[listindex].Node + "\t" +
                                                       iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131822 - OTA : Generic : Forced Update : ACU Update - Part 1" + "\t" +
+                                                      iplist[listindex].MQTTPay + "\t" +
+                                                      "RQM 131835 - OTA : Downloading : Forced Update : User Starts Cycle from App - Part 1" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "Downloading";
-                                            else
-                                                content = null;
+                                                      "1" + "\t" +
+                                                      "Cycle";
                                             break;
                                         //Set OTA  downgrade (return to SOP)
                                         case 22:
-                                            if (!TB_ACU_DWN.Text.Equals(""))
-                                                content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      TB_ACU_DWN.Text + "\t" +
-                                                      "ACU" + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
+                                            content = iplist[listindex+1].IPAddress + "\t" +
+                                                      iplist[listindex+1].Payload + "\t" +
+                                                      iplist[listindex+1].Node + "\t" +
+                                                      iplist[listindex+1].Type + "\t" +
                                                       "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131822 - OTA : Generic : Forced Update : ACU Update - Part 2" + "\t" +
+                                                      "RQM 131835 - OTA : Downloading : Forced Update : User Starts Cycle from App - Part 2" + "\t" +
                                                       iplist[listindex].MAC + "\t" +
                                                       "0" + "\t" +
-                                                      "Downloading";
-                                            else
-                                                content = null;
+                                                      "";
                                             break;
-                                        //End of - 131822 - OTA : Generic : Forced Update : ACU Update
+                                        //End of - 131835 - OTA : Downloading : Forced Update : User starts cycle from App
+
+                                        //Start of - 131837 - OTA : Downloading : Forced Update : User Changes Settings from App
+                                        //Set OTA upgrade
+                                        case 23:
+                                            content = iplist[listindex].IPAddress + "\t" +
+                                                      iplist[listindex].Payload + "\t" +
+                                                      iplist[listindex].Node + "\t" +
+                                                      iplist[listindex].Type + "\t" +
+                                                      "0021FF333301070001323031392D30312D30315431393A33323A34382B30303A303000" + "\t" +
+                                                      "RQM 131837 - OTA : Downloading : Forced Update : User Changes Settings from App - Part 1" + "\t" +
+                                                      iplist[listindex].MAC + "\t" +
+                                                      "1" + "\t" +
+                                                      "Setting";
+                                            break;
+                                        //Set OTA  downgrade (return to SOP)
+                                        case 24:
+                                            content = iplist[listindex + 1].IPAddress + "\t" +
+                                                      iplist[listindex + 1].Payload + "\t" +
+                                                      iplist[listindex + 1].Node + "\t" +
+                                                      iplist[listindex + 1].Type + "\t" +
+                                                      "NA" + "\t" + //Not a cycle do not save
+                                                      "RQM 131837 - OTA : Downloading : Forced Update : User Changes Settings from App - Part 2" + "\t" +
+                                                      iplist[listindex].MAC + "\t" +
+                                                      "0" + "\t" +
+                                                      "";
+                                            break;
+                                        //End of - 131837 - OTA : Downloading : Forced Update : User Changes Settings from App
+
                                         default:
                                             content = null;
                                             break;

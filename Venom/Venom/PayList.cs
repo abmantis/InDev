@@ -34,6 +34,12 @@ namespace VenomNamespace
             DGV_Data.AutoGenerateColumns = true;
             DGV_Data.DataSource = parent.results;
             DGV_Data.DataSource = sbind;
+
+            // Do not allow columns to be sorted
+            foreach (DataGridViewColumn column in DGV_Data.Columns)
+            {
+                column.SortMode = DataGridViewColumnSortMode.NotSortable;
+            }
         }
         
         private void ResetForm()
@@ -142,6 +148,7 @@ namespace VenomNamespace
 
         private void BTN_Save_Click(object sender, EventArgs e)
         {
+            
             //Write info to log
             if (!File.Exists(parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
             {
@@ -152,15 +159,27 @@ namespace VenomNamespace
                     {
                         using (StreamWriter sw = File.CreateText(curfilename))
                         {
-                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName");
+                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tMAC\tCycle_Wait\tWait_Type");
                             foreach (DataRow row in parent.results.Rows)
                             {
-                                sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
+                                if (row.ItemArray[5].ToString() != "User Input")    //TODO Find a better way to handle this
+                                {
+                                    MessageBox.Show("Cannot save non user created (AUTOGEN) files. Nothing saved.", "Export: Payload List Not Saved.",
+                                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    sw.Close();
+                                    File.Delete(curfilename);
+                                    return;
+                                }
+
+                                    sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
                                              row.ItemArray[1].ToString() + "\t" + 
                                              row.ItemArray[4].ToString() + "\t" +
                                              row.ItemArray[3].ToString() + "\t" +
                                              "NA"+ "\t" +
-                                             row.ItemArray[5].ToString());
+                                             row.ItemArray[5].ToString() + "\t" +
+                                             "NA" + "\t" +
+                                             "0" + "\t" +
+                                             "NA");
                             }
                         }
                         MessageBox.Show("Saved payload list at " + curfilename + ".", "Export: Payload List Saving.",

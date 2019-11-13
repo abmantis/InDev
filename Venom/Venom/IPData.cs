@@ -75,6 +75,12 @@ namespace VenomNamespace
             get { return _waittype; }
             set { _waittype = value; }
         }
+        private string _typeres;
+        public string Typeres
+        {
+            get { return _typeres; }
+            set { _typeres = value; }
+        }
         private ManualResetEventSlim _signal;
         public ManualResetEventSlim Signal
         {
@@ -115,6 +121,7 @@ namespace VenomNamespace
             _node = "";
             _name = "";
             _waittype = "";
+            _typeres = "";
         }
 
     }
