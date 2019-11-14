@@ -14,6 +14,7 @@ using System.IO;
 using System.Threading;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
@@ -39,6 +40,9 @@ namespace VenomNamespace
         public List<IPData> iplist;
         public List<string> responses;
         public List<ManualResetEventSlim> signal;
+        //public ManualResetEvent terminate;
+        private readonly object padlock = new object();
+        private volatile bool stopping = false;
 
         public string curfilename;
         public PayList plist;
@@ -47,6 +51,7 @@ namespace VenomNamespace
         static object lockObj = new object();
         static object writeobj = new object();
         static object cancelobj = new object();
+
 
         // Used for importing API144 DDM (to identify cycles)
         public List<KeyValue> keyValues;
@@ -120,8 +125,10 @@ namespace VenomNamespace
             iplist = new List<IPData>();
             responses = new List<string>();
             signal = new List<ManualResetEventSlim>();
+            //terminate = new ManualResetEvent(false);
 
-    }
+
+        }
         
         /// <summary>
         /// Parse message from WideBoxInterface
@@ -595,6 +602,14 @@ namespace VenomNamespace
                 
             }
         }
+        /*public void Wait_Stop()
+        {
+            stopping = true;
+            lock (padlock)
+            {
+                Monitor.Pulse(padlock);
+            }
+        }*/
         public string StatusLookup(int statusval)
         {
             string statusb = "";
@@ -762,17 +777,19 @@ namespace VenomNamespace
         public void SetText(string type, string source, int listindex)
         {
             // Process each progress entity for each IP added
-            foreach (string s in responses)
-            {
+            //foreach (string s in responses)
+            //{
+
                 // Seperate on tabs and pull the IP address
-                string[] parts = s.Split('\t');
-               // IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
-               // listindex = iplist.IndexOf(ipd);
+                //string[] parts = s.Split('\t');
+                // IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
+                // listindex = iplist.IndexOf(ipd);
 
                 // Update window with OTA result
                 //results.Rows[listindex]["Delivery Method"] = iplist[listindex].Delivery;
                 //results.Rows[listindex]["OTA Type"] = iplist[listindex].Type;
                 //results.Rows[listindex]["Node"] = iplist[listindex].Node;
+                
                 results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
 
                 if (type.Equals("status"))
@@ -781,7 +798,7 @@ namespace VenomNamespace
                     {
                         using (StreamWriter sw = File.AppendText(curfilename))
                         {
-                            sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + parts[0] + "," +
+                            sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
                             //sw.WriteLine(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + "," + "By thread with lock " + iplist[listindex].Signal.WaitHandle.Handle + "," + parts[0] + "," +
                             iplist[listindex].MAC + "," + source + "," +
                             iplist[listindex].Payload + "," +
@@ -795,7 +812,10 @@ namespace VenomNamespace
                     }
                     catch { }
                 }
-            }
+
+                //if (iplist[listindex].Result.Contains("PASS") || iplist[listindex].Result.Contains("FAIL"))
+                   // break;
+            //}
 
             // Push result update
             DGV_Data.Refresh();
@@ -909,7 +929,9 @@ namespace VenomNamespace
                         //SetText("status", "user", member.TabIndex);
                         DGV_Data.Refresh();
                         iplist.Clear();
-                        results.Clear();
+                        //Wait_Stop();
+                        //terminate.Set();
+                        //results.Clear();
                         //Console.WriteLine("Thread with corresponding lock " + Thread.CurrentThread.Name + " closed.");
                         return;
                         //EnableWhileRunning();
@@ -940,8 +962,12 @@ namespace VenomNamespace
 
             System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
             ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
-            if (CancelRequest())
+            if (cancel_request)
+            {
+                Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                //Thread.CurrentThread.Abort();
                 return;
+            }
             //If IP Address exists, send to that IP
             // if (cai != null)
             //Semd payload
@@ -1036,6 +1062,25 @@ namespace VenomNamespace
                     return;
                 Application.DoEvents();
             }
+
+            /*while (!stopping)
+            {
+                Application.DoEvents();
+                lock (padlock)
+                {
+                    Monitor.Wait(padlock, timeout);
+                }
+            }*/
+
+            /*while (true)
+            {
+                Application.DoEvents();
+
+                if (terminate.WaitOne(timeout))
+                    break;
+
+            }*/
+
         }
         private static void EndThread(object source, ElapsedEventArgs args)
         {
@@ -1043,7 +1088,7 @@ namespace VenomNamespace
             //Thread.CurrentThread.Interrupt();
             //EnableWhileRunning();
         }
-        public bool CancelRequest()
+        /*public bool CancelRequest()
         {
             lock (cancelobj)
             {
@@ -1051,17 +1096,17 @@ namespace VenomNamespace
                 {
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
                     //Thread.CurrentThread.Abort();
-                    return true;
+                    return;
                 }
             }
             return false;
-        }
+        }*/
         public void RunCycle(IPData ipd, byte[] ipbytes)
         {
             //Send subscribe message before sending cycle
             byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
             SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, ipd.MAC);
-            Wait(2000);
+            Wait(4000);
 
             //paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);for (int i = 0; i < bytes.Length; i++)
 
@@ -1088,8 +1133,12 @@ namespace VenomNamespace
                 //if (TaskQ.Peek().ToString().Contains(ip))
                 foreach (IPData ipd in iplist)
                 {
-                    if (CancelRequest())
+                    if (cancel_request)
+                    {
+                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                        //Thread.CurrentThread.Abort();
                         return;
+                    }
                     if (ipd.IPAddress.Equals(ip) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
                     {
                         ipd.IPIndex = Int32.Parse(ipindex);
@@ -1118,7 +1167,7 @@ namespace VenomNamespace
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
-                            if (ipd.Type.Equals("Cycle"))
+                            /*if (ipd.Type.Equals("Cycle"))
                             {
                                 RunCycle(ipd, ipbytes);
                                 thread_waits = false;
@@ -1131,18 +1180,22 @@ namespace VenomNamespace
                             }
 
                             else
-                            {
+                            {*/
                                 SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, ipd.MAC);
                                 thread_waits = true;
 
-                                if (iplist[ipd.TabIndex].Name.Contains("Downloading"))
+                                /*if (iplist[ipd.TabIndex].Name.Contains("Downloading"))
                                 {
                                     //TODO May need to use an extra lock instead of while
                                     while (iplist[ipd.TabIndex].Result != "Downloading")
                                     {
                                         //TODO Add timeout logic here to skip and move thread to next test
-                                        if (CancelRequest())
-                                            return;                                        
+                                        if (cancel_request)
+                                        {
+                                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                                            //Thread.CurrentThread.Abort();
+                                            return;
+                                        }
                                     }
                                     
                                     // Execute individual test while downloading
@@ -1158,8 +1211,12 @@ namespace VenomNamespace
                                     //TODO Add timeout logic here to skip and move thread to next test
                                     while (iplist[ipd.TabIndex].Result != "Programming")
                                     {
-                                        if (CancelRequest())
+                                        if (cancel_request)
+                                        {
+                                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                                            //Thread.CurrentThread.Abort();
                                             return;
+                                        }
                                     }
                                     
                                     // Execute individual test while downloading
@@ -1169,7 +1226,7 @@ namespace VenomNamespace
                                     if (iplist[ipd.TabIndex].WaitType == "Setting")
                                         RunCycle(ipd, ipbytes);
                                 }
-                            }
+                            }*/
                         }
                         else //TODO IF USE REVELATION MUST COPY ABOVE LOGIC FOR AUTOGEN (CYCLE, WAIT, ETC.)
                         {
@@ -1187,15 +1244,20 @@ namespace VenomNamespace
                             sig.Wait();
 
                         // Check to see if thread should be cancelled
-                        if (CancelRequest())
+                        if (cancel_request)
+                        {
+                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                            //Thread.CurrentThread.Abort();
                             return;
+                        }
 
                         if (thread_waits)
                         {
                             Wait(RECONWAIT); //Wait one minute for MQTT to come back on after reboout out of IAP
-                            byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"); //Force reclaim
-                            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", subbytes, ipd.MAC);
-                            Wait(REBMAX); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
+                            //byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"); //Force reclaim
+                            //SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", subbytes, ipd.MAC);
+                            //Wait(REBMAX); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
+                            ipd.
                         }
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished the task.");
                         //break;
@@ -1219,8 +1281,12 @@ namespace VenomNamespace
             foreach (IPData ipd in iplist)
             //Parallel.ForEach(iplist, ipd =>
             {
-                if (CancelRequest())
+                if (cancel_request)
+                {
+                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                    //Thread.CurrentThread.Abort();
                     return;
+                }
                 // Enable Trace for IP address in list
                 if (!TraceConnect(ipd.IPAddress, ipd.Payload, ipd.Type, ipd.Delivery))
                     return;
@@ -1267,8 +1333,12 @@ namespace VenomNamespace
             {
                 try
                 {
-                    if (CancelRequest())
+                    if (cancel_request)
+                    {
+                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                        //Thread.CurrentThread.Abort();
                         return false;
+                    }
 
                     traceattempt++;
                     if (cai != null)
@@ -1343,8 +1413,12 @@ namespace VenomNamespace
                 //If an appliance with the specified IP address is found in the list
                 if (!RevelationConnect(cai))
                 {
-                    if (CancelRequest())
+                    if (cancel_request)
+                    {
+                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                        //Thread.CurrentThread.Abort();
                         return false;
+                    }
                     //First round of attempts failed, close data / open data and try again
                     CycleWifi(cai);
 
@@ -1358,7 +1432,6 @@ namespace VenomNamespace
             }
 
 
-            responses.Add(ip + "\t" + pay + "\t" + delivery + "\t" + type + "\t" + "PENDING");
 
             return true;
 
