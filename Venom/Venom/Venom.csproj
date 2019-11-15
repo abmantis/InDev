@@ -9,12 +9,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Venom</RootNamespace>
     <AssemblyName>Venom</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>&lt;Project Location In Database&gt;</SccProjectName>
     <SccLocalPath>&lt;Local Binding Root of Project&gt;</SccLocalPath>
     <SccAuxPath>&lt;Source Control Database&gt;</SccAuxPath>
     <SccProvider>Jazz Source Control Provider:{AC8810C5-F6E7-4145-83AA-FDFFF6F5506D}</SccProvider>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -25,6 +26,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,6 +36,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -41,12 +44,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <PlatformTarget>x86</PlatformTarget>
     <OutputPath>bin\Debug\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <PlatformTarget>x86</PlatformTarget>
     <OutputPath>bin\Release\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CertManager">
+      <HintPath>Lib\CertManager.exe</HintPath>
+    </Reference>
     <Reference Include="GnatMQ, Version=0.9.3.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Lib\GnatMQ.dll</HintPath>
@@ -61,6 +69,15 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http">
+      <HintPath>Lib\System.Net.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime">
+      <HintPath>Lib\System.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks">
+      <HintPath>Lib\System.Threading.Tasks.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -87,12 +104,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoGen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AutoGen.Designer.cs">
+      <DependentUpon>AutoGen.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Cycle.cs" />
+    <Compile Include="Enumeration.cs" />
+    <Compile Include="KeyValue.cs" />
+    <Compile Include="KeyValueProperty.cs" />
+    <Compile Include="PayList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PayList.Designer.cs">
+      <DependentUpon>PayList.cs</DependentUpon>
+    </Compile>
     <Compile Include="IPData.cs" />
     <Compile Include="LED.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="LED.Designer.cs">
       <DependentUpon>LED.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TabSelect.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TabSelect.designer.cs">
+      <DependentUpon>TabSelect.cs</DependentUpon>
     </Compile>
     <Compile Include="Venom.cs">
       <SubType>Form</SubType>
@@ -101,6 +140,12 @@
       <DependentUpon>Venom.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AutoGen.resx">
+      <DependentUpon>AutoGen.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PayList.resx">
+      <DependentUpon>PayList.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LED.resx">
       <DependentUpon>LED.cs</DependentUpon>
     </EmbeddedResource>
@@ -112,7 +157,11 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="TabSelect.resx">
+      <DependentUpon>TabSelect.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Venom.resx">
       <DependentUpon>Venom.cs</DependentUpon>
     </EmbeddedResource>
@@ -143,6 +192,9 @@
     <Content Include="Lib\WideInterface.XML" />
     <Content Include="Lib\WirelessLib.dll" />
     <Content Include="Lib\WirelessLib.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

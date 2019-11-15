@@ -1,4 +1,4 @@
-﻿namespace Venom
+﻿namespace VenomNamespace
 {
     partial class LED
     {
