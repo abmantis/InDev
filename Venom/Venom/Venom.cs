@@ -1257,7 +1257,7 @@ namespace VenomNamespace
                             //byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"); //Force reclaim
                             //SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", subbytes, ipd.MAC);
                             //Wait(REBMAX); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
-                            ipd.
+                            ipd.MAKE
                         }
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished the task.");
                         //break;
