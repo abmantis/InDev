@@ -1,23 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using WideBoxLib;
 using WirelessLib;
 using System.IO;
-using System.Globalization;
 
 namespace VenomNamespace
 {
     public partial class PayList : WideInterface
     {
         public Venom parent;
-        public AutoGen auto;
         private BindingSource sbind = new BindingSource();
         public PayList(Venom ParentForm, WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
@@ -41,7 +34,7 @@ namespace VenomNamespace
                 column.SortMode = DataGridViewColumnSortMode.NotSortable;
             }
         }
-        
+
         private void ResetForm()
         {
             TB_IPDisplay.Text = "";
@@ -108,7 +101,6 @@ namespace VenomNamespace
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         private void BTN_Remove_Click(object sender, EventArgs e)
         {
             try
@@ -131,7 +123,6 @@ namespace VenomNamespace
             }
             catch { }
         }
-
         private void BTN_Clear_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("This will clear all IPs and their results from all windows. Press Yes to Clear or No to Cancel.",
@@ -145,7 +136,6 @@ namespace VenomNamespace
                 DGV_Data.Refresh();
             }
         }
-
         private void BTN_Save_Click(object sender, EventArgs e)
         {
             
@@ -194,29 +184,10 @@ namespace VenomNamespace
                 }
             }
         }
-
-       
         private void BTN_Close_Click(object sender, EventArgs e)
         {
             this.Close();
         }
-
-        private void BTN_Auto_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                auto.Show();
-            }
-            catch
-            {
-
-                auto = new AutoGen(parent, this.WideLocal, this.WifiLocal);
-                auto.Show();
-            }
-
-            
-        }
-
         private void PayList_Load(object sender, EventArgs e)
         {
             //ResetForm();   //ENABLE WHEN UPLOADING TO STORE

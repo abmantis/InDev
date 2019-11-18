@@ -104,16 +104,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AutoGen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AutoGen.Designer.cs">
-      <DependentUpon>AutoGen.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Cycle.cs" />
-    <Compile Include="Enumeration.cs" />
-    <Compile Include="KeyValue.cs" />
-    <Compile Include="KeyValueProperty.cs" />
     <Compile Include="PayList.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -121,18 +111,6 @@
       <DependentUpon>PayList.cs</DependentUpon>
     </Compile>
     <Compile Include="IPData.cs" />
-    <Compile Include="LED.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="LED.Designer.cs">
-      <DependentUpon>LED.cs</DependentUpon>
-    </Compile>
-    <Compile Include="TabSelect.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TabSelect.designer.cs">
-      <DependentUpon>TabSelect.cs</DependentUpon>
-    </Compile>
     <Compile Include="Venom.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -140,14 +118,8 @@
       <DependentUpon>Venom.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="AutoGen.resx">
-      <DependentUpon>AutoGen.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="PayList.resx">
       <DependentUpon>PayList.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="LED.resx">
-      <DependentUpon>LED.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -159,9 +131,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="TabSelect.resx">
-      <DependentUpon>TabSelect.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Venom.resx">
       <DependentUpon>Venom.cs</DependentUpon>
     </EmbeddedResource>

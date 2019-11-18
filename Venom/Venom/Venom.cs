@@ -1,24 +1,14 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Timers;
-using System.Data.OleDb;
 using System.Windows.Forms;
 using WideBoxLib;
 using WirelessLib;
 using System.IO;
 using System.Threading;
-using System.Globalization;
-using System.Text.RegularExpressions;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
-using System.Net;
-using System.Net.Sockets;
-using System.Net.NetworkInformation;
 
 namespace VenomNamespace
 {
@@ -51,19 +41,7 @@ namespace VenomNamespace
         static object lockObj = new object();
         static object writeobj = new object();
         static object cancelobj = new object();
-
-
-        // Used for importing API144 DDM (to identify cycles)
-        public List<KeyValue> keyValues;
-        public List<Enumeration> enumerations;
-        public List<Enumeration> allenums;
-        public List<Cycle> cyclesU;
-        public List<Cycle> cyclesL;
-        public List<Cycle> cyclesM;
-        public List<Cycle> cyclesW;
-        public List<Cycle> cyclesD;
-        public List<List<Cycle>> cycles;
-
+        
         public int kvapi;
         public string dm_name;
         public string implementation;
@@ -78,21 +56,11 @@ namespace VenomNamespace
             InitializeComponent();
             this.Text += " (" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + ")";
             AutoSave = true;
-            keyValues = new List<KeyValue>();
-            enumerations = new List<Enumeration>();
-            allenums = new List<Enumeration>();
             kvapi = 144;
             implementation = "";
             dm_name = "";
             usesCookTimeOp = true;
 
-            // Set DDM holder entities
-            cycles = new List<List<Cycle>>();
-            cyclesU = new List<Cycle>();
-            cyclesL = new List<Cycle>();
-            cyclesM = new List<Cycle>();
-            cyclesW = new List<Cycle>();
-            cyclesD = new List<Cycle>();
 
             // Build log and window table
             results = new DataTable();
@@ -109,10 +77,6 @@ namespace VenomNamespace
             DGV_Data.AutoGenerateColumns = true;
             DGV_Data.DataSource = results;
             DGV_Data.DataSource = sbind;
-            //DataGridViewColumn column = DGV_Data.Columns[2];
-            //column.Width = 60;
-            //DataGridViewColumn column2 = DGV_Data.Columns[4];
-            //column2.Width = 40;
             TB_LogDir.Text = Directory.GetCurrentDirectory();
 
             // Do not allow columns to be sorted
@@ -125,7 +89,6 @@ namespace VenomNamespace
             iplist = new List<IPData>();
             responses = new List<string>();
             signal = new List<ManualResetEventSlim>();
-            //terminate = new ManualResetEvent(false);
 
 
         }
@@ -233,54 +196,6 @@ namespace VenomNamespace
                         ProcessPayload(sb, data.Source.ToString(), "MQTT Message", "NA");
                     }
                     break;
-
-                 /*case "iot-2/evt/subscribe/fmt/json":  
-                    // Process connection-related messages
-                     if (iplist.Count > 0)
-                     {
-                         string pay = System.Text.Encoding.ASCII.GetString(data.Message);
-                        if (pay.Contains("version"))
-                        {
-                            if (iplist.FirstOrDefault(x => x.IPAddress == data.Source.ToString()) != null)
-                            {                                
-                                string[] stats = pay.Split(':');
-
-                                if (stats[1].Equals("0"))
-                                {
-                                    // Allow a moment for widebox to catch up to the logs
-                                    Wait(1000);
-                                    // Send connection message to the IP that raised the event
-                                    byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
-                                    string[] ipad = data.Source.ToString().Split('.');
-                                    byte[] ipbytes = new byte[4];
-                                    for (int j = 0; j < 4; j++)
-                                    {
-                                        ipbytes[j] = byte.Parse(ipad[j]);
-                                    }
-                                    SendMQTT(ipbytes, "iot-2/evt/subscribe/fmt/json", paybytes);
-                                    return;
-                                }
-
-                                else
-                                {   // Already connected so see if this thread is waiting for permission to send next OTA payload
-                                    foreach (var member in iplist)
-                                    {
-                                        if (member.IPAddress.ToString().Equals(data.Source.ToString()))
-                                        {
-                                            if (!member.Result.Contains("PENDING"))
-                                                continue;
-                                            else
-                                            {
-                                                member.Signal.Set();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }                                
-                            }
-                        }
-                     }
-                     break;*/
 
                 case "iot-2/evt/cc_Kvp/fmt/binary":
                     string savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
@@ -436,26 +351,7 @@ namespace VenomNamespace
         }
 
         #endregion
-       public void SetLED(string ip)
-        {
-            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
-            if (cai != null)
-            {
-                if (!cai.IsMqttConnected)
-                    LED_Internet.SetColor(Color.Red);
-
-                else
-                    LED_Internet.SetColor(Color.LightGreen);
-            }
-            else
-            {
-                // Else if the IP address is not found in the WifiBasic list                        
-                MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            
-        }
+      
         public void ProcessPayload(string sb, string ip, string source, string raw)
         {
             // Locate if OTA payload has been sent and update status
@@ -569,7 +465,7 @@ namespace VenomNamespace
 
             }
 
-            if (sb.Contains("cc_SetKvpResult"))
+            /*if (sb.Contains("cc_SetKvpResult"))
             {
                 string end = raw.Substring(raw.Length - 1);
 
@@ -600,16 +496,8 @@ namespace VenomNamespace
                     }
                 }
                 
-            }
+            }*/
         }
-        /*public void Wait_Stop()
-        {
-            stopping = true;
-            lock (padlock)
-            {
-                Monitor.Pulse(padlock);
-            }
-        }*/
         public string StatusLookup(int statusval)
         {
             string statusb = "";
@@ -773,7 +661,6 @@ namespace VenomNamespace
             }
             
         }
-
         public void SetText(string type, string source, int listindex)
         {
             // Process each progress entity for each IP added
@@ -820,8 +707,7 @@ namespace VenomNamespace
             // Push result update
             DGV_Data.Refresh();
             //responses.Clear();
-        }
-       
+        }       
         private void BTN_Payload_Click(object sender, EventArgs e)
         {
             if (BTN_Payload.Text == "Run Test List")
@@ -850,22 +736,16 @@ namespace VenomNamespace
                 // Begin processing all IPs on list
                 if (LB_IPs.Items.Count > 0)
 
-                //DisableWhileRunning();
                 {
 
                     BTN_Payload.Text = "Stop Running";
-                    LED_Internet.SetColor(Color.DarkGray);
-                    BTN_Add.Enabled = false;
                     BTN_Remove.Enabled = false;
                     BTN_Clr.Enabled = false;
                     TB_LogDir.Enabled = false;
-                    TB_Loop.Enabled = false;
                     LB_IPs.Enabled = false;
                     BTN_Import.Enabled = false;
                     BTN_MakeList.Enabled = false;
                     BTN_LogDir.Enabled = false;
-                    // RB_MQTT.Enabled = false;
-                    //RB_Reveal.Enabled = false;
                     cancel_request = false;
                     ProcessIP();
                 }
@@ -886,30 +766,19 @@ namespace VenomNamespace
                 if (dialogResult == DialogResult.Yes)
                 {
                     BTN_Payload.Text = "Run Test List";
-                    BTN_Add.Enabled = true;
                     BTN_Remove.Enabled = true;
                     BTN_Clr.Enabled = true;
                     TB_LogDir.Enabled = true;
-                    TB_Loop.Enabled = true;
                     LB_IPs.Enabled = true;
                     BTN_Import.Enabled = true;
                     BTN_MakeList.Enabled = true;
                     BTN_LogDir.Enabled = true;
-                    // RB_MQTT.Enabled = true;
-                    //RB_Reveal.Enabled = true;
                     cancel_request = true;
-                    //Console.WriteLine("Thread with corresponding lock " + Thread.CurrentThread.Name + " closed.");
-                    //return;
-                    //IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == parts[0]);
-                    //int listindex = iplist.IndexOf(ipd);
                     try
                     {
 
                         foreach (var member in iplist)
                         {
-                            //if (iplist[member.TabIndex].Signal.)
-                            //{
-                            //Console.WriteLine("Thread with corresponding lock " + iplist[member.TabIndex].Signal.WaitHandle.Handle + " closed.");
                             if (iplist[member.TabIndex].Result.Contains("PASS") || iplist[member.TabIndex].Result.Contains("FAIL"))
                             {
                                 iplist[member.TabIndex].Signal.Set();
@@ -921,21 +790,10 @@ namespace VenomNamespace
                                 results.Rows[TabIndex]["OTA Result"] = iplist[member.TabIndex].Result;
                                 iplist[member.TabIndex].Signal.Set();
                             }
-
-                            //return;
-                            // }
-                            //Thread.CurrentThread.Interrupt();
                         }
-                        //SetText("status", "user", member.TabIndex);
                         DGV_Data.Refresh();
                         iplist.Clear();
-                        //Wait_Stop();
-                        //terminate.Set();
-                        //results.Clear();
-                        //Console.WriteLine("Thread with corresponding lock " + Thread.CurrentThread.Name + " closed.");
                         return;
-                        //EnableWhileRunning();
-                        //return;
                     }
 
                     catch
@@ -952,7 +810,6 @@ namespace VenomNamespace
             }               
                 
         } 
-
         public void SendMQTT(byte[] ipbytes, string topic, byte[] paybytes, string mac)
         {
             System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
@@ -965,90 +822,14 @@ namespace VenomNamespace
             if (cancel_request)
             {
                 Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
-                //Thread.CurrentThread.Abort();
                 return;
             }
             //If IP Address exists, send to that IP
-            // if (cai != null)
             //Semd payload
             WifiLocal.SendMqttMessage(ip, topic, paybytes);
-            /*else
-            {
-                //Otherwise IP changed, use MAC address to map to new IP
-                ConnectedApplianceInfo cai_m = cio.FirstOrDefault(x => x.MacAddress == mac);
-                if (cai != null)
-                {
-                    string[] ipad = cai_m.IPAddress.Split('.');
-                    byte[] n_ipbytes = new byte[4];
-                    for (int j = 0; j < 4; j++)
-                    {
-                        n_ipbytes[j] = byte.Parse(ipad[j]);
-                    }
-                    System.Net.IPAddress n_ip = new System.Net.IPAddress(n_ipbytes);
-                    WifiLocal.SendMqttMessage(n_ip, topic, paybytes);
-                }
-                else
-                {
-                    MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
-                        "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    Thread.CurrentThread.Abort();
-                    return;
-                }
-            }*/
+            
 
         }
-
-        public void SendRevelation(string ips, byte[] paybytes)
-        {
-            int revattempt = 0;
-            bool revconnect = false;
-            // Check CAI and set IP address
-            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
-
-            var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals(ips));
-
-            // See if Revelation is Connected and attempt to connect until it is
-            while (!revconnect && (revattempt < ATTEMPTMAX))
-            {
-                try
-                {
-                    // Connect revelation
-                     WifiLocal.ConnectTo(cai);
-                     Wait(2000);
-                     revattempt++;
-                    
-                    // Send Revelation message
-                    if (myDestination != null && cai.IsRevelationConnected)
-                    {
-                        WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
-                        {
-                            API = 0xF1,
-                            Opcode = 00,
-                            Payload = paybytes,
-                        });
-                        revconnect = true;
-                    }
-
-                    // Close revelation
-                    if (revconnect)
-                    {
-                        WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
-                        //WifiLocal.Close(cai);
-                        Wait(2000);
-                        revattempt = 0;
-                    }
-
-                    if (revattempt >= ATTEMPTMAX)
-                    {
-                        CycleWifi(cai);
-                        revattempt = 0;
-                    }
-                }
-                catch { }
-            }
-        }
-        //Wait 
         public void Wait(int timeout)
         {
             Thread thread = new Thread(delegate ()
@@ -1088,49 +869,8 @@ namespace VenomNamespace
             //Thread.CurrentThread.Interrupt();
             //EnableWhileRunning();
         }
-        /*public bool CancelRequest()
-        {
-            lock (cancelobj)
-            {
-                if (cancel_request)
-                {
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
-                    //Thread.CurrentThread.Abort();
-                    return;
-                }
-            }
-            return false;
-        }*/
-        public void RunCycle(IPData ipd, byte[] ipbytes)
-        {
-            //Send subscribe message before sending cycle
-            byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
-            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, ipd.MAC);
-            Wait(4000);
-
-            //paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);for (int i = 0; i < bytes.Length; i++)
-
-            byte[] bytes = new byte[ipd.MQTTPay.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
-                
-            }
-                        
-            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes, ipd.MAC);
-            Wait(ipd.Wait*1000);
-            //Wait(CYCLEWAIT);
-        }
         public void RunTask(string ip, ManualResetEventSlim sig, string ipindex)
         {
-            int loop = int.Parse(TB_Loop.Text);
-            //if (loop < 1)
-                //loop = 1;
-
-            for (int i = 0; i <= loop; i++)
-            {
-                int looptestREMOVE = 0;
-                //if (TaskQ.Peek().ToString().Contains(ip))
                 foreach (IPData ipd in iplist)
                 {
                     if (cancel_request)
@@ -1167,75 +907,11 @@ namespace VenomNamespace
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
-                            /*if (ipd.Type.Equals("Cycle"))
-                            {
-                                RunCycle(ipd, ipbytes);
-                                thread_waits = false;
-                            }
-
-                            else if (ipd.Type.Equals("Wait"))
-                            {
-                                Wait(ipd.Wait * 1000);
-                                thread_waits = false;
-                            }
-
-                            else
-                            {*/
                                 SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, ipd.MAC);
                                 thread_waits = true;
 
-                                /*if (iplist[ipd.TabIndex].Name.Contains("Downloading"))
-                                {
-                                    //TODO May need to use an extra lock instead of while
-                                    while (iplist[ipd.TabIndex].Result != "Downloading")
-                                    {
-                                        //TODO Add timeout logic here to skip and move thread to next test
-                                        if (cancel_request)
-                                        {
-                                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
-                                            //Thread.CurrentThread.Abort();
-                                            return;
-                                        }
-                                    }
-                                    
-                                    // Execute individual test while downloading
-                                    if (iplist[ipd.TabIndex].WaitType == "Cycle")
-                                        RunCycle(ipd, ipbytes);
-
-                                    if (iplist[ipd.TabIndex].WaitType == "Setting")
-                                        RunCycle(ipd, ipbytes);                                    
-                                }
-
-                                if (iplist[ipd.TabIndex].WaitType == "Programming")
-                                {
-                                    //TODO Add timeout logic here to skip and move thread to next test
-                                    while (iplist[ipd.TabIndex].Result != "Programming")
-                                    {
-                                        if (cancel_request)
-                                        {
-                                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
-                                            //Thread.CurrentThread.Abort();
-                                            return;
-                                        }
-                                    }
-                                    
-                                    // Execute individual test while downloading
-                                    if (iplist[ipd.TabIndex].WaitType == "Cycle")
-                                        RunCycle(ipd, ipbytes);
-
-                                    if (iplist[ipd.TabIndex].WaitType == "Setting")
-                                        RunCycle(ipd, ipbytes);
-                                }
-                            }*/
-                        }
-                        else //TODO IF USE REVELATION MUST COPY ABOVE LOGIC FOR AUTOGEN (CYCLE, WAIT, ETC.)
-                        {
-                            SendRevelation(ipd.IPAddress, paybytes);
                         }
 
-                        // Spinwait until our result gets updated to a pass or fail
-                        //while (!results.Rows[index][4].ToString().Contains("PASS") || !results.Rows[index][4].ToString().Contains("FAIL")) ;
-                        //SpinWait.SpinUntil(() => isCompleted == true);
                         Console.WriteLine("This is the info before calling this lock " + ipd.Signal.WaitHandle.Handle + " with this thread name " + Thread.CurrentThread.Name +
                             " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
 
@@ -1257,7 +933,7 @@ namespace VenomNamespace
                             //byte[] subbytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"); //Force reclaim
                             //SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", subbytes, ipd.MAC);
                             //Wait(REBMAX); //12 minute timeout to allow worst case time for reconnecting to MQTT broker after booting out of IAP
-                            ipd.
+                            //ipd.
                         }
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished the task.");
                         //break;
@@ -1267,37 +943,21 @@ namespace VenomNamespace
                         continue;
                     }
 
-                }
-                
-                Console.WriteLine("Loop count is " + looptestREMOVE + " out of " + loop + ".");
-                looptestREMOVE++;
-            }   
+                }                
         } 
-        
         void ProcessIP()
         {
-            //TaskQ.Clear();
 
             foreach (IPData ipd in iplist)
-            //Parallel.ForEach(iplist, ipd =>
             {
                 if (cancel_request)
                 {
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
-                    //Thread.CurrentThread.Abort();
                     return;
                 }
                 // Enable Trace for IP address in list
                 if (!TraceConnect(ipd.IPAddress, ipd.Payload, ipd.Type, ipd.Delivery))
                     return;
-                //string taskentry = "";
-                //lock (lockObj)
-                //{
-
-
-                //}
-                //taskentry = ipd.IPAddress + "\t" + ipd.Payload + "\t" + ipd.Type + "\t" + ipd.Delivery;
-                //TaskQ.Enqueue(taskentry);
             }
 
             for (int i = 0; i < LB_IPs.Items.Count; i++)
@@ -1306,25 +966,13 @@ namespace VenomNamespace
                 string number = "";
                 ManualResetEventSlim sig = new ManualResetEventSlim();
                 signal.Add(sig);
-                //Console.WriteLine("This is the info on generating the lock " + sig  +
-                //       " and this IP Index (from thread order) " + i + " for this IP Address " + ip + ".");
-
                 Thread th = new Thread(() => RunTask(ip, sig, number));
                 th.Name = i.ToString();
                 number = th.Name;
                 th.IsBackground = true;
                 th.Start();
-                //th.Join();   
-                /*new Thread(() =>
-                {
-                    //Thread.CurrentThread.IsBackground = true;
-                    Name = i.ToString();
-                    RunTask(ip, sig, i.ToString());
-                }).Start();*/
             }
-            // });
         }
-
         bool RevelationConnect(ConnectedApplianceInfo cai)
         {
             int traceattempt = 0;
@@ -1336,7 +984,6 @@ namespace VenomNamespace
                     if (cancel_request)
                     {
                         Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
-                        //Thread.CurrentThread.Abort();
                         return false;
                     }
 
@@ -1364,7 +1011,6 @@ namespace VenomNamespace
                             if (cai.IsRevelationConnected)
                             {
                                 WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
-                                //WifiLocal.Close(cai);
                                 Wait(2000);
                             }
                             return true;
@@ -1377,7 +1023,6 @@ namespace VenomNamespace
                                 "opened and it is not in use (UITracer is not running). You may need to close" +
                                 "Widebox and try again.", "Error: Unable to start Trace",
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                        //WifiLocal.CloseAll(true);
                         return false;
                     }
 
@@ -1390,7 +1035,6 @@ namespace VenomNamespace
                                     "opened and it is not in use (UITracer is not running). You may need to close" +
                                 "Widebox and try again.", "Error: Unable to start Trace",
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    //WifiLocal.CloseAll(true);
                     return false;
                 }
             }
@@ -1398,7 +1042,6 @@ namespace VenomNamespace
 
             return false;
         }
-
         bool TraceConnect(string ip, string pay, string type, string delivery) 
         {
             //gets the list of appliances from WifiBasic
@@ -1416,7 +1059,6 @@ namespace VenomNamespace
                     if (cancel_request)
                     {
                         Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
-                        //Thread.CurrentThread.Abort();
                         return false;
                     }
                     //First round of attempts failed, close data / open data and try again
@@ -1436,15 +1078,8 @@ namespace VenomNamespace
             return true;
 
         }
-       
         public bool CycleWifi(ConnectedApplianceInfo cai)
         {
-            /*using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
-            {
-                socket.Connect("8.8.8.8", 65530);
-                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
-                localIP = endPoint.Address.ToString();
-            }*/
             string localIP = WifiLocal.Localhost.ToString();
             try
             {
@@ -1466,100 +1101,16 @@ namespace VenomNamespace
 
             catch
             {
-                //WifiLocal.SetWifi(System.Net.IPAddress.Parse(cai.IPAddress), new CertManager.CertificateManager().GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
                 return false;
             }
 
             return false;
             
         }
-
-        private void BTN_Add_Click(object sender, EventArgs e)
-        {
-           /* string localpay = ""; // TB_Payload.Text;
-            string localdeliver = "";
-            RB_MQTT.Checked = true;         // Disable this when actually using RBs for Revelation and MQTT
-            // A delivery method must be selected
-            if (!RB_MQTT.Checked && !RB_Reveal.Checked)
-            {
-                // Else if the IP address is not found in the WifiBasic list                        
-                MessageBox.Show("No delivery method was selected. Please choose either the Revelation or MQTT button for a delivery method.", "Error: Payload Delivery Method Not Found",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            // Set delivery method
-            if (RB_MQTT.Checked)
-            {
-                localdeliver = "MQTT";
-                //SetLED(TB_IP.Text);
-            }
-            else
-                localdeliver = "Revelation";
-
-            try
-            {
-                if (iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
-                {
-                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
-
-                    // Will only run if IP address is first time added
-                    if (cai != null)
-                    {
-                        if (localdeliver.Equals("MQTT") && !cai.IsMqttConnected)
-                        {
-                            DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
-                                                                        " for the entered IP Address of " + TB_IP.Text + " is not currently connected." +
-                                                                        " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
-                                                                        " MQTT connection then try adding the IP Address again.",
-                                                                        "Error: MQTT Delivery but Device is not the MQTT Broker.",
-                                                                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-                            if (dialogResult == DialogResult.No)
-                                return;
-                        }
-                        
-                         // Add IP to list of IPs
-                         LB_IPs.Items.Add(cai.IPAddress);
-                         IPData newip = new IPData(cai.IPAddress, localpay);
-                         iplist.Add(newip);
-                         newip.MAC = cai.MacAddress;
-
-                         // Update window for added IP
-                         DataRow dr = results.NewRow();
-                         dr["IP Address"] = newip.IPAddress;
-                         dr["OTA Payload"] = newip.Payload;
-                         dr["Delivery Method"] = localdeliver;
-                         dr["OTA Result"] = "PENDING";
-                         results.Rows.Add(dr);
-                                
-                    
-                    }
-                    else
-                    {
-                        // Else if the IP address is not found in the WifiBasic list                        
-                        MessageBox.Show("No IP Address was found in WifiBasic. Please choose a new IP Address or Retry.", "Error: WifiBasic IP Address Not Found",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            catch
-            {
-            }
-
-            //RB_MQTT.Checked = false;            //Enable these when actually using RBs for Revelation and MQTT
-            //RB_Reveal.Checked = false;*/
-        }
-
         private void BTN_Remove_Click(object sender, EventArgs e)
         {
             try
             {
-                /* foreach (DataRow row in results.Rows)
-                 {
-                     if (row["IP Address"].ToString().Equals(TB_IP.Text))
-                         results.Rows.Remove(row);
-                 }*/
                 DialogResult dialogResult = MessageBox.Show("This will clear all payloads for the chosen IP " + LB_IPs.SelectedItem.ToString() + ". Press Yes to Remove or No to Cancel.",
                                                         "Verify IP Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
@@ -1580,7 +1131,6 @@ namespace VenomNamespace
             }
             catch { }
         }
-        
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("This will clear all IPs and their results from all windows. Press Yes to Clear or No to Cancel.",
@@ -1590,23 +1140,11 @@ namespace VenomNamespace
                 results.Clear();
                 responses.Clear();
                 iplist.Clear();
-                LED_Internet.SetColor(Color.DarkGray);
                 LB_IPs.Items.Clear();
                 DGV_Data.Refresh();
-                // Stop anything that is still running
-                //Environment.Exit(Environment.ExitCode);
             }
             
         }
-
-        private void BTN_MQTT_Click(object sender, EventArgs e)
-        {
-            // Send Subscribe message over MQTT to test MQTT connection
-            //WifiLocal.SendMqttMessage(System.Net.IPAddress.Parse(TB_IP.Text), "iot-2/evt/subscribe/fmt/json", Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}"));
-            //LED_Internet.SetColor(Color.DarkGray);
-            //SetLED(TB_IP.Text);
-        }
-
         private void BTN_MakeList_Click(object sender, EventArgs e)
         {
             try
@@ -1621,7 +1159,6 @@ namespace VenomNamespace
             }
 
         }
-
         private void BTN_Import_Click(object sender, EventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
@@ -1645,7 +1182,6 @@ namespace VenomNamespace
                             value = reader.ReadLine().Split('\t');
                             System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                             ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == value[0]);
-                            //CycleWifi(cai);
                             if (cai != null)
                             {
                                 if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null && !cai.IsMqttConnected)
@@ -1718,669 +1254,22 @@ namespace VenomNamespace
                 
             }
         }
-
-        //Convert string representation of data types into a standard format
-        private string SwitchLength(string type)
+        private void ResetForm()
         {
-            string length = "";
-            switch (type)
-            {
-                case "String":
-                    length = "string";
-                    break;
-                case "IntegerUnsigned8Bit":
-                    length = "uint8";
-                    break;
-                case "BEIntegerUnsigned16Bit":
-                    length = "uint16";
-                    break;
-                case "BEIntegerSigned16Bit":
-                    length = "int16";
-                    break;
-                case "BEInteger16Bit":
-                    length = "int16";
-                    break;
-                case "BEIntegerUnsigned32Bit":
-                    length = "uint32";
-                    break;
-                case "BEIntegerSigned32Bit":
-                    length = "int32";
-                    break;
-                case "BEInteger32Bit":
-                    length = "int32";
-                    break;
-                case "IntegerSigned8Bit":
-                    length = "int8";
-                    break;
-                case "Integer8Bit":
-                    length = "int8";
-                    break;
-                case "Boolean":
-                    length = "boolean";
-                    break;
-                case "enum":
-                    length = "uint8";
-                    break;
-                default:
-                    length = "string";
-                    break;
-            }
-            return length;
+            BTN_Payload.Text = "Run Test List";
+            BTN_Remove.Enabled = true;
+            BTN_Clr.Enabled = true;
+            TB_LogDir.Enabled = true;
+            LB_IPs.Enabled = true;
+            BTN_Import.Enabled = true;
+            BTN_MakeList.Enabled = true;
+            BTN_LogDir.Enabled = true;
+            iplist.Clear();
+            results.Clear();
         }
-        private bool XLSKeyValues(string filename)
-        {
-            string connectionString = string.Format("Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties='Excel 12.0;HDR=No'", filename);
-            string query;// = string.Format("SELECT * FROM [{0}$]", "Keys");
-            DataTable data = new DataTable();
-            DataTable dt = new DataTable();
-            string[] excelSheets = null;
-            bool loaded = true;
-            //string implementation = "";
-
-            try
-            {
-                using (OleDbConnection con = new OleDbConnection(connectionString))
-                {
-                    con.Open();
-                    dt = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
-                    //OleDbDataAdapter adapter = new OleDbDataAdapter(query, con);
-                    //adapter.Fill(data);
-                    con.Close();
-                }
-
-                excelSheets = new string[dt.Rows.Count];
-                int i = 0;
-
-                // Add the sheet name to the string array.
-                foreach (DataRow row in dt.Rows)
-                {
-                    excelSheets[i] = row["TABLE_NAME"].ToString().Replace("'", "").Replace("$", "");
-                    i++;
-                }
-
-                string selection = "";
-                if (Array.IndexOf(excelSheets, "Definitions") >= 0)
-                {
-                    selection = "Definitions";
-                }
-                else
-                {
-                    TabSelect ts = new TabSelect("Select the tab containing the KVP definitions", excelSheets);
-                    ts.ShowDialog();
-                    selection = ts.SelectedTab;
-                }
-
-                query = string.Format("SELECT * FROM [{0}$]", selection);
-
-                using (OleDbConnection con = new OleDbConnection(connectionString))
-                {
-                    con.Open();
-                    //dt = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
-                    OleDbDataAdapter adapter = new OleDbDataAdapter(query, con);
-                    adapter.Fill(data);
-                    con.Close();
-                }
-
-                keyValues.Clear();
-
-                if (selection == "Keys")
-                {
-                    bool start = false;
-
-                    foreach (DataRow d in data.Rows)
-                    {
-                        if (start && d[0].ToString() != "")
-                        {
-                            KeyValue kv = new KeyValue(d[0].ToString(), "", "", "", d[2].ToString(), d[10].ToString(), d[7].ToString().Substring(2), kvapi, "", "");
-                            keyValues.Add(kv);
-                        }
-                        if (d[0].ToString() == "Class")
-                        {
-                            start = true;
-                        }
-                    }
-                }
-                else
-                {
-                    int instanceCol = -1;
-                    int lengthCol = -1;
-                    int keyCol = -1;
-                    int platCol = 0;
-                    int descCol = 0;
-                    for (int j = 0; j < data.Columns.Count; j++)
-                    {
-                        if (data.Rows[0][j].ToString() == "Instance") { instanceCol = j; }
-                        if (data.Rows[0][j].ToString() == "Payload Data Type") { lengthCol = j; }
-                        if (data.Rows[1][j].ToString() == "Hex") { keyCol = j; }
-                        if (data.Rows[0][j].ToString() == "Implementation") { platCol = j; }
-                        if (data.Rows[0][j].ToString() == "Description") { descCol = j; }
-                    }
-
-                    if (instanceCol > 0 && lengthCol > 0 && keyCol > 0)
-                    {
-                        if (platCol > 0)
-                        {
-                            string[] plats = new string[data.Columns.Count - platCol];
-                            //plats[0] = "All";
-                            for (int m = 0; m < plats.Length; m++)
-                            {
-                                plats[m] = data.Rows[1][platCol + m].ToString().Replace("\n", "");
-                            }
-
-                            TabSelect ts1 = new TabSelect("Select the platform implementation", plats);
-                            ts1.ShowDialog();
-                            implementation = ts1.SelectedTab;
-
-                            if (!(implementation == "All" || implementation == ""))
-                            {
-                                platCol = platCol + ts1.SelectedIndex;
-                            }
-                            else
-                            {
-                                platCol = 0;
-                            }
-                        }
-
-                        for (int k = 2; k < data.Rows.Count; k++)
-                        {
-                            if (data.Rows[k][lengthCol].ToString() != ""/* && (data.Rows[k][platCol].ToString() == "X" || platCol == 0)*/)
-                            {
-                                KeyValue kv = new KeyValue(selection, data.Rows[k][instanceCol - 2].ToString(), data.Rows[k][instanceCol - 1].ToString(), data.Rows[k][instanceCol].ToString(), data.Rows[k][instanceCol].ToString() + "_" + data.Rows[k][instanceCol + 1].ToString(), SwitchLength(data.Rows[k][lengthCol].ToString()), data.Rows[k][keyCol].ToString().Substring(2), kvapi, data.Rows[k][descCol].ToString(), data.Rows[k][descCol - 1].ToString());
-                                if (kv.KeyID != "00000000")
-                                {
-                                    kv.isSet = data.Rows[k][keyCol + 2].ToString() == "TRUE" || data.Rows[k][keyCol + 2].ToString() == "1" ? true : false;
-                                    keyValues.Add(kv);
-                                    kv.IsUsed = data.Rows[k][platCol].ToString() == "X" ? true : false;
-                                    kv.IsState = data.Rows[k][descCol - 2].ToString() == "TRUE" || data.Rows[k][descCol - 2].ToString() == "1" ? true : false;
-                                    if (kv.KeyID == "030D0002")
-                                    {
-                                        usesCookTimeOp = kv.IsUsed;
-                                    }
-                                }
-                            }
-                        }
-
-
-
-                    }
-                    else
-                    {
-                        MessageBox.Show("Unable to load key values from selected file");
-                        loaded = false;
-                    }
-                }
-            }
-            catch
-            {
-                MessageBox.Show("Unable to load key values from selected file.  Make sure the Data Model file has not been modified and you have either Microsoft Excel or the Office System Driver (found in the Help link) installed.");
-                loaded = false;
-            }
-
-            if (loaded)
-            {
-                string selection2 = "";
-                if (Array.IndexOf(excelSheets, "Enumerations") >= 0)
-                {
-                    selection2 = "Enumerations";
-                }
-                else
-                {
-                    TabSelect ts2 = new TabSelect("Select the tab containing the Enumerations", excelSheets);
-                    ts2.ShowDialog();
-                    selection2 = ts2.SelectedTab;
-                }
-
-                query = string.Format("SELECT * FROM [{0}$]", selection2);
-                DataTable data2 = new DataTable();
-
-                try
-                {
-                    using (OleDbConnection con = new OleDbConnection(connectionString))
-                    {
-                        con.Open();
-                        OleDbDataAdapter adapter = new OleDbDataAdapter(query, con);
-                        adapter.Fill(data2);
-                    }
-
-                    int platCol = -1;
-                    if (!(implementation == "All" || implementation == ""))
-                    {
-                        for (int i = 0; i < data2.Columns.Count; i++)
-                        {
-                            if (data2.Rows[1][i].ToString().Replace("\n", "") == implementation)
-                            {
-                                platCol = i;
-                                i = data2.Columns.Count;
-                            }
-                        }
-                    }
-
-                    enumerations.Clear();
-
-                    if (kvapi == 144 || kvapi == 147)
-                    {
-                        string curEntity = "";
-                        string curAtt = "";
-                        string fixedname = "";
-                        Enumeration curEnum = new Enumeration();
-                        Enumeration cloneEnum = new Enumeration();
-
-                        for (int j = 2; j < data2.Rows.Count; j++)
-                        {
-                            if (data2.Rows[j][0].ToString() != "")
-                            {
-                                curEntity = data2.Rows[j][0].ToString();
-                            }
-                            if (data2.Rows[j][1].ToString() != "")
-                            {
-                                curAtt = data2.Rows[j][1].ToString();
-                                /*foreach (KeyValue kv in keyValues)
-                                {
-                                    if (kv.Entity == curEntity && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
-                                    {
-                                        kv.EnumName = curEnum;
-                                        curEnum.UsedBy += curEntity + "." + curAtt + ";";
-                                        cloneEnum.UsedBy += curEntity + "." + curAtt + ";";
-                                    }
-                                }*/
-                            }
-                            if (!(data2.Rows[j][2].ToString() == ""))
-                            {
-                                //curEnum.Name = data2.Rows[j][2].ToString();
-                                bool found = false;
-
-                                foreach (Enumeration e in enumerations)
-                                {
-                                    fixedname = data2.Rows[j][2].ToString().IndexOf(':') > 0 ? data2.Rows[j][2].ToString().Substring(0, data2.Rows[j][2].ToString().IndexOf(':')) : data2.Rows[j][2].ToString();
-                                    if (e.Name == curEntity + "." + fixedname)
-                                    {
-                                        found = true;
-                                        curEnum = e;
-                                        cloneEnum = allenums[enumerations.IndexOf(e)];
-                                        curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                        cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                        //if (platCol < 0 || data2.Rows[j][platCol].ToString() == "X")
-                                        {
-                                            curEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
-                                            curEnum.enableEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][platCol].ToString() == "X");
-                                        }
-                                        foreach (KeyValue kv in keyValues)
-                                        {
-                                            if ((kv.Entity == curEntity || kv.Instance == curEntity) && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
-                                            {
-                                                kv.EnumName = curEnum;
-                                                //curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                                //cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                            }
-                                        }
-                                    }
-                                }
-                                if (!found)
-                                {
-                                    curEnum = new Enumeration(curEntity + "." + data2.Rows[j][2].ToString());
-                                    cloneEnum = new Enumeration(curEntity + "." + data2.Rows[j][2].ToString());
-                                    //if (platCol < 0 || data2.Rows[j][platCol].ToString() == "X")
-                                    {
-                                        curEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
-                                        curEnum.enableEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][platCol].ToString() == "X");
-                                        foreach (KeyValue kv in keyValues)
-                                        {
-                                            if ((kv.Entity == curEntity || kv.Instance == curEntity) && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
-                                            {
-                                                kv.EnumName = curEnum;
-                                                curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                                cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                            }
-                                        }
-                                    }
-                                    cloneEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
-                                    enumerations.Add(curEnum);
-                                    allenums.Add(cloneEnum);
-                                }
-                            }
-                            else
-                            {
-                                if (data2.Rows[j][3].ToString() != "")
-                                {
-                                    // if (platCol < 0 || data2.Rows[j][platCol].ToString() == "X")
-                                    {
-                                        curEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
-                                        curEnum.enableEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][platCol].ToString() == "X");
-                                        foreach (KeyValue kv in keyValues)
-                                        {
-                                            if ((kv.Entity == curEntity || kv.Instance == curEntity) && kv.DisplayName.Substring(kv.DisplayName.LastIndexOf('_') + 1) == curAtt)
-                                            {
-                                                kv.EnumName = curEnum;
-                                                curEnum.UsedBy = curEnum.UsedBy.Contains(curEntity + "." + curAtt) ? curEnum.UsedBy : curEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                                cloneEnum.UsedBy = cloneEnum.UsedBy.Contains(curEntity + "." + curAtt) ? cloneEnum.UsedBy : cloneEnum.UsedBy + curEntity + "." + curAtt + ";";
-                                            }
-                                        }
-                                    }
-                                    cloneEnum.insertEnum(int.Parse(data2.Rows[j][3].ToString()), data2.Rows[j][4].ToString());
-                                }
-
-                            }
-
-                        }
-                    }
-                    else
-                    {
-                        bool start = false;
-                        Enumeration en;
-                        for (int col = 0; col < data2.Columns.Count; col += 3)
-                        {
-                            en = new Enumeration();
-                            start = true;
-                            for (int row = 0; row < data2.Rows.Count; row++)
-                            {
-                                if (data2.Rows[row][col].ToString() == "")
-                                {
-                                    start = true;
-                                    if (en.Enums.Count > 0 && en.Name != null)
-                                    {
-                                        enumerations.Add(en);
-                                    }
-                                    en = new Enumeration();
-                                }
-                                else
-                                {
-                                    if (start)
-                                    {
-                                        en.Name = data2.Rows[row][col].ToString();
-                                        start = false;
-                                    }
-                                    else
-                                    {
-                                        en.insertEnum(int.Parse(data2.Rows[row][col].ToString().Substring(2, 2), NumberStyles.AllowHexSpecifier), data2.Rows[row][col + 1].ToString());
-                                        if (row == data2.Rows.Count - 1)// if this enumeration goes to the bottom of the file
-                                        {
-                                            enumerations.Add(en);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    CorrectEnums();
-
-                }
-                catch
-                {
-                    MessageBox.Show("Could not load Enumerations from selected file");
-                }
-            }
-            return loaded;
-        }
-
-        private void JSONKeyValues(string filename)
-        {
-            string ddm = new StreamReader(filename).ReadToEnd();
-            ddm = ddm.Replace("\"", "");
-            ddm = ddm.Replace(" ", "");
-            ddm = ddm.Replace("\n", "");
-            int id = ddm.IndexOf("_id:") + "_id:".Length;
-            implementation = ddm.Substring(id, ddm.IndexOf(",", id) - id);
-            implementation = Regex.Match(implementation, @"(?!_)[^_]*_[^_]*$").Value;
-            id = ddm.IndexOf("Category:") + "Category:".Length;
-            dm_name = System.Threading.Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(ddm.Substring(id, ddm.IndexOf(",", id) - id).ToLower());
-            ddm = ddm.Substring(ddm.IndexOf("attributes:[") + "attributes:[".Length);
-            int level = 0;
-            char[] chars = ddm.ToCharArray();
-            for (int i = 0; i < chars.Length; i++)
-            {
-                if (chars[i] == '{')
-                {
-                    level++;
-                    if (level > 1)
-                    {
-                        chars[i] = '[';
-                    }
-                }
-                if (chars[i] == '}')
-                {
-                    level--;
-                    if (level > 0)
-                    {
-                        chars[i] = ']';
-                    }
-                }
-
-            }
-            ddm = new string(chars);
-            ddm = ddm.Replace("},", "`");
-            string[] keys = ddm.Split('`');
-            foreach (string a in keys)
-            {
-                string b = a.Substring(1);
-                if (b.Contains("["))
-                {
-                    while (b.IndexOf(':', b.IndexOf("[")) > 0 && (b.IndexOf(':', b.IndexOf("["))) < b.IndexOf(']'))
-                    {
-                        try
-                        {
-                            int c = b.IndexOf(':', b.IndexOf("["));
-                            b = b.Remove(c, 1);
-                            b = b.Insert(c, ";");
-                            c = b.IndexOf(',', b.IndexOf("["));
-                            if (c < b.IndexOf(']'))
-                            {
-                                b = b.Remove(c, 1);
-                                b = b.Insert(c, ";");
-                            }
-                        }
-                        catch { }
-                    }
-                }
-                string[] attributes = b.Split(',');
-                Dictionary<string, string> attdict = new Dictionary<string, string>();
-                foreach (string att in attributes)
-                {
-                    try
-                    {
-                        string[] pair = att.Split(':');
-                        attdict.Add(pair[0], pair[1]);
-                    }
-                    catch { }
-                }
-
-                try
-                {
-                    if (attdict["Key"] != "0x00000000")
-                    {
-                        KeyValue k = new KeyValue("Definitions", attdict["M2MAttributeName"].Substring(0, attdict["M2MAttributeName"].IndexOf("_")), "", attdict["Instance"], attdict["Instance"] + "_" + attdict["AttributeName"], SwitchLength(attdict["DataType"]), attdict["Key"].Substring(2), 144, "", "");
-                        k.isSet = attdict["DeviceIO"] == "RW" || attdict["DeviceIO"] == "WO";
-                        k.IsUsed = true;
-                        if (attdict["DataType"] == "enum")
-                        {
-                            string[] enums = attdict["EnumValues"].Substring(1, attdict["EnumValues"].Length - 2).Split(';');
-                            if (enums[0] != "")
-                            {
-                                Enumeration e = new Enumeration();
-                                for (int i = 0; i < enums.Length; i += 2)
-                                {
-                                    e.insertEnum(int.Parse(enums[i]), enums[i + 1]);
-                                    e.enableEnum(int.Parse(enums[i]), true);
-                                }
-                                enumerations.Add(e);
-                                k.EnumName = e;
-                            }
-                        }
-                        keyValues.Add(k);
-                    }
-                }
-                catch { }
-            }
-            CorrectEnums();
-        }
-
-        //For key values with multiple possible enum sets, cycle through the one currently assigned to it and see if any are used, otherwise swap it with an enum that is used
-        private void CorrectEnums()
-        {
-            bool swapped = false;
-            for (int i = 0; i < keyValues.Count; i++)
-            {
-                if (keyValues[i].IsUsed && keyValues[i].EnumName != null)
-                {
-                    bool used = false;
-                    foreach (bool b in keyValues[i].EnumName.IsUsed)
-                    {
-                        if (b || swapped)
-                        {
-                            used = true;
-                            swapped = false;
-                            break;
-                        }
-                    }
-                    if (!used)
-                    {
-                        foreach (Enumeration en in enumerations)
-                        {
-                            if (en.UsedBy.Contains(keyValues[i].AttributeName) && keyValues[i].EnumName != en)
-                            {
-                                keyValues[i].EnumName = en;
-                                i--;
-                                swapped = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (keyValues[i].EnumName != null)
-                {
-                    keyValues[i].EnumName.TrimEnums();
-                }
-            }
-        }
-        private void BTN_Auto_Click(object sender, EventArgs e)
-        {
-            DialogResult dialogResult = MessageBox.Show("This will automatically create a new test plan run from the current IP list. " +
-                "This will then clear the current payload list and update the table accordingly. " +
-                "Press Yes to Create or No to Cancel.", "Verify Full Clear and Auto Generation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (dialogResult == DialogResult.Yes)
-            {
-                /*foreach (IPData ipd in iplist)
-                {
-                    if (ipd.Type.Equals("HMI")) ;
-
-                    if (ipd.Type.Equals("ACU")) ;
-
-                    if (ipd.Type.Equals("WiFi")) ;
-
-                    if (ipd.Type.Equals("Multi")) ;
-
-                }*/
-
-                /* OpenFileDialog ofd = new OpenFileDialog();
-                 ofd.Filter = "Data Model/DDM Definitions (*.xlsx, *.json)|*.xlsx; *.json";
-                 ofd.ShowDialog();
-                 if (ofd.FileName != "")
-                 {
-                     keyValues.Clear();
-                     enumerations.Clear();
-                     //settings.Clear();
-                     //setLabels.Clear();
-                     cyclesL.Clear();
-                     cyclesM.Clear();
-                     cyclesU.Clear();
-                    // PAN_Settings.Controls.Clear();
-                     kvapi = 144;
-                     bool loaded = true;
-                     if (ofd.FileName.EndsWith("xlsx"))
-                     {
-                         loaded = XLSKeyValues(ofd.FileName);
-                         try
-                         {
-                             dm_name = ofd.SafeFileName.Substring(0, ofd.SafeFileName.LastIndexOf(' ')).Replace("API 144 Data Model Definition - ", "");
-                         }
-                         catch
-                         {
-                             dm_name = "";
-                         }
-                     }
-                     else
-                     {
-                         JSONKeyValues(ofd.FileName);
-                     }
-                     if (loaded)
-                     {                        
-                         //xc = new XCategory(keyValues, this);
-
-                         if (Array.IndexOf(categoryList, dm_name) < 0)
-                         {
-                             TabSelect dm = new TabSelect("Please select Data Model category", categoryList);
-                             dm.ShowDialog();
-                             dm_name = dm.SelectedTab;
-                         }
-
-                         //TB_Cap.Text = dm_name + " - " + implementation;
-                         switch (dm_name)
-                         {
-                             case "Laundry":
-                                 cycles.Add(cyclesW);
-                                 cycles.Add(cyclesD);
-                                 break;
-                             default:
-                                 cycles.Add(cyclesU);
-                                 cycles.Add(cyclesL);
-                                 cycles.Add(cyclesM);
-                                 break;
-                         }*/
-
-                /*SetupLabels();
-                CyclesFromDM(keyValues);
-                SettingsLabels();
-                SwitchCycles(0);
-            }
-
-            }*/
-
-            }
-        }
-
         private void Venom_Load(object sender, EventArgs e)
         {
-            TB_Loop.Text = "0";
+            ResetForm();
         }
-
-        /*private byte[] SetStartDisplay(bool start, bool modify)
-        {
-            try
-            {
-                //string zeroes = "00000000";
-                string startdisp = start ? "02" : "03";
-                startdisp = modify ? "04" : startdisp;
-                string timestartdisp = start ? "02" : "05";
-                int endfunc = CBO_End.SelectedIndex < 0 ? 0 : CBO_End.SelectedIndex;
-
-                string mes = cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].KeyID + cycles[TAB_Platform_Cooking.SelectedIndex][CBO_Cycles.SelectedIndex].Enum.ToString("X2");
-                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Temp" ? mes + tempKey + FtoCx10(TB_Temp.Text) : mes;
-                mes = TB_Temp.Enabled && TB_Temp.Text != "" && LBL_SetTemp.Text == "Power" ? mes + powKey + int.Parse(TB_Temp.Text).ToString("X2") : mes;
-
-                mes = TB_Time.Enabled && TB_Time.Text != "" ? mes + timeKey + ((int)(double.Parse(TB_Time.Text) * 60)).ToString("X8") : mes;
-                mes = TB_Time.Enabled && TB_Time.Text != "" && !modify && usesCookTimeOp ? mes + timeOpKey + timestartdisp : mes;
-
-                mes = TB_Probe.Enabled && TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + probeAmtKey + FtoCx10(TB_Probe.Text) : mes;
-                mes =  TB_Probe.Text != "" && TAB_Platform_Cooking.SelectedIndex == 2 ? mes + probeAmtKey + int.Parse(TB_Probe.Text.ToString()).ToString("X4") : mes;
-                //mes = CBO_Amt.Enabled && CBO_Amt.SelectedItem != null
-                mes = CBO_End.SelectedItem != null ? mes + cpltKey + endfunc.ToString("X2") : mes;
-
-                mes = TB_Delay.Enabled && TB_Delay.Text != "" && TAB_Platform_Cooking.SelectedIndex != 2 ? mes + delayKey + (int.Parse(TB_Delay.Text) * 60).ToString("X8") : mes;
-                mes = CBO_Doneness.Visible && CBO_Doneness.SelectedItem != null ? mes + doneKey + CBO_Doneness.SelectedIndex.ToString("X2") : mes;
-
-                mes += opKey + startdisp;
-                mes = CBO_Cycles.SelectedItem.ToString().Contains("Sabbath") ? mes += sabKey + "01" : mes;
-
-                byte[] bytes = MakeBytes(mes, true);
-
-                return bytes;
-            }
-            catch
-            {
-                MessageBox.Show("Input contains invalid arguments");
-                return null;
-            }
-
-        }*/
-
     }
 }
