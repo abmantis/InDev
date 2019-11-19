@@ -91,6 +91,9 @@ namespace VenomNamespace
                 }
                 catch
                 {
+                    MessageBox.Show("Catastrophic Add error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
             }
         
@@ -121,7 +124,12 @@ namespace VenomNamespace
                 parent.iplist.RemoveAt(DGV_Data.CurrentCell.RowIndex);
                 parent.results.Rows.RemoveAt(DGV_Data.CurrentCell.RowIndex);
             }
-            catch { }
+            catch
+            {
+                MessageBox.Show("Catastrophic Remove error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
         }
         private void BTN_Clear_Click(object sender, EventArgs e)
         {
@@ -138,18 +146,18 @@ namespace VenomNamespace
         }
         private void BTN_Save_Click(object sender, EventArgs e)
         {
-            
-            //Write info to log
-            if (!File.Exists(parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
+            try
             {
+                //Write info to log
+                if (!File.Exists(parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
                 {
-                    // Verify directory exists, if not, throw exception
-                    string curfilename = parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                    try
                     {
+                        // Verify directory exists, if not, throw exception
+                        string curfilename = parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+
                         using (StreamWriter sw = File.CreateText(curfilename))
                         {
-                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tMAC\tCycle_Wait\tWait_Type");
+                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tMAC");
                             foreach (DataRow row in parent.results.Rows)
                             {
                                 if (row.ItemArray[5].ToString() != "User Input")    //TODO Find a better way to handle this
@@ -161,28 +169,28 @@ namespace VenomNamespace
                                     return;
                                 }
 
-                                    sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
-                                             row.ItemArray[1].ToString() + "\t" + 
-                                             row.ItemArray[4].ToString() + "\t" +
-                                             row.ItemArray[3].ToString() + "\t" +
-                                             "NA"+ "\t" +
-                                             row.ItemArray[5].ToString() + "\t" +
-                                             "NA" + "\t" +
-                                             "0" + "\t" +
-                                             "NA");
+                                sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
+                                         row.ItemArray[1].ToString() + "\t" +
+                                         row.ItemArray[4].ToString() + "\t" +
+                                         row.ItemArray[3].ToString() + "\t" +
+                                         "NA" + "\t" +
+                                         row.ItemArray[5].ToString() + "\t" +
+                                         "NA");
                             }
                         }
                         MessageBox.Show("Saved payload list at " + curfilename + ".", "Export: Payload List Saving.",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    catch
-                    {
-                        MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+
+
                     }
                 }
             }
+            catch
+            {
+                MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }           
         }
         private void BTN_Close_Click(object sender, EventArgs e)
         {
