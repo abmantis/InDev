@@ -958,10 +958,10 @@ namespace VenomNamespace
             System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
 
             // From byte array to string
-            string ips = Encoding.UTF8.GetString(ipbytes, 0, ipbytes.Length);
+            //string ips = Encoding.UTF8.GetString(ipbytes, 0, ipbytes.Length);
 
-            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
+            //System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            //ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ips);
             if (cancel_request)
             {
                 Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
