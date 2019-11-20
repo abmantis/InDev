@@ -917,11 +917,6 @@ namespace VenomNamespace
         {
             try
             {
-                foreach (IPData ipd in iplist)
-                {
-                    if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
-                        ipd.TabIndex = iplist.IndexOf(ipd);
-                }
 
                 foreach (IPData ipd in iplist)
                 {
