@@ -104,6 +104,12 @@ namespace VenomNamespace
             get { return _wait; }
             set { _wait = value; }
         }
+        private bool _written;
+        public bool Written
+        {
+            get { return _written; }
+            set { _written = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -119,6 +125,7 @@ namespace VenomNamespace
             _name = "";
             _waittype = "";
             _typeres = "";
+            _written = false;
         }
 
     }
