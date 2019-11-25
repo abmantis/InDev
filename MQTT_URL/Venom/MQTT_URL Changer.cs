@@ -370,7 +370,7 @@ namespace VenomNamespace
                     BTN_Reset.Enabled = true;
                     return;
                 }
-
+                
                 catch
                 {
                     Reset(false);
