@@ -32,7 +32,7 @@ namespace VenomNamespace
 
         // Entities used to store the list of targeted IPs and their progress
         public List<IPData> iplist;
-        public List<string> responses;
+        public List<Thread> waits;
         public List<ManualResetEventSlim> signal;
 
         public string curfilename;
@@ -79,11 +79,11 @@ namespace VenomNamespace
 
             // Generate lists
             iplist = new List<IPData>();
-            responses = new List<string>();
             signal = new List<ManualResetEventSlim>();
+            waits = new List<Thread> ();
 
 
-        }
+    }
         
         /// <summary>
         /// Parse message from WideBoxInterface
@@ -799,6 +799,8 @@ namespace VenomNamespace
 
                                 if (iplist[i_base].Result.Contains("PASS") || iplist[i_base].Result.Contains("FAIL"))
                                 {
+                                    if (iplist[i_base].Signal == null)
+                                        continue;
                                     if (!iplist[i_base].Signal.IsSet)
                                         iplist[i_base].Signal.Set();
                                 }
@@ -806,6 +808,8 @@ namespace VenomNamespace
                                 {
                                     iplist[i_base].Result = "Cancelled by User.";
                                     results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                                    if (iplist[i_base].Signal == null)
+                                        continue;
                                     if (!iplist[i_base].Signal.IsSet)
                                         iplist[i_base].Signal.Set();
                                 }
@@ -815,7 +819,14 @@ namespace VenomNamespace
                             {
                                 DGV_Data.Refresh();
                             });
-                            //iplist.Clear();
+
+                            foreach (Thread thread in waits)
+                            {
+                                //Wake sleeping wait threads that will no longer be used
+                                if (thread.IsAlive)
+                                    thread.Interrupt();
+                            }
+
                             return;
                         }
 
@@ -856,7 +867,7 @@ namespace VenomNamespace
 
                 if (cancel_request)
                 {
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                     return true;
                 }
                 //If IP Address exists, send to that IP
@@ -865,8 +876,12 @@ namespace VenomNamespace
                 {
                     for (int i = 0; i < MQTTMAX; i++)
                     {
-                        WifiLocal.SendMqttMessage(ip, topic, paybytes);
-                        Wait(2000);
+
+                        if (ipd.Result != "Downloading")
+                        {
+                            WifiLocal.SendMqttMessage(ip, topic, paybytes);
+                            Wait(2000);
+                        }
 
                         if (ipd.Result != "Downloading")
                             continue;
@@ -894,8 +909,16 @@ namespace VenomNamespace
             {
                 Thread thread = new Thread(delegate ()
                 {
-                    System.Threading.Thread.Sleep(timeout);
+                    try
+                    {
+                        Thread.Sleep(timeout);
+                    }
+                    catch (ThreadInterruptedException)
+                    {
+                        Console.WriteLine("Thread with ID " + Thread.CurrentThread.ManagedThreadId + " interrupted.");
+                    }
                 });
+                waits.Add(thread);
                 thread.Start();
                 while (thread.IsAlive)
                 {
@@ -907,8 +930,7 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("Catastrophic Wait error.", "Error",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Catastrophic Wait error.", "Error",MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -963,7 +985,7 @@ namespace VenomNamespace
                 {
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
                     if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
@@ -1040,7 +1062,7 @@ namespace VenomNamespace
                         // Check to see if thread should be cancelled
                         if (cancel_request)
                         {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                             return;
                         }
                         System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
@@ -1097,7 +1119,7 @@ namespace VenomNamespace
 
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
                     if (cai.IsTraceOn)
@@ -1143,7 +1165,7 @@ namespace VenomNamespace
                 {
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return false;
                     }
 
@@ -1215,7 +1237,7 @@ namespace VenomNamespace
                     {
                         if (cancel_request)
                         {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " closed.");
+                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                             return false;
                         }
                         //First round of attempts failed, close data / open data and try again
@@ -1432,65 +1454,6 @@ namespace VenomNamespace
             });
             
         }
-        /*private void NewIP(ConnectedApplianceInfo cai, string[] value, bool operation)
-        {
-            try
-            {
-                if (operation)
-                {
-                    IPData newip = new IPData(cai.IPAddress, value[1]); //MQTT Forced as type at value[1] add Revelation logic if supported
-                    iplist.Add(newip);
-                    newip.Node = value[2];
-                    newip.Type = value[3];
-                    newip.MQTTPay = value[4];
-                    newip.Name = value[5];
-                    newip.MAC = cai.MacAddress; //value[6]
-
-                    // Update window for added IP
-                    DataRow dr = results.NewRow();
-                    dr["IP Address"] = newip.IPAddress;
-                    dr["OTA Payload"] = newip.Payload;
-                    dr["Delivery Method"] = "MQTT";
-                    dr["OTA Type"] = newip.Type;
-                    dr["Node"] = newip.Node;
-                    dr["Name"] = newip.Name;
-                    dr["OTA Result"] = "PENDING";
-                    results.Rows.Add(dr);
-                }
-                else
-                {
-                    IPData newip = new IPData(cai.IPAddress, ""); //MQTT Forced as type at value[1] add Revelation logic if supported
-                    iplist.Add(newip);
-                    newip.Payload = results.Rows[1];
-                    newip.Node = results[];
-                    newip.Type = value[3];
-                    newip.MQTTPay = value[4];
-                    newip.Name = value[5];
-                    newip.MAC = cai.MacAddress; //value[6]
-
-                    // Update window for added IP
-                    iplist.Clear();
-                    results.Clear();
-                    DGV_Data.Refresh();
-
-                    DataRow dr = results.NewRow();
-                    dr["IP Address"] = newip.IPAddress;
-                    dr["OTA Payload"] = newip.Payload;
-                    dr["Delivery Method"] = "MQTT";
-                    dr["OTA Type"] = newip.Type;
-                    dr["Node"] = newip.Node;
-                    dr["Name"] = newip.Name;
-                    dr["OTA Result"] = "PENDING";
-                    results.Rows.Add(dr);
-                }
-            }
-            catch
-            {
-                MessageBox.Show("Catastrophic NewIP error.", "Error",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-        }*/
         private void FinalResult()
         {
             try {

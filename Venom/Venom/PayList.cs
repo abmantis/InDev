@@ -138,7 +138,6 @@ namespace VenomNamespace
             if (dialogResult == DialogResult.Yes)
             {
                 parent.results.Clear();
-                parent.responses.Clear();
                 parent.iplist.Clear();
                 parent.LB_IPs.Items.Clear();
                 DGV_Data.Refresh();
