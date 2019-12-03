@@ -1,23 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using WideBoxLib;
 using WirelessLib;
 using System.IO;
-using System.Globalization;
 
 namespace VenomNamespace
 {
     public partial class PayList : WideInterface
     {
         public Venom parent;
-        public AutoGen auto;
         private BindingSource sbind = new BindingSource();
         public PayList(Venom ParentForm, WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
@@ -41,7 +34,7 @@ namespace VenomNamespace
                 column.SortMode = DataGridViewColumnSortMode.NotSortable;
             }
         }
-        
+
         private void ResetForm()
         {
             TB_IPDisplay.Text = "";
@@ -98,6 +91,9 @@ namespace VenomNamespace
                 }
                 catch
                 {
+                    MessageBox.Show("Catastrophic Add error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
             }
         
@@ -108,7 +104,6 @@ namespace VenomNamespace
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         private void BTN_Remove_Click(object sender, EventArgs e)
         {
             try
@@ -129,9 +124,13 @@ namespace VenomNamespace
                 parent.iplist.RemoveAt(DGV_Data.CurrentCell.RowIndex);
                 parent.results.Rows.RemoveAt(DGV_Data.CurrentCell.RowIndex);
             }
-            catch { }
+            catch
+            {
+                MessageBox.Show("Catastrophic Remove error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
         }
-
         private void BTN_Clear_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("This will clear all IPs and their results from all windows. Press Yes to Clear or No to Cancel.",
@@ -139,27 +138,25 @@ namespace VenomNamespace
             if (dialogResult == DialogResult.Yes)
             {
                 parent.results.Clear();
-                parent.responses.Clear();
                 parent.iplist.Clear();
                 parent.LB_IPs.Items.Clear();
                 DGV_Data.Refresh();
             }
         }
-
         private void BTN_Save_Click(object sender, EventArgs e)
         {
-            
-            //Write info to log
-            if (!File.Exists(parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
+            try
             {
+                //Write info to log
+                if (!File.Exists(parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
                 {
-                    // Verify directory exists, if not, throw exception
-                    string curfilename = parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                    try
                     {
+                        // Verify directory exists, if not, throw exception
+                        string curfilename = parent.TB_LogDir.Text + "\\" + "Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+
                         using (StreamWriter sw = File.CreateText(curfilename))
                         {
-                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tMAC\tCycle_Wait\tWait_Type");
+                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tMAC");
                             foreach (DataRow row in parent.results.Rows)
                             {
                                 if (row.ItemArray[5].ToString() != "User Input")    //TODO Find a better way to handle this
@@ -171,52 +168,33 @@ namespace VenomNamespace
                                     return;
                                 }
 
-                                    sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
-                                             row.ItemArray[1].ToString() + "\t" + 
-                                             row.ItemArray[4].ToString() + "\t" +
-                                             row.ItemArray[3].ToString() + "\t" +
-                                             "NA"+ "\t" +
-                                             row.ItemArray[5].ToString() + "\t" +
-                                             "NA" + "\t" +
-                                             "0" + "\t" +
-                                             "NA");
+                                sw.WriteLine(row.ItemArray[0].ToString() + "\t" +
+                                         row.ItemArray[1].ToString() + "\t" +
+                                         row.ItemArray[4].ToString() + "\t" +
+                                         row.ItemArray[3].ToString() + "\t" +
+                                         "NA" + "\t" +
+                                         row.ItemArray[5].ToString() + "\t" +
+                                         "NA");
                             }
                         }
                         MessageBox.Show("Saved payload list at " + curfilename + ".", "Export: Payload List Saving.",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    catch
-                    {
-                        MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+
+
                     }
                 }
             }
+            catch
+            {
+                MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }           
         }
-
-       
         private void BTN_Close_Click(object sender, EventArgs e)
         {
             this.Close();
         }
-
-        private void BTN_Auto_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                auto.Show();
-            }
-            catch
-            {
-
-                auto = new AutoGen(parent, this.WideLocal, this.WifiLocal);
-                auto.Show();
-            }
-
-            
-        }
-
         private void PayList_Load(object sender, EventArgs e)
         {
             //ResetForm();   //ENABLE WHEN UPLOADING TO STORE

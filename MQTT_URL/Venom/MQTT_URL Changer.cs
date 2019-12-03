@@ -24,7 +24,7 @@ namespace VenomNamespace
     public partial class MQTT_URL : WideInterface
     {
         public const byte API_NUMBER = 0;
-        public static int ATTEMPTMAX = 5;
+        public static int ATTEMPTMAX = 10;
         public string choice = "";
         public string mqtt_url = "TRY AGAIN";
         public enum OPCODES { }
@@ -253,8 +253,8 @@ namespace VenomNamespace
         }
         public string PaySelection()
         {
-            if (BTN_GET.Text == "Stop Running")
-                return "{\"system\":\"readpsm: whr,mfgdata,mqtt_url\"}";
+            if (BTN_GET.Text == "Running")
+                return "{\"system\":\"readpsm:whr,mfgdata,mqtt_url\"}";
             if (CB_Custom.Checked == true)
                 return "{\"system\":\"mqtt_url:" + TB_Custom.Text + "\"}";
             if (CB_EMEAP.Checked == true)
@@ -303,7 +303,8 @@ namespace VenomNamespace
                     }
                     string set = "set";
                     bool result = false;
-                    BTN_Payload.Text = "Stop Running";
+                    BTN_Payload.Text = "Running";
+                    BTN_Payload.Enabled = false;
                     CB_EMEAP.Enabled = false;
                     CB_NARS.Enabled = false;
                     CB_NARP.Enabled = false;
@@ -312,29 +313,50 @@ namespace VenomNamespace
                     BTN_Reset.Enabled = false;
                     TB_IP.Enabled = false;
                     BTN_GET.Enabled = false;
-                    CycleWifi();
-                    Wait(2000);
+                    //CycleWifi();
+                    //Wait(2000);
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
+                    
                     byte[] paybytes = Encoding.ASCII.GetBytes(PaySelection());
                     byte[] orgbytes = Encoding.ASCII.GetBytes(OrgSelection());
-                    if (RevelationConnect(set))
+
+                    if (cai != null)
                     {
-                        result = SendRevelation(TB_IP.Text, paybytes, orgbytes);
-                        Wait(2000);
+                        if (RevelationConnect(set, cai))
+                        {
+                            result = SendRevelation(TB_IP.Text, paybytes, orgbytes);//, cai);
+                            Wait(2000);
+                        }
+                        if (result)
+                            dialogurl = MessageBox.Show("The MQTT URl for " + TB_IP.Text + " WAS CHANGED successfuly." +
+                                                        " Request completed. Closing all open connections.", "Set MQTT URL",
+                                                                   MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        else
+                            dialogurl = MessageBox.Show("The MQTT URl for " + TB_IP.Text + " was NOT CHANGED successfuly." +
+                                                                                    " Request completed. Closing all open connections.", "Set MQTT URL",
+                                                                                               MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Reset(false);
+                        BTN_Payload.Enabled = true;
+                        TB_IP.Enabled = true;
+                        BTN_Reset.Enabled = true;
+                        BTN_GET.Enabled = true;
+                        WifiLocal.CloseAll(true);
+                        return;
                     }
-                    if (!CB_Suppress.Checked)
-                        dialogurl = MessageBox.Show("The MQTT URl for " + TB_IP.Text + " was changed successfuly is " + result + ".", "Set MQTT URL",
-                                                               MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    BTN_Payload.Text = "Set";
-                    Reset(false);
-                    TB_IP.Enabled = true;
-                    BTN_Reset.Enabled = true;
-                    BTN_GET.Enabled = true;
-                    return;
-
+                    else
+                    {
+                        MessageBox.Show("Unable to connect. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
+                                            " and that the IP Address is listed within WifiBasic.", "Error: Unable to connect.",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        Reset(false);
+                        return;
+                    }
                 }
-
+                
                 catch
                 {
+                    Reset(false);
                     return;
                 }
                 
@@ -343,22 +365,22 @@ namespace VenomNamespace
             {
                 try
                 {
-                    BTN_Payload.Text = "Set";
                     Reset(false);
                     TB_IP.Enabled = true;
                     BTN_Reset.Enabled = true;
                     return;
                 }
-
+                
                 catch
                 {
+                    Reset(false);
                     return;
                 }
                                
             }
                 
         }         
-        public bool SendRevelation(string ips, byte[] paybytes, byte[] orgbytes)
+        public bool SendRevelation(string ips, byte[] paybytes, byte[] orgbytes)//, ConnectedApplianceInfo cai)
         {
             int revattempt = 0;
             bool revconnect = false;
@@ -373,8 +395,8 @@ namespace VenomNamespace
             {
                 try
                 {
-                     revattempt++;
-                    
+                    revattempt++;
+
                     // Send Revelation message(s)
                     if (myDestination != null && cai.IsRevelationConnected)
                     {
@@ -397,7 +419,7 @@ namespace VenomNamespace
                         }
                         revconnect = true;
                     }
-                    
+
                     // Close revelation
                     if (revconnect)
                     {
@@ -421,6 +443,58 @@ namespace VenomNamespace
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             return false;
 
+            /*bool revconnect = false;
+            int revattempt = 0;
+            //var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals(ips));
+            // See if Revelation is Connected and attempt to connect until it is
+
+            Wait(2000);
+            try
+            {
+                revattempt++;
+
+                // Send Revelation message(s)
+                if (cai != null && cai.IsRevelationConnected)
+                {
+                    WifiLocal.SendRevelationMessage(cai, new RevelationPacket()
+                    {
+                        API = 0xF0,
+                        Opcode = 00,
+                        Payload = paybytes,
+                    });
+                    Wait(2000);
+                    if (CB_Org.Checked)
+                    {
+                        WifiLocal.SendRevelationMessage(cai, new RevelationPacket()
+                        {
+                            API = 0xF0,
+                            Opcode = 00,
+                            Payload = orgbytes,
+                        });
+                        Wait(2000);
+                    }
+                    revconnect = true;
+                }
+
+                // Close revelation
+                if (revconnect)
+                    return true;
+
+            }
+            catch
+            {
+                MessageBox.Show("Revelation connection failed. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
+                                       " and that the IP Address is listed within WifiBasic.", "Error: Unable to connect.",
+                               MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return false;
+            }
+
+
+
+            MessageBox.Show("Revelation connection failed. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
+                                        " and that the IP Address is listed within WifiBasic.", "Error: Unable to connect.",
+                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            return false;*/
         }        
         public void Wait(int timeout)
         {
@@ -432,48 +506,61 @@ namespace VenomNamespace
             while (thread.IsAlive)
                 Application.DoEvents();
         }
-        bool RevelationConnect(string sent)
+        bool RevelationConnect(string sent, ConnectedApplianceInfo cai)
         {
-            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
 
             int revattempt = 0;
             while (revattempt < ATTEMPTMAX)
             {
                 revattempt++;
                 try
-                {   
+                {
                     if (cai != null)
                     {
-                        if (!cai.IsRevelationConnected)
+                        if (sent == "set")
                         {
-                            WifiLocal.ConnectTo(cai);
-                            Wait(2000);
+                            if (!cai.IsRevelationConnected)
+                            {
+                                WifiLocal.ConnectTo(cai);
+                                Wait(2000);
+                            }
+
+
+                            if (!cai.IsRevelationConnected)
+                            {
+                                continue;
+                            }
+
+
+                            if (cai.IsRevelationConnected)
+                                return true;
                         }
 
 
-                        if (!cai.IsRevelationConnected && sent == "set")
+                        if (sent == "get")
                         {
-                            continue;
+                            if (!cai.IsTraceOn)
+                            {
+                                //if it's not and Revelation is also not enabled, enable Revelation
+                                if (!cai.IsRevelationConnected)
+                                {
+                                    WifiLocal.ConnectTo(cai);
+                                    Wait(2000);
+                                }
+                                if (cai.IsRevelationConnected)
+                                {
+                                    //If Revelation is enabled, enable Trace
+                                    WifiLocal.EnableTrace(cai, true);
+                                    Wait(2000);
+                                }
+                            }
+
+                            if (cai.IsTraceOn)
+                                    return true;
                         }
-
-
-                        if (cai.IsRevelationConnected && sent == "set")
-                            return true;
-
-
-                        if (cai.IsRevelationConnected && sent == "trace")
-                        {
-                            //If Revelation is enabled, enable Trace
-                            WifiLocal.EnableTrace(cai, true);
-                            Wait(2000);
-                        }
-
-                        if (cai.IsTraceOn)
-                            return true;
-                    }
-
-                    
+                            
+                    }            
+                                        
                     else
                     {
                         MessageBox.Show("Revelation connection failed. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
@@ -487,7 +574,7 @@ namespace VenomNamespace
 
                 catch
                 {
-                    if (sent == "trace")
+                    if (sent == "get")
                         MessageBox.Show("Connection failed. Verify that UITracer is NOT RUNNING and is Closed. You may need to close" +
                                 "Widebox and try again.", "Error: Unable to connect.",
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -538,7 +625,7 @@ namespace VenomNamespace
                 // Close all WifiBasic connections
                 WifiLocal.CloseAll(true);
                 //WifiLocal.Close(cai);
-                Wait(2000);
+                Wait(4000);
                 // Get new cert to restart WifiBasic connections
                 CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
 
@@ -659,7 +746,11 @@ namespace VenomNamespace
             TB_Custom.Text = "";
             TB_Custom.Visible = false;
             BTN_GET.Enabled = true;
+            BTN_Payload.Enabled = true;
+            BTN_GET.Text = "Get";
+            BTN_Payload.Text = "Set";
             choice = "";
+            TB_IP.Enabled = true;
             if (parm)
             {
                 TB_IP.Text = "";
@@ -683,10 +774,12 @@ namespace VenomNamespace
                                                               " listed within WifiBasic and UITracer is NOT running. If not, press 'No' on this window and open WifiBasic then press 'Data Start'" +
                                                               " and finally, press 'Scan Appliances' to populate the list in WifiBasic.", "Verify IP Address is Listed",
                                                               MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
-                            return;
+
+                        return;
                     }
-                    string trace = "trace";
-                    BTN_GET.Text = "Stop Running";
+                    string get = "get";
+                    BTN_GET.Text = "Running";
+                    BTN_GET.Enabled = false;
                     CB_EMEAP.Enabled = false;
                     CB_NARS.Enabled = false;
                     CB_NARP.Enabled = false;
@@ -696,31 +789,58 @@ namespace VenomNamespace
                     BTN_Reset.Enabled = false;
                     TB_IP.Enabled = false;
                     BTN_Payload.Enabled = false;
-                    CycleWifi();
-                    Wait(2000);
+                    //CycleWifi();
+                    //Wait(2000);
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == TB_IP.Text);
                     byte[] orgbytes = Encoding.ASCII.GetBytes(OrgSelection());
                     byte[] paybytes = Encoding.ASCII.GetBytes(PaySelection());
-                    if (RevelationConnect(trace))
-                    {
-                        SendRevelation(TB_IP.Text, paybytes, orgbytes);
-                        Wait(2000);
-                    }
-                    //if (CB_Org.Checked)
-                    dialogurl = MessageBox.Show("The MQTT URL for " + TB_IP.Text + " is currently " + mqtt_url + ".", "Current MQTT URL",
-                                                               MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    BTN_GET.Text = "Get";
-                    Reset(false);
-                    mqtt_url = "";
-                    TB_IP.Enabled = true;
-                    BTN_Reset.Enabled = true;
-                    BTN_Payload.Enabled = true;
-                    return;
 
+                    if (cai != null)
+                    {
+                        if (RevelationConnect(get, cai))
+                        {
+                            if (SendRevelation(TB_IP.Text, paybytes, orgbytes))
+                            {
+                                for (int i = 0; i < ATTEMPTMAX; i++)
+                                {
+                                    if (mqtt_url.Contains("."))
+                                        break;
+                                    else
+                                        Wait(1000);
+                                }
+                            }                            
+                        }                            
+
+                        if (mqtt_url != "")
+                            dialogurl = MessageBox.Show("The MQTT URL for " + TB_IP.Text + " is currently " + mqtt_url + "."
+                                                    + " Request completed. Closing all open connections.", "Current MQTT URL",
+                                                                   MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        else
+                            dialogurl = MessageBox.Show("The MQTT URl for " + TB_IP.Text + " was NOT returned successfuly." +
+                                                                                    " Request completed. Closing all open connections.", "Get MQTT URL",
+                                                                                               MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Reset(false);
+                        mqtt_url = "";
+                        TB_IP.Enabled = true;
+                        BTN_Reset.Enabled = true;
+                        BTN_Payload.Enabled = true;
+                        WifiLocal.CloseAll(true);
+                        return;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Connection failed. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
+                                            " and that the IP Address is listed within WifiBasic.", "Error: Unable to connect.",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        Reset(false);
+                        return;
+                    }
                 }
 
                 catch
                 {
-                    BTN_GET.Text = "Get";
                     Reset(false);
                     mqtt_url = "";
                     TB_IP.Enabled = true;
@@ -734,7 +854,6 @@ namespace VenomNamespace
             {
                 try
                 {
-                    BTN_Payload.Text = "Get";
                     Reset(false);
                     TB_IP.Enabled = true;
                     BTN_Reset.Enabled = true;
@@ -743,12 +862,12 @@ namespace VenomNamespace
 
                 catch
                 {
+                    Reset(false);
                     return;
                 }
 
             }
         }
-
         private void CB_Org_CheckedChanged(object sender, EventArgs e)
         {
             if (CB_Org.Checked)

@@ -13,7 +13,7 @@ using System.Diagnostics;
 
 namespace VenomNamespace
 {
-    public partial class Venom : WideInterface
+    public partial class Revelation_OTA : WideInterface
     {
         public const byte API_NUMBER = 0;
         public static int ATTEMPTMAX = 3;
@@ -37,8 +37,6 @@ namespace VenomNamespace
         public List<ManualResetEventSlim> signal;
 
         public string curfilename;
-        public PayList plist;
-        public Rev rev;
         public bool cancel_request = false;
 
         static object lockObj = new object();
@@ -48,7 +46,7 @@ namespace VenomNamespace
         public enum OPCODES { }
 
         //to access wideLocal use base.WideLocal or simple WideLocal
-        public Venom(WideBox wideLocal, WhirlpoolWifi wifiLocal)
+        public Revelation_OTA(WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
         {
             InitializeComponent();
@@ -59,11 +57,12 @@ namespace VenomNamespace
             // Build log and window table
             results = new DataTable();
             results.Columns.Add("IP Address");
+            results.Columns.Add("MAC");
             results.Columns.Add("OTA Payload");
-            results.Columns.Add("Delivery Method");
-            results.Columns.Add("OTA Type");
-            results.Columns.Add("Node");
-            results.Columns.Add("Name");
+            results.Columns.Add("Model");
+            results.Columns.Add("Serial");
+            results.Columns.Add("CCURI");
+            results.Columns.Add("Version");
             results.Columns.Add("OTA Result");
 
             // Generate tables
@@ -690,22 +689,30 @@ namespace VenomNamespace
 
                         return;
                     }
-                    //if (!iplist[listindex].Result.Contains("PASS") || !iplist[listindex].Result.Contains("FAIL"))
+                    
                     results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
 
                     if (type.Equals("status") && !iplist[listindex].Written)
                     {
-
+                        System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                        ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == iplist[listindex].IPAddress);
+                        if (cai != null)
+                        {
+                            iplist[listindex].CCURI = cai.CC_URI;
+                            iplist[listindex].Version = cai.VersionNumber;
+                            results.Rows[listindex]["CCURI"] = iplist[listindex].CCURI;
+                            results.Rows[listindex]["Version"] = iplist[listindex].Version;
+                        }
                         using (StreamWriter sw = File.AppendText(curfilename))
                         {
                             sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
-                            iplist[listindex].MAC + "," + //source + "," +
-                            iplist[listindex].Payload + "," +
-                            iplist[listindex].Delivery + "," +
-                            iplist[listindex].Type + "," +
-                            iplist[listindex].Node + "," +
-                            iplist[listindex].Name + "," +
-                            iplist[listindex].Result);
+                            iplist[listindex].MAC + "," +
+                            iplist[listindex].Model + "," +
+                            iplist[listindex].Serial + "," +
+                            iplist[listindex].CCURI + "," +
+                            iplist[listindex].Version + "," +
+                            iplist[listindex].Result + "," +
+                            iplist[listindex].Payload); 
                         }
                         Invoke((MethodInvoker)delegate
                         {
@@ -733,196 +740,142 @@ namespace VenomNamespace
                 }
 
         }       
-        private void BTN_Payload_Click(object sender, EventArgs e)
+        public bool IsEmpty()
         {
-            // Begin processing all IPs on list
-            if (LB_IPs.Items.Count > 0 && iplist.Count > 0)
+            if (String.IsNullOrEmpty(TB_Version.Text))
             {
-                if (BTN_Payload.Text == "Run Test List")
-                {
-                    //Write info to log
-                    if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
-                    {
-                        {
-                            // Verify directory exists, if not, throw exception
-                            curfilename = TB_LogDir.Text + "\\" + "OTALog_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                            try
-                            {
-                                using (StreamWriter sw = File.CreateText(curfilename))
-                                {
-                                    sw.WriteLine("Time,IP,MAC,Log Source,Payload,Method,Type,Result");
-                                }
-                            }
-                            catch
-                            {
-                                MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                return;
-                            }
-                        }
-                    }
-
-                    BTN_Payload.Text = "Stop Running";
-                    BTN_Remove.Enabled = false;
-                    BTN_Clr.Enabled = false;
-                    TB_LogDir.Enabled = false;
-                    LB_IPs.Enabled = false;
-                    BTN_Import.Enabled = false;
-                    BTN_MakeList.Enabled = false;
-                    BTN_LogDir.Enabled = false;
-                    cancel_request = false;
-                    g_time.Start();
-                    if (rerun)
-                    {
-                        for (int i = 0; i < iplist.Count(); i++)
-                        {
-                            if (iplist[i].Result != "PENDING")
-                            {
-                                iplist[i].Result = "PENDING";
-                                results.Rows[i]["OTA Result"] = "PENDING";
-                            }
-                        }
-                        DGV_Data.Refresh();
-                    }
-                    //After first time press, force reset results in DGV (only reset if ResetForm(true) is called)
-                    rerun = true;    
-            
-                    ProcessIP();
-                }
-
-                else
-                {
-                    DialogResult dialogResult = MessageBox.Show("This will dispose of all running threads and end the OTA list execution. Are you sure you want to exit?",
-                                                            "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                    if (dialogResult == DialogResult.Yes)
-                    {
-                        BTN_Payload.Text = "Run Test List";
-                        BTN_Remove.Enabled = true;
-                        BTN_Clr.Enabled = true;
-                        TB_LogDir.Enabled = true;
-                        LB_IPs.Enabled = true;
-                        BTN_Import.Enabled = true;
-                        BTN_MakeList.Enabled = true;
-                        BTN_LogDir.Enabled = true;
-                        cancel_request = true;
-                        g_time.Stop();
-                        g_time.Reset();
-                        try
-                        {
-                            int stop = iplist.Count();
-                            for (int i_base = 0; i_base < stop; i_base++)
-                            {
-
-                                if (iplist[i_base].Result.Contains("PASS") || iplist[i_base].Result.Contains("FAIL"))
-                                {
-                                    if (iplist[i_base].Signal == null)
-                                        continue;
-                                    if (!iplist[i_base].Signal.IsSet)
-                                        iplist[i_base].Signal.Set();
-                                }
-                                else
-                                {
-                                    iplist[i_base].Result = "Cancelled by User.";
-                                    results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
-                                    if (iplist[i_base].Signal == null)
-                                        continue;
-                                    if (!iplist[i_base].Signal.IsSet)
-                                        iplist[i_base].Signal.Set();
-                                }
-                            }
-
-                            Invoke((MethodInvoker)delegate
-                            {
-                                DGV_Data.Refresh();
-                            });
-
-                            foreach (Thread thread in waits)
-                            {
-                                //Wake sleeping wait threads that will no longer be used
-                                if (thread.IsAlive)
-                                    thread.Interrupt();
-                            }
-
-                            return;
-                        }
-
-                        catch
-                        {
-                            MessageBox.Show("Catastrophic thread closure error. Closing all threads and parent environment (Widebox).", "Error: Threads Failed to Close",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            //Environment.Exit(1);
-                        }
-
-
-                    }
-                    else //Dialog was Yes
-                        return;
-                }
-
-            }
-                        
-            else
-            {
-                if (iplist.Count > 0)
-                    MessageBox.Show("No IP Address in IP List. Please populate list and try again.", "Error: No IP in List",
+                MessageBox.Show("No Target Version input. Please input a Target Version and try again.", "Error: Target Version Empty",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-                else
-                    MessageBox.Show("DataGrid has become corrupted. Please Import again OR go to Test List Control and" +
-                        " Save your current DataGrid then Import.", "Error: DataGrid corrupted",
+                return true;
+            }
+            if (String.IsNullOrEmpty(TB_Max.Text))
+            {
+                MessageBox.Show("No Maximum amount of Targets input. Please input a Target Maximum and try again.", "Error: Target Maximum Empty",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                return true;
             }
-        } 
-        public bool SendMQTT(byte[] ipbytes, string topic, byte[] paybytes, ConnectedApplianceInfo cai, IPData ipd)
-        {
-            try
+            if (String.IsNullOrEmpty(TB_Payload.Text))
             {
-                System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
-                //string ips = ip.ToString();
-
-
-                if (cancel_request)
-                {
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
-                    return true;
-                }
-                //If IP Address exists, send to that IP
-                if (cai != null)
-                //Send payload
-                {
-                    for (int i = 0; i < MQTTMAX; i++)
-                    {
-
-                        if (ipd.Result != "Downloading")
-                        {
-                            WifiLocal.SendMqttMessage(ip, topic, paybytes);
-                            Wait(2000);
-                        }
-
-                        if (ipd.Result != "Downloading")
-                        {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and signal " 
-                                + ipd.Signal.WaitHandle.Handle + " had a result of " + ipd.Result + ".");
-                            continue;
-                        }
-
-                        return true;
-                    }
-                    
-                }
-                else
-                    return false;
-            }
-            catch
-            {
-                MessageBox.Show("Catastrophic SendMQTT error.", "Error",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
+                MessageBox.Show("No Payload input. Please input a Payload and try again.", "Error: Payload Empty",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return true;
             }
 
             return false;
-            
         }
+        private void BTN_Start_Click(object sender, EventArgs e)
+        {
+            if (IsEmpty())
+                return;
+            string TVers = TB_Version.Text;
+            int TAmt = Int32.Parse(TB_Max.Text);
+            if (BTN_Start.Text == "Start")
+            {
+
+                //Write info to log
+                if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
+                {
+                    {
+                        // Verify directory exists, if not, throw exception
+                        curfilename = TB_LogDir.Text + "\\" + "OTALog_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+                        try
+                        {
+                            using (StreamWriter sw = File.CreateText(curfilename))
+                            {
+                                sw.WriteLine("Time,IP,MAC,Model,Serial Number,CCURI,SW Version,Result,Payload");
+                            }
+                        }
+                        catch
+                        {
+                            MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+                    }
+                }
+                BTN_Start.Text = "Stop Running";
+                TB_Payload.Enabled = false;
+                TB_Max.Enabled = false;
+                TB_Version.Enabled = false;
+                BTN_Clr.Enabled = false;
+                cancel_request = false;
+                g_time.Start();
+                ResetForm(false, true);
+
+                //Initialize list
+                for (int i = 0; i < TAmt; i++)
+                {
+                    IPData newip = new IPData("0.0.0.0", "");
+                    iplist.Add(newip);
+                }
+
+                ProcessIP(TVers);
+            }
+            else
+            {
+                DialogResult dialogResult = MessageBox.Show("This will dispose of all running threads and end the OTA list execution. Are you sure you want to exit?",
+                                                        "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    cancel_request = true;
+                    TB_Payload.Enabled = true;
+                    TB_Max.Enabled = true;
+                    TB_Version.Enabled = true;
+                    BTN_Clr.Enabled = true;
+                    g_time.Stop();
+                    g_time.Reset();
+                    BTN_Start.Text = "Start";
+
+                    try
+                    {
+                        int stop = iplist.Count();
+                        for (int i_base = 0; i_base < stop; i_base++)
+                        {
+
+                            if (iplist[i_base].Result.Contains("PASS") || iplist[i_base].Result.Contains("FAIL"))
+                            {
+                                if (iplist[i_base].Signal == null)
+                                    continue;
+                                if (!iplist[i_base].Signal.IsSet)
+                                    iplist[i_base].Signal.Set();
+                            }
+                            else
+                            {
+                                if (iplist[i_base].IPAddress == "0.0.0.0")
+                                    continue;
+                                iplist[i_base].Result = "Cancelled by User.";
+                                results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                                if (iplist[i_base].Signal == null)
+                                    continue;
+                                if (!iplist[i_base].Signal.IsSet)
+                                    iplist[i_base].Signal.Set();
+                            }
+                        }
+
+                        Invoke((MethodInvoker)delegate
+                        {
+                            DGV_Data.Refresh();
+                        });
+
+                        foreach (Thread thread in waits)
+                        {
+                            //Wake sleeping wait threads that will no longer be used
+                            if (thread.IsAlive)
+                                thread.Interrupt();
+                        }
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Catastrophic thread closure error. Closing all threads and parent environment (Widebox).", "Error: Threads Failed to Close",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        //Environment.Exit(1);
+                    }
+                }
+                else //Dialog was Yes
+                    return;
+
+            }
+        } 
         public void Wait(int timeout)
         {
             try
@@ -989,129 +942,117 @@ namespace VenomNamespace
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            
+
         }
-        public void RunTask(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex, Barrier barrier)
+        public void AddResult(ConnectedApplianceInfo cai, IPData ipd)
+        {
+            ipd.IPAddress = cai.IPAddress;
+            ipd.Payload = TB_Payload.Text;
+            ipd.Model = cai.ModelNumber;
+            ipd.Serial = cai.SerialNumber;
+            ipd.Version = cai.VersionNumber;
+            ipd.MAC = cai.MacAddress;
+            ipd.CCURI = cai.CC_URI;
+            ipd.Result = "PENDING";
+
+            // Update window for added IP
+            DataRow dr = results.NewRow();
+
+            dr["IP Address"] = ipd.IPAddress;
+            dr["OTA Payload"] = ipd.Payload;
+            dr["Model"] = ipd.Model;
+            dr["Serial"] = ipd.Serial;
+            dr["MAC"] = ipd.MAC;
+            dr["Version"] = ipd.Version;
+            dr["CCURI"] = ipd.CCURI;
+            dr["OTA Result"] = ipd.Result;
+            results.Rows.Add(dr);
+        }
+        public void RunTask(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex, Barrier barrier, IPData ipd, ref byte[] paybytes)
         {
             try
             {
-                /*foreach (IPData ipd in iplist)
+                if (cancel_request)
                 {
-                    if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
-                        ipd.TabIndex = iplist.IndexOf(ipd);
-                }*/
+                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                    return;
+                }
+                if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
+                {
+                    ipd.IPIndex = Int32.Parse(ipindex);
+                    ipd.Signal = sig;
+                    ipd.TabIndex = iplist.IndexOf(ipd);
+                    bool thread_waits = true;   // Indicates this is a thread that will require a reboot time for the product
 
-                foreach (IPData ipd in iplist)
-                {
+                    //Force each thread to live only two hours (process somehow got stuck)
+                    System.Timers.Timer timer = new System.Timers.Timer();
+                    timer.Interval = TMAX;
+                    timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
+                    timer.Start();
+
+                    if (SendRevelation(cai, ref paybytes))
+                        thread_waits = true;
+
+                    else
+                    {
+                        //Otherwise IP changed, use MAC address to map to new IP
+                        System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_m = WifiLocal.ConnectedAppliances;
+                        ConnectedApplianceInfo cai_m = cio_m.FirstOrDefault(x => x.MacAddress == ipd.MAC);
+                        if (cai_m != null)
+                        {
+                            if (SendRevelation(cai_m, ref paybytes))
+                                thread_waits = true;
+                        }
+                        else
+                        {
+                            MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
+                                "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
+                            SetText("status", "Bad IP Address", ipd.TabIndex);
+                            thread_waits = false;
+                        }
+                    }
+
+
+
+
+                    // Set wait signal to be unlocked by thread after job is complete (result seen from log)
+                    if (thread_waits)
+                    {
+                        Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
+                           " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+                        ipd.Signal.Wait();
+
+                        if (ipd.Result.Contains("timeout"))
+                            SetText("status", "Force Close", ipd.TabIndex);
+                    }
+
+                    timer.Stop();
+                    timer.Dispose();
+                    // Check to see if thread should be cancelled
                     if (cancel_request)
                     {
                         Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
-                    if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
-                    {
-                        ipd.IPIndex = Int32.Parse(ipindex);
-                        ipd.Signal = sig;
-                        ipd.TabIndex = iplist.IndexOf(ipd);
-                        bool thread_waits = true;   // Indicates this is a thread that will require a reboot time for the product
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
+                    ConnectedApplianceInfo cai_n = cio_n.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
+                    Wait(2 * RECONWAIT); //Wait two minutes for MQTT to come back on after reboout out of IAP
 
-                        //Force each thread to live only two hours (process somehow got stuck)
-                        System.Timers.Timer timer = new System.Timers.Timer();
-                        timer.Interval = TMAX;
-                        timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
-                        timer.Start();
 
-                        //Parse payload into byte array
-                        byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
-
-                        //Prepare IP address for sending via MQTT
-                        string[] ipad = ipd.IPAddress.Split('.');
-                        byte[] ipbytes = new byte[4];
-                        for (int j = 0; j < 4; j++)
-                        {
-                            ipbytes[j] = byte.Parse(ipad[j]);
-                        }
-
-                        // See if sending over MQTT or Revelation
-                        if (ipd.Delivery.Equals("MQTT"))
-                        {
-                            if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
-                                thread_waits = true;
-
-                            else
-                            {
-                                //Otherwise IP changed, use MAC address to map to new IP
-                                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_m = WifiLocal.ConnectedAppliances;
-                                ConnectedApplianceInfo cai_m = cio_m.FirstOrDefault(x => x.MacAddress == ipd.MAC);
-                                if (cai_m != null)
-                                {
-                                    string[] n_ipad = cai_m.IPAddress.Split('.');
-                                    byte[] n_ipbytes = new byte[4];
-                                    for (int j = 0; j < 4; j++)
-                                    {
-                                        n_ipbytes[j] = byte.Parse(n_ipad[j]);
-                                    }
-                                    if (SendMQTT(n_ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai_m, ipd))
-                                        thread_waits = true;
-                                }
-                                else
-                                {
-                                    MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
-                                        "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                                    ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
-                                    SetText("status", "Bad IP Address", ipd.TabIndex);
-                                    thread_waits = false;
-                                }
-                            }
-
-                        }
-                        
-                        // Set wait signal to be unlocked by thread after job is complete (result seen from log)
-                        if (thread_waits)
-                        {
-                            Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
-                               " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
-                            ipd.Signal.Wait();
-
-                            if (ipd.Result.Contains("timeout"))
-                                SetText("status", "Force Close", ipd.TabIndex);
-                        }
-
-                        timer.Stop();
-                        timer.Dispose();
-                        // Check to see if thread should be cancelled
-                        if (cancel_request)
-                        {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
-                            return;
-                        }
-                        System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
-                        ConnectedApplianceInfo cai_n = cio_n.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
-                        int REMOVEME = 0;
-                        Wait(2*RECONWAIT); //Wait two minutes for MQTT to come back on after reboout out of IAP
-                        for (int i = 0; i < MQTTMAX; i++)
-                        {
-                            if (cai_n.IsMqttConnected)
-                                break;
-                            CycleWifi();
-                            Wait(RECONWAIT); //If not MQTT, give more time to reconnect
-                            REMOVEME = i;
-                            
-                        }
-                        
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
-                        ipd.Signal.Reset();
-                        Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
-                    }
-                    else
-                    {
-                        continue;
-                    }
+                    Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                    ipd.Signal.Reset();
                 }
+                /*else
+                {
+                    continue;
+                }*/
+
+
                 Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " reached barrier.");
 
                 //Thread task cancelled or completed, signal others it is done
-                 barrier.SignalAndWait();
+                barrier.SignalAndWait();
                 lock (lockObj)
                 {
                     FinalResult();
@@ -1121,59 +1062,88 @@ namespace VenomNamespace
             {
                 MessageBox.Show("Catastrophic RunTask error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-                barrier.SignalAndWait();                
+                barrier.SignalAndWait();
                 return;
             }
-            
-        } 
-        public void ProcessIP()
+
+        }
+        public void ProcessIP(string TVers)
         {
+            int number;
+            int ipc;
             try
             {
-                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
 
+                //Parse payload into byte array
+                byte[] paybytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
 
+                ipc = iplist.Count();
+                //Set barrier to wait for all threads to complete
+                Barrier barrier = new Barrier(participantCount: ipc);
                 foreach (IPData ipd in iplist)
                 {
-                    //Selects the appliance based on IP address
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
+                    string[] parts;
 
-                    if (cancel_request)
+                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                    number = cio.Count;
+                    ConnectedApplianceInfo cai = null;
+
+                    for (int i = 0; i < number; i++)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
-                        return;
+                        parts = cio[i].VersionNumber.Replace(" ", "").Split('|');
+                        if (parts[0] != TVers)
+                        {
+                            cai = cio[i];
+                            break;
+                        }
+
                     }
-                    if (cai.IsTraceOn)
-                        continue;
-                    // Enable Trace for IP address in list
-                    if (!TraceConnect(cai))
-                        return;
+                    number = 0;
+
+                    if (cai != null)
+                    {
+                        if (cai.IsTraceOn && cai.IsRevelationConnected)
+                            continue;
+                        if (!RevelationConnect(cai))
+                        {
+                            MessageBox.Show("Revelation was unable to connect. You may need to press 'Close All' and then" +
+                                "'Data Start' on Widebox.", "Error: Unable to start Trace",
+                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            AddResult(cai, ipd);
+                            ipd.Result = "FAIL - Revelation unable to connect.";
+                            SetText("status", "Force Close", ipd.TabIndex);
+                            Wait(250);
+                            continue;
+                        }
+
+                        if (iplist[number].IPAddress == cai.IPAddress)
+                        {
+                            number++;
+                            continue;
+                        }
+
+                        else
+                        {
+                            AddResult(cai, ipd);
+                            string name = "";
+
+                            ManualResetEventSlim sig = new ManualResetEventSlim();
+                            Thread th = new Thread(() => RunTask(cai, sig, name, barrier, ipd, ref paybytes));
+                            th.Name = number.ToString();
+                            name = th.Name;
+                            th.IsBackground = true;
+                            th.Start();
+                        }
+
+                        number++;
+                    }
                 }
 
-                //Set barrier to wait for all threads to complete
-                Barrier barrier = new Barrier(participantCount: LB_IPs.Items.Count);
-
-                for (int i = 0; i < LB_IPs.Items.Count; i++)
-                {
-                    string ip = LB_IPs.Items[i].ToString();
-                    string number = "";
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
-                    ManualResetEventSlim sig = new ManualResetEventSlim();
-                    signal.Add(sig);
-                    Thread th = new Thread(() => RunTask(cai, sig, number, barrier));
-                    th.Name = i.ToString();
-                    number = th.Name;
-                    th.IsBackground = true;
-                    th.Start();
-                }
-
-                return;
             }
             catch
             {
-                MessageBox.Show("ProcessIP exception.", "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                MessageBox.Show("Catastrophic ProcessIP error.", "Error",
+                             MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         bool RevelationConnect(ConnectedApplianceInfo cai)
@@ -1198,25 +1168,23 @@ namespace VenomNamespace
                             //if it's not and Revelation is also not enabled, enable Revelation
                             if (!cai.IsRevelationConnected)
                             {
+                                if (traceattempt > (ATTEMPTMAX / 2))
+                                    //CycleWifi();
                                 WifiLocal.ConnectTo(cai);
-                                Wait(2000);
+                                Wait(3000);
                             }
                             if (cai.IsRevelationConnected)
                             {
                                 //If Revelation is enabled, enable Trace
                                 WifiLocal.EnableTrace(cai, true);
-                                Wait(2000);
+                                Wait(3000);
                             }
                         }
                         else
                         {
-                            //If the Trace is enabled and Revelation is also connected, close the Revelation connection
+                            //If the Trace is enabled and Revelation is also connected return
                             if (cai.IsRevelationConnected)
-                            {
-                                WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
-                                Wait(2000);
-                            }
-                            return true;
+                                return true;
                         }
 
                     }
@@ -1245,43 +1213,48 @@ namespace VenomNamespace
 
             return false;
         }
-        bool TraceConnect(ConnectedApplianceInfo cai) 
+        public bool SendRevelation(ConnectedApplianceInfo cai, ref byte[] paybytes)
         {
+            bool revconnect = false;
             try
             {
-                if (!cai.IsTraceOn)
+                if (cai != null && !cai.IsRevelationConnected)
                 {
-                    //CycleWifi(cai);
+                    // Connect revelation
+                    WifiLocal.ConnectTo(cai);
                     Wait(2000);
-                    //If an appliance with the specified IP address is found in the list
-                    if (!RevelationConnect(cai))
-                    {
-                        if (cancel_request)
-                        {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
-                            return false;
-                        }
-                        //First round of attempts failed, close data / open data and try again
-                        CycleWifi();
-
-                        if (!RevelationConnect(cai))
-                        {
-                            MessageBox.Show("Revelation/Trace was not able to start even after retry. Please close Venom and WideBox and try again.",
-                                            "Error: WideBox issue prevents running Plugin", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return false;
-                        }
-                    }
                 }
 
-                return true;
+                // Send Revelation message
+                if (cai != null && cai.IsRevelationConnected)
+                {
+                    WifiLocal.SendRevelationMessage(cai, new RevelationPacket()
+                    {
+                        API = 0xF1,
+                        Opcode = 00,
+                        Payload = paybytes,
+                    });
+                    Wait(2000);
+                    revconnect = true;
+                }
+
+                // Close revelation
+                if (revconnect)
+                {
+                    WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                    //WifiLocal.Close(cai);
+                    Wait(2000);
+                    return true;
+                }
+                else
+                    return false;
             }
             catch
             {
-                MessageBox.Show("Catastrophic TraceConnect error.", "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Catastrophic SendRevelation error.", "Error",
+                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
-            
         }
         public void CycleWifi()
         {
@@ -1313,166 +1286,38 @@ namespace VenomNamespace
 
             
         }
-        private void BTN_Remove_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                DialogResult dialogResult = MessageBox.Show("This will clear all payloads for the chosen IP " + LB_IPs.SelectedItem.ToString() + ". Press Yes to Remove or No to Cancel.",
-                                                        "Verify IP Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    
-                    for (int i = results.Rows.Count - 1; i >= 0; i--)
-                    {
-                        DataRow dr = results.Rows[i];
-                        if (dr["IP Address"].ToString() == LB_IPs.SelectedItem.ToString())
-                            results.Rows.Remove(dr);
-                    }
-                    results.AcceptChanges();
-
-                    iplist.RemoveAll(x => x.IPAddress == LB_IPs.SelectedItem.ToString());
-                    LB_IPs.Items.Remove(LB_IPs.SelectedItem);
-                }
-
-            }
-            catch { }
-        }
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("This will clear all IPs and their results from all windows. Press Yes to Clear or No to Cancel.",
                                                         "Verify Full Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (dialogResult == DialogResult.Yes)
             {
-                ResetForm(true);
+                ResetForm(true, true);
             }
             
         }
-        private void BTN_MakeList_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                plist.Show();
-            }
-            catch
-            {
-
-                plist = new PayList(this, this.WideLocal, this.WifiLocal);
-                plist.Show();
-            }
-
-        }
-        private void BTN_Import_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "csv files (*.csv)|*.csv|All files (*.*)|*.*";
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                try
-                {
-
-                    //Read the contents of the file into a stream
-                    var fileStream = ofd.OpenFile();
-                    using (StreamReader reader = new StreamReader(fileStream))
-                    {
-                        string line = reader.ReadLine();
-                        string[] value; // = line.Split(new string[] { "\",\"" }, StringSplitOptions.None);
-                        int skipped = 0;
-                        var ipskipped = new List<string>();
-
-                        while (!reader.EndOfStream)
-                        {
-                            value = reader.ReadLine().Split('\t');
-                            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-                            ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == value[0]);
-                            if (cai != null)
-                            {
-                                if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null && !cai.IsMqttConnected)
-                                {
-                                    DialogResult dialogResult = MessageBox.Show("You have selected the OTA delivery method as MQTT but the MQTT connection" +
-                                                                                " for the entered IP Address of " + cai.IPAddress + " is not currently connected." +
-                                                                                " If this is acceptable, click Yes to Continue. Otherwise, click No and setup the" +
-                                                                                " MQTT connection then try adding the IP Address again.",
-                                                                                "Error: MQTT Delivery but Device is not the MQTT Broker.",
-                                                                                MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-                                    if (dialogResult == DialogResult.No)
-                                        return;
-                                }
-
-                                if (iplist.FirstOrDefault(x => x.IPAddress == value[0]) == null)
-                                    LB_IPs.Items.Add(cai.IPAddress);
-                                IPData newip = new IPData(cai.IPAddress, value[1]); //MQTT Forced as type at value[1] add Revelation logic if supported
-                                iplist.Add(newip);
-                                newip.Node = value[2];
-                                newip.Type = value[3];
-                                newip.MQTTPay = value[4];
-                                newip.Name = value[5];
-                                newip.MAC = cai.MacAddress; //value[6]
-
-                                // Update window for added IP
-                                DataRow dr = results.NewRow();
-                                dr["IP Address"] = newip.IPAddress;
-                                dr["OTA Payload"] = newip.Payload;
-                                dr["Delivery Method"] = "MQTT";
-                                dr["OTA Type"] = newip.Type;
-                                dr["Node"] = newip.Node;
-                                dr["Name"] = newip.Name;
-                                dr["OTA Result"] = "PENDING";
-                                results.Rows.Add(dr);
-                            }
-                            else
-                            {
-                                skipped++;
-                                if (ipskipped.FirstOrDefault(x => x.ToString() == value[0]) == null)
-                                    ipskipped.Add(value[0]);
-                            }
-
-                        }
-
-                        if (skipped > 0)
-                        {
-                            string badips = "";
-                            foreach (string ips in ipskipped)
-                                badips = badips + "  " + ips;
-                            if (String.IsNullOrWhiteSpace(badips))
-                                badips = "EMPTY LINES";
-                            MessageBox.Show("Import skipped a total of " + skipped + " line(s) for IP Address(es) " +
-                                 badips + " due to NOT being listed in Wifibasic OR the import file having EMPTY lines. Please verify the IP Address(es) or empty lines " +
-                                "that were skipped are connected and listed in Wifibasic or expected, then retry importing.", "Error: WifiBasic IP Address(es) Not Found or File Has Empty Lines",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                }
-                catch
-                {
-                    MessageBox.Show("Import failed due to unkown error. Verify the import file has not been corrupted or in an incorrect format" +
-                                    "then retry importing. Clearing IP Address list.", "Error: Import Failed",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    iplist.Clear();
-                    LB_IPs.Items.Clear();
-                }
-                
-            }
-        }
-        private void ResetForm(bool operation)
+        private void ResetForm(bool freset, bool resclear)
         {
             Invoke((MethodInvoker)delegate {
 
-                BTN_Payload.Text = "Run Test List";
-                BTN_Remove.Enabled = true;
-                BTN_Clr.Enabled = true;
-                TB_LogDir.Enabled = true;
-                LB_IPs.Enabled = true;
-                BTN_Import.Enabled = true;
-                BTN_MakeList.Enabled = true;
-                BTN_LogDir.Enabled = true;
-                if (operation)
+                if (freset)
                 {
-                    iplist.Clear();
-                    results.Clear();
-                    LB_IPs.Items.Clear();
-                    DGV_Data.Refresh();
-                    rerun = false;
+                    BTN_Start.Text = "Start";
+                    BTN_Clr.Enabled = true;
+                    TB_LogDir.Enabled = true;
+                    BTN_LogDir.Enabled = true;
+                    TB_Payload.Enabled = true;
+                    TB_Max.Enabled = true;
+                    TB_Version.Enabled = true;
                 }
+
+                if (resclear)
+                {
+                    results.Clear();
+                    DGV_Data.Refresh();
+                    iplist.Clear();
+                }
+
             });
             
         }
@@ -1481,11 +1326,11 @@ namespace VenomNamespace
             try {
 
                 thread_done++;
-                if (thread_done == LB_IPs.Items.Count)
+                if (thread_done == iplist.Count)
                 {
                     thread_done = 0;
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " was last and reset form.");
-                    ResetForm(false);
+                    ResetForm(true, false);
                     g_time.Stop();
                     long duration = g_time.ElapsedMilliseconds;
                     g_time.Reset();
@@ -1525,22 +1370,8 @@ namespace VenomNamespace
         }
         private void Venom_Load(object sender, EventArgs e)
         {
-            ResetForm(true);
+            //ResetForm(true, true);
         }
 
-        private void BTN_Rev_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                rev.Show();
-            }
-            catch
-            {
-
-                rev = new Rev(this, this.WideLocal, this.WifiLocal);
-                rev.Show();
-            }
-
-        }
     }
 }

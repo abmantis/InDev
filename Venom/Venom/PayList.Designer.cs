@@ -40,7 +40,6 @@
             this.TB_IPDisplay = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.BTN_Close = new System.Windows.Forms.Button();
-            this.BTN_Auto = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
@@ -156,16 +155,6 @@
             this.BTN_Close.UseVisualStyleBackColor = true;
             this.BTN_Close.Click += new System.EventHandler(this.BTN_Close_Click);
             // 
-            // BTN_Auto
-            // 
-            this.BTN_Auto.Location = new System.Drawing.Point(626, 12);
-            this.BTN_Auto.Name = "BTN_Auto";
-            this.BTN_Auto.Size = new System.Drawing.Size(90, 23);
-            this.BTN_Auto.TabIndex = 25;
-            this.BTN_Auto.Text = "Auto Test Plan";
-            this.BTN_Auto.UseVisualStyleBackColor = true;
-            this.BTN_Auto.Click += new System.EventHandler(this.BTN_Auto_Click);
-            // 
             // label3
             // 
             this.label3.AutoSize = true;
@@ -191,7 +180,6 @@
             this.ClientSize = new System.Drawing.Size(747, 371);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
-            this.Controls.Add(this.BTN_Auto);
             this.Controls.Add(this.BTN_Close);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.TB_IPDisplay);
@@ -226,7 +214,6 @@
         private System.Windows.Forms.TextBox TB_IPDisplay;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button BTN_Close;
-        private System.Windows.Forms.Button BTN_Auto;
         public System.Windows.Forms.DataGridView DGV_Data;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
