@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SmartCableVersions</name>
+    </assembly>
+    <members>
+        <member name="M:SmartCableVersions.MySqlConnector.OpenDB(System.String,System.Boolean)">
+            <summary>
+            Open a data base using a connection string or a dsn file path
+            </summary>
+            <param name="dsn_file_or_connection_string">connection string or a dsn file path</param>
+            <param name="file">true if is a dsn file path under the first parameter</param>
+            <returns></returns>
+        </member>
+        <member name="M:SmartCableVersions.MySqlConnector.GetTable(System.String)">
+            <summary>
+            Return the table data of given table
+            If the table does not exist will return null
+            </summary>
+            <param name="table_name">Name of the table to get data</param>
+            <returns>DataTable object containing the requested table data</returns>
+        </member>
+        <member name="M:SmartCableVersions.MySqlConnector.InsertRow(System.String,System.Data.DataRow)">
+            <summary>
+            Insert a row in the given table
+            </summary>
+            <param name="table_name">table name</param>
+            <param name="row">data row to be inserted</param>
+            <returns></returns>
+        </member>
+        <member name="M:SmartCableVersions.MySqlConnector.GetTable(System.String,System.String,System.String)">
+            <summary>
+            Return the table data of given table
+            If the table does not exist will return null
+            Can build a expression with more than one table
+            
+            </summary>
+            <param name="tables_name">Name of the tables to get data separated by comma</param>
+            <param name="key_expr">Expression to match commonly used as "collumn_name='key_value'" 
+            I.e "ID='1'" will get all the rows that contains the ID equals to 1
+            Don't forget the ' ' between the key_value in the expression</param>
+            <param name="collumn">Specifie a single collumn to get the values or "*" to get all collumns</param>
+            <returns>DataTable object containing the requested table data</returns>
+        </member>
+        <member name="F:SmartCableVersions.VersionInformation.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:SmartCableVersions.VersionInformation.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        </member>
+        <member name="M:SmartCableVersions.VersionInformation.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="T:SmartCableVersions.Properties.Resources">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:SmartCableVersions.Properties.Resources.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:SmartCableVersions.Properties.Resources.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,7 @@
+IP	Payload	Type	Result
+192.168.1.2	{"update":{"crc32":"b602c5a1","url":"http://wcars.applianceconnect.net/firmware/Cooking/EMEA/Test/BK_SpeedOven/10.2.0_forced/ubd_file.signed.enc"}}	HMI Downgrade	PENDING
+192.168.1.6	{"update":{"crc32":"8b2128e8","url":"http://wcars.applianceconnect.net/firmware/Cooking/EMEA/Test/BK_SpeedOven/12.0.0_forced/ubd_file.signed.enc"}}	HMI Upgrade	PENDING
+192.168.1.6	{"update":{"crc32":"b602c5a1","url":"http://wcars.applianceconnect.net/firmware/Cooking/EMEA/Test/BK_SpeedOven/10.2.0_forced/ubd_file.signed.enc"}}	HMI Downgrade	PENDING
+192.168.1.2	{"update":{"crc32":"8b2128e8","url":"http://wcars.applianceconnect.net/firmware/Cooking/EMEA/Test/BK_SpeedOven/12.0.0_forced/ubd_file.signed.enc"}}	HMI Upgrade	PENDING
+192.168.1.25	{"update":{"crc32":"9a078c73","url":"http://wcars.applianceconnect.net/firmware/Cooking/NAR/Test/SpeedOven/HMI/Indigo/0.05.00/ubd_file.signed.enc"}}	HMI Downgrade	PENDING
+192.168.1.25	{"update":{"crc32":"17f8001a","url":"http://wcars.applianceconnect.net/firmware/Cooking/EMEA/Test/BK_SpeedOven/11.0.0//ubd_file.signed.enc"}}	HMI Upgrade	PENDING
