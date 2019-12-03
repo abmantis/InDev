@@ -14,7 +14,7 @@ namespace APIDebugger
         static void Main()
         {
             WideBoxInterface.WideBoxInterfaceForm main = new WideBoxInterface.WideBoxInterfaceForm();
-            VenomNamespace.Venom debug = new VenomNamespace.Venom(main.WideLocal, main.WifiLocal);
+            VenomNamespace.Revelation_OTA debug = new VenomNamespace.Revelation_OTA(main.WideLocal, main.WifiLocal);
             main.Run(new WideInterface[] { debug });
         }
     }

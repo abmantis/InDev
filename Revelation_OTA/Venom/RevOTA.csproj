@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Venom</RootNamespace>
-    <AssemblyName>Venom</AssemblyName>
+    <AssemblyName>Revelation_OTA</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>&lt;Project Location In Database&gt;</SccProjectName>
@@ -104,29 +104,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PayList.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PayList.Designer.cs">
-      <DependentUpon>PayList.cs</DependentUpon>
-    </Compile>
     <Compile Include="IPData.cs" />
-    <Compile Include="Rev.cs">
+    <Compile Include="RevOTA.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Rev.Designer.cs">
-      <DependentUpon>Rev.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Venom.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Venom.Designer.cs">
-      <DependentUpon>Venom.cs</DependentUpon>
+    <Compile Include="RevOTA.Designer.cs">
+      <DependentUpon>RevOTA.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="PayList.resx">
-      <DependentUpon>PayList.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -137,11 +122,8 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="Rev.resx">
-      <DependentUpon>Rev.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Venom.resx">
-      <DependentUpon>Venom.cs</DependentUpon>
+    <EmbeddedResource Include="RevOTA.resx">
+      <DependentUpon>RevOTA.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="Properties\Settings.settings">
