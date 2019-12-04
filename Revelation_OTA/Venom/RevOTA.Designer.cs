@@ -135,9 +135,9 @@ namespace VenomNamespace
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(18, 174);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(79, 13);
+            this.label1.Size = new System.Drawing.Size(70, 13);
             this.label1.TabIndex = 100;
-            this.label1.Text = "Target Version:";
+            this.label1.Text = "Final Version:";
             // 
             // TB_Version
             // 

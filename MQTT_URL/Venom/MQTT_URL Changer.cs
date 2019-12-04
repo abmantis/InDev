@@ -27,6 +27,7 @@ namespace VenomNamespace
         public static int ATTEMPTMAX = 10;
         public string choice = "";
         public string mqtt_url = "TRY AGAIN";
+        public string org_id = "TRY AGAIN";
         public enum OPCODES { }
 
         //to access wideLocal use base.WideLocal or simple WideLocal
@@ -129,6 +130,19 @@ namespace VenomNamespace
                 {
                     string hs = parts[1].Substring(i, 1);
                     mqtt_url += hs;
+                }
+            }
+
+            // Filter on relevant OTA topics only psm[mqtt_url]=[wa.applianceconnect.net]
+            if (data.ContentAsString.StartsWith("psm") && data.ContentAsString.Contains("mqtt_org"))
+            {
+                //MQTT data in the Trace just comes as raw hex regardless of message format, so need to convert it to ASCII to get the payload
+                string[] parts = data.ContentAsString.Replace("[", "").Split('=');
+                org_id = "";
+                for (int i = 0; i < parts[1].Length - 1; i++)
+                {
+                    string hs = parts[1].Substring(i, 1);
+                    org_id += hs;
                 }
             }
         }
@@ -268,14 +282,18 @@ namespace VenomNamespace
         }
         public string OrgSelection()
         {
-            //if (BTN_GET.Text == "Stop Running")
-                //return "{\"system\":\"readpsm: whr,mfgdata,mqtt_org_id\"}";
+            if (BTN_GET.Text == "Running")
+                return "{\"system\":\"readpsm:whr,mfgdata,mqtt_org_id\"}";
             if (CB_EMEAP.Checked == true)
                 return "{\"system\":\"mqtt_org_id:xsc5ga\"}";
-            if (CB_NARS.Checked == true)
+            if (CB_NARS.Checked == true && CB_Legacy.Checked == true)
                 return "{\"system\":\"mqtt_org_id:leni51\"}";
-            if (CB_NARP.Checked == true)
+            if (CB_NARP.Checked == true && CB_Legacy.Checked == true)
                 return "{\"system\":\"mqtt_org_id:rychla\"}";
+            if (CB_NARS.Checked == true)
+                return "{\"system\":\"mqtt_org_id:msy76z\"}";
+            if (CB_NARP.Checked == true)
+                return "{\"system\":\"mqtt_org_id:34bhp8\"}";
 
             return "";
         }
@@ -313,6 +331,7 @@ namespace VenomNamespace
                     BTN_Reset.Enabled = false;
                     TB_IP.Enabled = false;
                     BTN_GET.Enabled = false;
+                    CB_Legacy.Enabled = false;
                     //CycleWifi();
                     //Wait(2000);
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
@@ -407,7 +426,7 @@ namespace VenomNamespace
                             Payload = paybytes,
                         });
                         Wait(2000);
-                        if (CB_Org.Checked)
+                        if (CB_Org.Checked || BTN_GET.Text == "Running")
                         {
                             WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
                             {
@@ -443,58 +462,6 @@ namespace VenomNamespace
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             return false;
 
-            /*bool revconnect = false;
-            int revattempt = 0;
-            //var myDestination = WifiLocal.ConnectedAppliances.FirstOrDefault(i => i.IPAddress.Equals(ips));
-            // See if Revelation is Connected and attempt to connect until it is
-
-            Wait(2000);
-            try
-            {
-                revattempt++;
-
-                // Send Revelation message(s)
-                if (cai != null && cai.IsRevelationConnected)
-                {
-                    WifiLocal.SendRevelationMessage(cai, new RevelationPacket()
-                    {
-                        API = 0xF0,
-                        Opcode = 00,
-                        Payload = paybytes,
-                    });
-                    Wait(2000);
-                    if (CB_Org.Checked)
-                    {
-                        WifiLocal.SendRevelationMessage(cai, new RevelationPacket()
-                        {
-                            API = 0xF0,
-                            Opcode = 00,
-                            Payload = orgbytes,
-                        });
-                        Wait(2000);
-                    }
-                    revconnect = true;
-                }
-
-                // Close revelation
-                if (revconnect)
-                    return true;
-
-            }
-            catch
-            {
-                MessageBox.Show("Revelation connection failed. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
-                                       " and that the IP Address is listed within WifiBasic.", "Error: Unable to connect.",
-                               MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return false;
-            }
-
-
-
-            MessageBox.Show("Revelation connection failed. Verify IP Address of " + TB_IP.Text + " has been correctly typed" +
-                                        " and that the IP Address is listed within WifiBasic.", "Error: Unable to connect.",
-                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            return false;*/
         }        
         public void Wait(int timeout)
         {
@@ -749,6 +716,9 @@ namespace VenomNamespace
             BTN_Payload.Enabled = true;
             BTN_GET.Text = "Get";
             BTN_Payload.Text = "Set";
+            CB_Legacy.Checked = false;
+            CB_Legacy.Enabled = false;
+            CB_Legacy.Visible = false;
             choice = "";
             TB_IP.Enabled = true;
             if (parm)
@@ -789,6 +759,7 @@ namespace VenomNamespace
                     BTN_Reset.Enabled = false;
                     TB_IP.Enabled = false;
                     BTN_Payload.Enabled = false;
+                    CB_Legacy.Enabled = false;
                     //CycleWifi();
                     //Wait(2000);
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
@@ -813,13 +784,21 @@ namespace VenomNamespace
                         }                            
 
                         if (mqtt_url != "")
+                        {
+                            if (mqtt_url == "0")
+                                mqtt_url = "DEFAULT";
+                            if (org_id == "0")
+                                org_id = "DEFAULT";
                             dialogurl = MessageBox.Show("The MQTT URL for " + TB_IP.Text + " is currently " + mqtt_url + "."
-                                                    + " Request completed. Closing all open connections.", "Current MQTT URL",
+                                                    + " The ORG ID for " + TB_IP.Text + " is currently " + org_id + "." +
+                                                    " Request completed. Closing all open connections.", "Get MQTT URL and ORG ID",
                                                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                            
 
                         else
                             dialogurl = MessageBox.Show("The MQTT URl for " + TB_IP.Text + " was NOT returned successfuly." +
-                                                                                    " Request completed. Closing all open connections.", "Get MQTT URL",
+                                                                                    " Request completed. Closing all open connections.", "Get MQTT URL and ORG ID",
                                                                                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                         Reset(false);
                         mqtt_url = "";
@@ -877,12 +856,20 @@ namespace VenomNamespace
                 CB_Custom.Checked = false;
                 TB_Custom.Text = "";
                 TB_Custom.Visible = false;
+                if (!CB_EMEAP.Checked == true)
+                {
+                    CB_Legacy.Enabled = true;
+                    CB_Legacy.Visible = true;
+                }
             }
             else
             {
                 BTN_GET.Enabled = true;
                 CB_Custom.Enabled = true;
+                CB_Legacy.Enabled = false;
+                CB_Legacy.Visible = false;
             }
         }
+
     }
 }

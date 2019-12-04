@@ -43,6 +43,7 @@ namespace VenomNamespace
             this.BTN_GET = new System.Windows.Forms.Button();
             this.CB_Suppress = new System.Windows.Forms.CheckBox();
             this.CB_Org = new System.Windows.Forms.CheckBox();
+            this.CB_Legacy = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -54,7 +55,7 @@ namespace VenomNamespace
             // 
             // BTN_Payload
             // 
-            this.BTN_Payload.Location = new System.Drawing.Point(31, 186);
+            this.BTN_Payload.Location = new System.Drawing.Point(31, 205);
             this.BTN_Payload.Name = "BTN_Payload";
             this.BTN_Payload.Size = new System.Drawing.Size(100, 35);
             this.BTN_Payload.TabIndex = 14;
@@ -125,7 +126,7 @@ namespace VenomNamespace
             // 
             // BTN_Reset
             // 
-            this.BTN_Reset.Location = new System.Drawing.Point(305, 186);
+            this.BTN_Reset.Location = new System.Drawing.Point(305, 205);
             this.BTN_Reset.Name = "BTN_Reset";
             this.BTN_Reset.Size = new System.Drawing.Size(100, 35);
             this.BTN_Reset.TabIndex = 21;
@@ -135,7 +136,7 @@ namespace VenomNamespace
             // 
             // BTN_GET
             // 
-            this.BTN_GET.Location = new System.Drawing.Point(168, 186);
+            this.BTN_GET.Location = new System.Drawing.Point(168, 205);
             this.BTN_GET.Name = "BTN_GET";
             this.BTN_GET.Size = new System.Drawing.Size(100, 35);
             this.BTN_GET.TabIndex = 22;
@@ -165,11 +166,24 @@ namespace VenomNamespace
             this.CB_Org.UseVisualStyleBackColor = true;
             this.CB_Org.CheckedChanged += new System.EventHandler(this.CB_Org_CheckedChanged);
             // 
+            // CB_Legacy
+            // 
+            this.CB_Legacy.AutoSize = true;
+            this.CB_Legacy.Enabled = false;
+            this.CB_Legacy.Location = new System.Drawing.Point(322, 173);
+            this.CB_Legacy.Name = "CB_Legacy";
+            this.CB_Legacy.Size = new System.Drawing.Size(87, 17);
+            this.CB_Legacy.TabIndex = 25;
+            this.CB_Legacy.Text = "NAR Legacy";
+            this.CB_Legacy.UseVisualStyleBackColor = true;
+            this.CB_Legacy.Visible = false;
+            // 
             // MQTT_URL
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(431, 252);
+            this.Controls.Add(this.CB_Legacy);
             this.Controls.Add(this.CB_Org);
             this.Controls.Add(this.CB_Suppress);
             this.Controls.Add(this.BTN_GET);
@@ -203,6 +217,7 @@ namespace VenomNamespace
         private Button BTN_GET;
         private CheckBox CB_Suppress;
         private CheckBox CB_Org;
+        private CheckBox CB_Legacy;
     }
 }
 
