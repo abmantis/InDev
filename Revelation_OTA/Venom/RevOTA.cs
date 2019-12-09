@@ -253,13 +253,15 @@ namespace VenomNamespace
                     ProcessPayload(sb, data.Source.ToString(), "Trace Message");
                 }
             }
-
             if (data.ContentAsString.StartsWith("pa_core.c:download_all_processes_asset:1766"))
+            {
                 lock (writeobj)
                 {
                     ProcessPayload("\"update\"", data.Source.ToString(), "Trace Message");
                 }
+            }
             if (data.ContentAsString.StartsWith("Writing applianceUpdateVersion"))
+            {
                 lock (writeobj)
                 {
                     string[] parts = data.ContentAsString.Split('=');
@@ -268,6 +270,7 @@ namespace VenomNamespace
 
                     ProcessPayload("version " + s, data.Source.ToString(), "Trace Message");
                 }
+            }
         }
 
         #region WIRED BUS Message functions
@@ -439,14 +442,12 @@ namespace VenomNamespace
                             }
                             if (changed)
                             {
-                                if (ipd.Result.Contains("PASS") || ipd.Result.Contains("FAIL"))
-                                    return;
                                 if (ipd.Version == TB_Version.Text)
                                     ipd.Result = "PASS - Version changed to correct final version but final status message was not received.";
                                 else
                                     ipd.Result = "FAIL - Version changed but to a different version than the input target.";
                             }
-                            
+
                             else
                                 return;
 
@@ -472,7 +473,7 @@ namespace VenomNamespace
                                     SetText("udp", source, ipd.TabIndex);
                                 }
                             }
-                            
+
                         }
 
                     }
@@ -480,28 +481,49 @@ namespace VenomNamespace
                     if (sb.Contains("version "))
                     {
                         IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
-                        if (!ipd.Done)
+                        if (ipd.Result.Contains("Programming") && !ipd.Written)
                         {
-                            if (ipd.Result.Contains("PASS") || ipd.Result.Contains("FAIL") || ipd.Result.Contains("Programming"))
+                            string[] parts = sb.Split(' ');
+                            string s = parts[1];
+                            bool changed = false;
+
+                            if (ipd.Version != s)
                             {
-                                string[] parts = sb.Split(' ');
-                                string s = parts[1];
-                                if (ipd.Version != s)
-                                    ipd.Version = s;
-                                else
-                                    return;
+                                changed = true;
+                                ipd.Version = s;
+                            }
+                            if (changed)
+                            {
                                 if (ipd.Version == TB_Version.Text)
                                     ipd.Result = "PASS - Version changed to correct final version but final status message was not received.";
                                 else
-                                    ipd.Result = "FAIL - Version changed but to a different version than the input target final version.";
-                                ipd.Written = true;
-                                SetText("udp", source, ipd.TabIndex);
+                                    ipd.Result = "FAIL - Version changed but to a different version than the input target.";
+                            }
+
+                            else
+                                return;
+                            ipd.Written = true;
+                            SetText("udp", source, ipd.TabIndex);
+                        }
+
+                        if (!ipd.Done)
+                        {
+                            if (ipd.Result.Contains("PASS") || ipd.Result.Contains("FAIL"))
+                            {
+                                string[] parts = sb.Split(' ');
+                                string s = parts[1];
+                                {
+                                    if (ipd.Version != s)
+                                        ipd.Version = s;
+                                    else
+                                        return;
+
+                                    SetText("udp", source, ipd.TabIndex);
+                                }
                             }
                         }
                     }
-
                 }
-
                 catch
                 {
                     MessageBox.Show("Catastrophic ProcessPayload error.", "Error",
