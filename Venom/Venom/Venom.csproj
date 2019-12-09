@@ -111,12 +111,6 @@
       <DependentUpon>PayList.cs</DependentUpon>
     </Compile>
     <Compile Include="IPData.cs" />
-    <Compile Include="Rev.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Rev.Designer.cs">
-      <DependentUpon>Rev.cs</DependentUpon>
-    </Compile>
     <Compile Include="Venom.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -137,9 +131,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="Rev.resx">
-      <DependentUpon>Rev.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Venom.resx">
       <DependentUpon>Venom.cs</DependentUpon>
     </EmbeddedResource>

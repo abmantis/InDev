@@ -77,11 +77,11 @@ namespace VenomNamespace
             set { _tabindex = value; }
         }
 
-        private int _wait;
-        public int Wait
+        private bool _done;
+        public bool Done
         {
-            get { return _wait; }
-            set { _wait = value; }
+            get { return _done; }
+            set { _done = value; }
         }
         private bool _written;
         public bool Written
@@ -101,7 +101,7 @@ namespace VenomNamespace
             _ipindex = 0;
             _tabindex = 0;
             _signal = null;
-            _wait = 0;
+            _done = false;
             _written = false;
             _ccuri = "";            
         }

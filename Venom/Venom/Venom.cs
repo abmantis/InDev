@@ -38,7 +38,6 @@ namespace VenomNamespace
 
         public string curfilename;
         public PayList plist;
-        public Rev rev;
         public bool cancel_request = false;
 
         static object lockObj = new object();
@@ -890,7 +889,10 @@ namespace VenomNamespace
                 if (cai != null)
                 //Send payload
                 {
-                    for (int i = 0; i < MQTTMAX; i++)
+                    WifiLocal.SendMqttMessage(ip, topic, paybytes);
+                    Wait(2000);
+                    return true;
+                    /*for (int i = 0; i < MQTTMAX; i++)
                     {
 
                         if (ipd.Result != "Downloading")
@@ -907,8 +909,8 @@ namespace VenomNamespace
                         }
 
                         return true;
-                    }
-                    
+                    }*/
+
                 }
                 else
                     return false;
@@ -1528,19 +1530,5 @@ namespace VenomNamespace
             ResetForm(true);
         }
 
-        private void BTN_Rev_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                rev.Show();
-            }
-            catch
-            {
-
-                rev = new Rev(this, this.WideLocal, this.WifiLocal);
-                rev.Show();
-            }
-
-        }
     }
 }
