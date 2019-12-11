@@ -51,12 +51,6 @@ namespace VenomNamespace
             get { return _mac; }
             set { _mac = value; }
         }
-        private int _ipindex;
-        public int IPIndex
-        {
-            get { return _ipindex; }
-            set { _ipindex = value; }
-        }
 
         private int _tabindex;
         public int TabIndex
@@ -85,7 +79,6 @@ namespace VenomNamespace
             _version = "";
             _mac = "";
             _result = "";
-            _ipindex = 0;
             _tabindex = 0;
             _sent = false;
             _done = false;

@@ -254,15 +254,22 @@ namespace VenomNamespace
        
         public bool Valid()
         {
-            if (CB_Custom.Checked == true)
+            if (CB_MQTT.Checked == true && CB_Custom.Checked == true)
                 return true;
-            if (CB_EMEAP.Checked == true)
+            if (CB_MQTT.Checked == true && CB_EMEAP.Checked == true)
                 return true;
-            if (CB_NARS.Checked == true)
+            if (CB_MQTT.Checked == true && CB_NARS.Checked == true)
                 return true;
-            if (CB_NARP.Checked == true)
+            if (CB_MQTT.Checked == true && CB_NARP.Checked == true)
                 return true;
-
+            if (CB_Org.Checked == true && CB_Custom.Checked == true)
+                return true;
+            if (CB_Org.Checked == true && CB_EMEAP.Checked == true)
+                return true;
+            if (CB_Org.Checked == true && CB_NARS.Checked == true)
+                return true;
+            if (CB_Org.Checked == true && CB_NARP.Checked == true)
+                return true;
             return false;
         }
         public string PaySelection()
@@ -276,7 +283,8 @@ namespace VenomNamespace
             if (CB_NARS.Checked == true)
                 return "{\"system\":\"mqtt_url:wa.applianceconnect.net\"}"; 
             if (CB_NARP.Checked == true)
-                return "{\"system\":\"mqtt_url:169.45.2.20\"}";
+                //return "{\"system\":\"mqtt_url:169.45.2.20\"}";
+                return "{\"system\":\"mqtt_url:wa.applianceconnect.net\"}";
 
             return "";
         }
@@ -327,6 +335,7 @@ namespace VenomNamespace
                     CB_NARS.Enabled = false;
                     CB_NARP.Enabled = false;
                     CB_Custom.Enabled = false;
+                    CB_MQTT.Enabled = false;
                     CB_Org.Enabled = false;
                     BTN_Reset.Enabled = false;
                     TB_IP.Enabled = false;
@@ -419,13 +428,16 @@ namespace VenomNamespace
                     // Send Revelation message(s)
                     if (myDestination != null && cai.IsRevelationConnected)
                     {
-                        WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
+                        if(CB_MQTT.Checked || BTN_GET.Text == "Running")
                         {
-                            API = 0xF0,
-                            Opcode = 00,
-                            Payload = paybytes,
-                        });
-                        Wait(2000);
+                            WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
+                            {
+                                API = 0xF0,
+                                Opcode = 00,
+                                Payload = paybytes,
+                            });
+                            Wait(2000);
+                        }
                         if (CB_Org.Checked || BTN_GET.Text == "Running")
                         {
                             WifiLocal.SendRevelationMessage(myDestination, new RevelationPacket()
@@ -683,6 +695,7 @@ namespace VenomNamespace
                 CB_NARP.Enabled = false;
                 CB_NARS.Enabled = false;
                 CB_Org.Enabled = false;
+                CB_MQTT.Checked = true;
                 TB_Custom.Text = "";
                 TB_Custom.Visible = true;
                 choice = "custom";
@@ -694,6 +707,7 @@ namespace VenomNamespace
                 CB_NARP.Enabled = true;
                 CB_NARS.Enabled = true;
                 CB_Org.Enabled = true;
+                CB_MQTT.Checked = false;
                 TB_Custom.Text = "";
                 TB_Custom.Visible = false;
             }
@@ -704,6 +718,8 @@ namespace VenomNamespace
             CB_NARP.Enabled = true;
             CB_NARS.Enabled = true;
             CB_Custom.Enabled = true;
+            CB_MQTT.Enabled = true;
+            CB_MQTT.Checked = false;
             CB_Org.Enabled = true;
             CB_Org.Checked = false;
             CB_EMEAP.Checked = false;
@@ -756,6 +772,8 @@ namespace VenomNamespace
                     CB_Custom.Enabled = false;
                     CB_Org.Enabled = false;
                     CB_Org.Checked = false;
+                    CB_MQTT.Enabled = false;
+                    CB_MQTT.Checked = false;
                     BTN_Reset.Enabled = false;
                     TB_IP.Enabled = false;
                     BTN_Payload.Enabled = false;
@@ -797,7 +815,7 @@ namespace VenomNamespace
                             
 
                         else
-                            dialogurl = MessageBox.Show("The MQTT URl for " + TB_IP.Text + " was NOT returned successfuly." +
+                            dialogurl = MessageBox.Show("The MQTT URl/Org ID for " + TB_IP.Text + " was NOT returned successfuly." +
                                                                                     " Request completed. Closing all open connections.", "Get MQTT URL and ORG ID",
                                                                                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                         Reset(false);
@@ -870,6 +888,8 @@ namespace VenomNamespace
                 CB_Legacy.Visible = false;
             }
         }
-
+        private void CB_MQTT_CheckedChanged(object sender, EventArgs e)
+        {
+        }
     }
 }

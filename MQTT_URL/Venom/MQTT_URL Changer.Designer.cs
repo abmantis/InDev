@@ -44,6 +44,7 @@ namespace VenomNamespace
             this.CB_Suppress = new System.Windows.Forms.CheckBox();
             this.CB_Org = new System.Windows.Forms.CheckBox();
             this.CB_Legacy = new System.Windows.Forms.CheckBox();
+            this.CB_MQTT = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -75,7 +76,7 @@ namespace VenomNamespace
             // CB_NARS
             // 
             this.CB_NARS.AutoSize = true;
-            this.CB_NARS.Location = new System.Drawing.Point(31, 90);
+            this.CB_NARS.Location = new System.Drawing.Point(31, 76);
             this.CB_NARS.Name = "CB_NARS";
             this.CB_NARS.Size = new System.Drawing.Size(88, 17);
             this.CB_NARS.TabIndex = 16;
@@ -86,7 +87,7 @@ namespace VenomNamespace
             // CB_NARP
             // 
             this.CB_NARP.AutoSize = true;
-            this.CB_NARP.Location = new System.Drawing.Point(168, 90);
+            this.CB_NARP.Location = new System.Drawing.Point(168, 76);
             this.CB_NARP.Name = "CB_NARP";
             this.CB_NARP.Size = new System.Drawing.Size(103, 17);
             this.CB_NARP.TabIndex = 17;
@@ -97,7 +98,7 @@ namespace VenomNamespace
             // CB_EMEAP
             // 
             this.CB_EMEAP.AutoSize = true;
-            this.CB_EMEAP.Location = new System.Drawing.Point(305, 90);
+            this.CB_EMEAP.Location = new System.Drawing.Point(305, 76);
             this.CB_EMEAP.Name = "CB_EMEAP";
             this.CB_EMEAP.Size = new System.Drawing.Size(110, 17);
             this.CB_EMEAP.TabIndex = 18;
@@ -108,7 +109,7 @@ namespace VenomNamespace
             // CB_Custom
             // 
             this.CB_Custom.AutoSize = true;
-            this.CB_Custom.Location = new System.Drawing.Point(31, 149);
+            this.CB_Custom.Location = new System.Drawing.Point(31, 116);
             this.CB_Custom.Name = "CB_Custom";
             this.CB_Custom.Size = new System.Drawing.Size(61, 17);
             this.CB_Custom.TabIndex = 19;
@@ -118,7 +119,7 @@ namespace VenomNamespace
             // 
             // TB_Custom
             // 
-            this.TB_Custom.Location = new System.Drawing.Point(98, 146);
+            this.TB_Custom.Location = new System.Drawing.Point(98, 113);
             this.TB_Custom.Name = "TB_Custom";
             this.TB_Custom.Size = new System.Drawing.Size(170, 20);
             this.TB_Custom.TabIndex = 20;
@@ -157,7 +158,7 @@ namespace VenomNamespace
             // CB_Org
             // 
             this.CB_Org.AutoSize = true;
-            this.CB_Org.Location = new System.Drawing.Point(305, 149);
+            this.CB_Org.Location = new System.Drawing.Point(214, 160);
             this.CB_Org.Name = "CB_Org";
             this.CB_Org.Size = new System.Drawing.Size(57, 17);
             this.CB_Org.TabIndex = 24;
@@ -170,7 +171,7 @@ namespace VenomNamespace
             // 
             this.CB_Legacy.AutoSize = true;
             this.CB_Legacy.Enabled = false;
-            this.CB_Legacy.Location = new System.Drawing.Point(322, 173);
+            this.CB_Legacy.Location = new System.Drawing.Point(262, 174);
             this.CB_Legacy.Name = "CB_Legacy";
             this.CB_Legacy.Size = new System.Drawing.Size(87, 17);
             this.CB_Legacy.TabIndex = 25;
@@ -178,11 +179,23 @@ namespace VenomNamespace
             this.CB_Legacy.UseVisualStyleBackColor = true;
             this.CB_Legacy.Visible = false;
             // 
+            // CB_MQTT
+            // 
+            this.CB_MQTT.AutoSize = true;
+            this.CB_MQTT.Location = new System.Drawing.Point(98, 160);
+            this.CB_MQTT.Name = "CB_MQTT";
+            this.CB_MQTT.Size = new System.Drawing.Size(82, 17);
+            this.CB_MQTT.TabIndex = 26;
+            this.CB_MQTT.Text = "MQTT URL";
+            this.CB_MQTT.UseVisualStyleBackColor = true;
+            this.CB_MQTT.CheckedChanged += new System.EventHandler(this.CB_MQTT_CheckedChanged);
+            // 
             // MQTT_URL
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(431, 252);
+            this.Controls.Add(this.CB_MQTT);
             this.Controls.Add(this.CB_Legacy);
             this.Controls.Add(this.CB_Org);
             this.Controls.Add(this.CB_Suppress);
@@ -218,6 +231,7 @@ namespace VenomNamespace
         private CheckBox CB_Suppress;
         private CheckBox CB_Org;
         private CheckBox CB_Legacy;
+        private CheckBox CB_MQTT;
     }
 }
 

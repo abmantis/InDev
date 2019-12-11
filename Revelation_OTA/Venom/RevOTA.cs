@@ -17,15 +17,10 @@ namespace VenomNamespace
     {
         public const byte API_NUMBER = 0;
         public static int ATTEMPTMAX = 3;
-        public static int MQTTMAX = 10;
-        public static int TMAX = 60 * 60000; //OTA max thread time is 1 hour
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
         public static int TWAIT = 1 * 60000; //Time interval to check for update
         public static int AMT = 10;
-
-        public int thread_done = 0; //Count of threads that have no more tasks
         public int timeleft = TWAIT;
-        public int totalran = 0;
 
         //Global timer
         public Stopwatch g_time = new Stopwatch();
@@ -38,8 +33,11 @@ namespace VenomNamespace
         public List<IPData> iplist;
         public List<Thread> waits;
 
+        public int totalran = 0;
+        public string TVers = "";
         public string curfilename;
         public bool cancel_request = false;
+        public byte[] paybytes = null;
         public enum OPCODES { }
 
         //to access wideLocal use base.WideLocal or simple WideLocal
@@ -345,7 +343,7 @@ namespace VenomNamespace
                         sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
                         iplist[listindex].MAC + "," +
                         iplist[listindex].Model + "," +
-                        iplist[listindex].Serial + "," +
+                        iplist[listindex].Serial.Replace(System.Environment.NewLine, "") + "," +
                         iplist[listindex].Version + "," +
                         iplist[listindex].Result + "," +
                         iplist[listindex].Payload);
@@ -385,7 +383,10 @@ namespace VenomNamespace
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return true;
             }
-
+            //Parse payload into byte array
+            paybytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
+            //Set version
+            TVers = TB_Version.Text;
             return false;
         }
         public void StartLog()
@@ -400,7 +401,7 @@ namespace VenomNamespace
                     {
                         using (StreamWriter sw = File.CreateText(curfilename))
                         {
-                            sw.WriteLine("Time,IP,MAC,Model,Serial Number,CCURI,SW Version,Result,Payload");
+                            sw.WriteLine("Time,IP,MAC,Model,Serial Number,SW Version,Result,Payload");
                         }
                     }
                     catch
@@ -449,14 +450,10 @@ namespace VenomNamespace
                 //Environment.Exit(1);
             }
         }
-        private void BTN_Start_Click(object sender, EventArgs e)
+        public void SetForm(bool reset)
         {
-            if (IsEmpty())
-                return;
-            string TVers = TB_Version.Text;
-            if (BTN_Start.Text == "Start")
+            if (!reset)
             {
-                StartLog();
                 BTN_Start.Text = "Stop Running";
                 TB_Payload.Enabled = false;
                 TB_Version.Enabled = false;
@@ -464,7 +461,29 @@ namespace VenomNamespace
                 cancel_request = false;
                 g_time.Restart();
                 ResetForm(false, true);
-                ProcessCAI(TVers);
+            }
+            else
+            {
+                cancel_request = true;
+                TB_Payload.Enabled = true;
+                TB_Version.Enabled = true;
+                BTN_Clr.Enabled = true;
+                BTN_Start.Text = "Start";
+            }
+            
+        }
+        private void BTN_Start_Click(object sender, EventArgs e)
+        {
+            if (IsEmpty())
+                return;
+
+            if (BTN_Start.Text == "Start")
+            {
+                StartLog();
+
+                SetForm(false);
+
+                ProcessCAI();
             }
             else
             {
@@ -473,11 +492,7 @@ namespace VenomNamespace
                                                             "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
                 {
-                    cancel_request = true;
-                    TB_Payload.Enabled = true;
-                    TB_Version.Enabled = true;
-                    BTN_Clr.Enabled = true;
-                    BTN_Start.Text = "Start";
+                    SetForm(true);
 
                     CancelRequest();
                 }
@@ -486,7 +501,7 @@ namespace VenomNamespace
 
             }
         }
-        public bool RunCAITask(string TVers, ConnectedApplianceInfo cai, ref byte[] paybytes)
+        public bool RunCAITask(ConnectedApplianceInfo cai)
         {
             try
             {
@@ -497,7 +512,7 @@ namespace VenomNamespace
                     parts = cai.VersionNumber.Replace(" ", "").Split('|');
                     if (parts[0] == TVers)
                         return false;
-                    ipd = AddResult(cai, TB_Payload.Text);
+                    ipd = AddResult(cai);
                     if (!RevelationConnect(cai))
                     {
                         ipd.Result = "FAIL - Revelation unable to connect.";
@@ -508,7 +523,7 @@ namespace VenomNamespace
                     }
                     else
                     {
-                        if (SendRevelation(cai, ref paybytes))
+                        if (SendRevelation(cai))
                         {
                             ipd.Result = "Revelation OTA payload sent.";
                             ipd.Sent = true;
@@ -528,7 +543,7 @@ namespace VenomNamespace
                 }
                 else
                 {
-                    ipd = AddResult(cai, TB_Payload.Text);
+                    ipd = AddResult(cai);
                     ipd.Result = "FAIL - " + cai.IPAddress + " was unable to connect from WifiBasic.";
                     ipd.Done = true;
                     results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
@@ -556,26 +571,38 @@ namespace VenomNamespace
             TMR_Tick.Enabled = true;
             TMR_Tick.Start();
         }
-        public void Build(string TVers, ref byte[] paybytes)
+        public void Build()
         {
             try
             {
                 System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                 ConnectedApplianceInfo cai = null;
-                int number = Math.Min(cio.Count, AMT);
+                int number = Math.Min(cio.Count, (AMT - iplist.Count));
                 //Start a batch
+                int j = 0;
                 for (int i = 0; i < number; i++)
                 {
                     if (cancel_request)
                         break;
-                    cai = cio[i];
+                    cai = cio.ElementAtOrDefault(j);
                     if (cai != null)
                     {
                         IPData ipd = iplist.FirstOrDefault(x => x.MAC == cai.MacAddress);
-                        if (ipd != null && ipd.Sent)
+                        if (ipd != null && ipd.Done)
+                        {
+                            Remove(cai, ipd);
+                            i--;
                             continue;
-                        if (RunCAITask(TVers, cai, ref paybytes))
+                        }
+                        if (ipd != null && ipd.Sent)
+                        {
+                            i--;
+                            continue;
+                        }
+                        if (RunCAITask(cai))
                             totalran++;
+                        else
+                            i--;
                     }
                     else
                         continue;
@@ -588,7 +615,33 @@ namespace VenomNamespace
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        public void Remove(string TVers)
+        public bool Remove(ConnectedApplianceInfo cai, IPData ipd)
+        {
+            bool changed = false;
+            try
+            {
+                string[] vers = cai.VersionNumber.Replace(" ", "").Split('|');
+                if (vers[0] == TVers)
+                {
+                    ipd.Version = vers[0];
+                    ipd.Done = true;
+                    ipd.Result = "PASS - Product Version changed to final version.";
+                    WriteFile(ipd.TabIndex, null);
+                    DataRow dr = results.Rows[ipd.TabIndex];
+                    results.Rows.Remove(dr);
+                    changed = true;
+                    DGV_Data.Refresh();
+                }
+                return changed;
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic Remove error.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+        }
+        public void Check()
         {
             try
             {
@@ -599,25 +652,13 @@ namespace VenomNamespace
                 {
                     if (cancel_request)
                         break;
-                    cai = cio[i];
+                    cai = cio.ElementAtOrDefault(i);
                     if (cai != null)
                     {
                         IPData ipd = iplist.FirstOrDefault(x => x.MAC == cai.MacAddress);
                         if (ipd != null && !ipd.Done)
-                        {
-                            string[] vers = cai.VersionNumber.Replace(" ", "").Split('|');
-                            if (vers[0] == TVers)
-                            {
-                                ipd.Version = vers[0];
-                                ipd.Done = true;
-                                ipd.Result = "PASS - Product Version changed to final version.";
-                                WriteFile(ipd.TabIndex, null);
-                                DataRow dr = results.Rows[ipd.TabIndex];
-                                results.Rows.Remove(dr);
-                            }
-                        }
-                        DGV_Data.Refresh();
-                        iplist.RemoveAll(x => x.Done);
+                            if (Remove(cai, ipd))
+                                iplist.RemoveAt(ipd.TabIndex);
                     }
                     else
                         continue;
@@ -627,28 +668,26 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("Catastrophic Remove error.", "Error",
+                MessageBox.Show("Catastrophic Check error.", "Error",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        public void ProcessCAI(string TVers)
+        public void ProcessCAI()
         {
             try
             {
-                //Parse payload into byte array
-                byte[] paybytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
                 
                 while (!cancel_request)
                 {
-                    Build(TVers, ref paybytes);
-                    StartTimer();
+                    Build();
 
+                    StartTimer();
                     Wait(TWAIT);
                     TMR_Tick.Stop();
 
                     Scan();
 
-                    Remove(TVers);
+                    Check();
                 }
 
                 DGV_Data.Refresh();
@@ -691,12 +730,12 @@ namespace VenomNamespace
             }
             
         }       
-        public IPData AddResult(ConnectedApplianceInfo cai, string payload)
+        public IPData AddResult(ConnectedApplianceInfo cai)
         {
             try
             {
 
-                IPData ipd = new IPData(cai.IPAddress, payload); 
+                IPData ipd = new IPData(cai.IPAddress, TB_Payload.Text); 
                 iplist.Add(ipd);
                 ipd.TabIndex = iplist.IndexOf(ipd);
                 ipd.IPAddress = cai.IPAddress;
@@ -772,7 +811,6 @@ namespace VenomNamespace
 
                 }
 
-
                 catch
                 {
                     MessageBox.Show("Revelation was not able to be connected due to error in WifiBasic." +
@@ -785,7 +823,7 @@ namespace VenomNamespace
 
             return true;
         }
-        public bool SendRevelation(ConnectedApplianceInfo cai, ref byte[] paybytes)
+        public bool SendRevelation(ConnectedApplianceInfo cai)
         {
             bool revconnect = false;
             try
