@@ -18,11 +18,14 @@ namespace VenomNamespace
         public const byte API_NUMBER = 0;
         public static int ATTEMPTMAX = 3;
         public static int MQTTMAX = 10;
-        public static int TMAX = 120 * 60000; //OTA max thread time is 2 hours
+        public static int TMAX = 60 * 60000; //OTA max thread time is 1 hour
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
+        public static int TWAIT = 1 * 60000; //Time interval to check for update
+        public static int AMT = 10;
 
         public int thread_done = 0; //Count of threads that have no more tasks
-        public bool rerun = false;
+        public int timeleft = TWAIT;
+        public int totalran = 0;
 
         //Global timer
         public Stopwatch g_time = new Stopwatch();
@@ -34,15 +37,9 @@ namespace VenomNamespace
         // Entities used to store the list of targeted IPs and their progress
         public List<IPData> iplist;
         public List<Thread> waits;
-        public List<ManualResetEventSlim> signal;
 
         public string curfilename;
         public bool cancel_request = false;
-
-        static object lockObj = new object();
-        static object writeobj = new object();
-        static object setobj = new object();
-
         public enum OPCODES { }
 
         //to access wideLocal use base.WideLocal or simple WideLocal
@@ -61,7 +58,6 @@ namespace VenomNamespace
             results.Columns.Add("OTA Payload");
             results.Columns.Add("Model");
             results.Columns.Add("Serial");
-            results.Columns.Add("CCURI");
             results.Columns.Add("Version");
             results.Columns.Add("OTA Result");
 
@@ -80,7 +76,6 @@ namespace VenomNamespace
 
             // Generate lists
             iplist = new List<IPData>();
-            signal = new List<ManualResetEventSlim>();
             waits = new List<Thread> ();
 
 
@@ -221,56 +216,7 @@ namespace VenomNamespace
 
         public override void parseTraceMessages(ExtendedTracePacket data)
         {
-            if (data.ContentAsString.StartsWith("udpOut:"))
-            {
-                //MQTT data in the Trace just comes as raw hex regardless of message format, so need to convert it to ASCII to get the payload
-                string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
-                string sb = "";
-                for (int i = 0; i < parts[1].Length; i += 2)
-                {
-                    string hs = parts[1].Substring(i, 2);
-                    sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
-                }
-                lock (writeobj)
-                {
-                    ProcessPayload(sb, data.Source.ToString(), "Trace Message");
-                }
-            }
-
-            // Filter on relevant OTA topics only
-            if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:"))
-            {
-                //MQTT data in the Trace just comes as raw hex regardless of message format, so need to convert it to ASCII to get the payload
-                string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
-                string sb = "";
-                for (int i = 0; i < parts[2].Length; i += 2)
-                {
-                    string hs = parts[2].Substring(i, 2);
-                    sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
-                }
-                lock (writeobj)
-                {
-                    ProcessPayload(sb, data.Source.ToString(), "Trace Message");
-                }
-            }
-            if (data.ContentAsString.StartsWith("pa_core.c:download_all_processes_asset:1766"))
-            {
-                lock (writeobj)
-                {
-                    ProcessPayload("\"update\"", data.Source.ToString(), "Trace Message");
-                }
-            }
-            if (data.ContentAsString.StartsWith("Writing applianceUpdateVersion"))
-            {
-                lock (writeobj)
-                {
-                    string[] parts = data.ContentAsString.Split('=');
-                    string[] sary = parts[1].Split(' ');
-                    string s = sary[0];
-
-                    ProcessPayload("version " + s, data.Source.ToString(), "Trace Message");
-                }
-            }
+            
         }
 
         #region WIRED BUS Message functions
@@ -378,314 +324,6 @@ namespace VenomNamespace
 
         #endregion
       
-        public void ProcessPayload(string sb, string ip, string source)
-        {
-            lock (setobj)
-            {
-
-                try
-                {
-                    // Locate if OTA payload has been sent and update status
-                    if (sb.Contains("\"update\""))
-                    {
-                        IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
-                        // Write info to widebox window
-                        iplist[ipd.TabIndex].Result = "Downloading";
-                        SetText("update", source, ipd.TabIndex);
-                    }
-
-                    if (sb.Contains("Programming") || sb.Contains("IAP_MODE"))
-                    {
-                        IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
-                        iplist[ipd.TabIndex].Result = "Programming";
-                        SetText("update", source, ipd.TabIndex);
-                    }
-
-                    //Locate the MQTT status message in the Trace and grab the reason byte immediately after it
-                    if (sb.Contains("\"status\""))
-                    {
-                        IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
-                        // Overwrite status portion to have a point of reference directly next to status reason byte
-                        sb = sb.Replace("\"status\":[", "@");
-                        string[] stats = sb.Split('@');
-                        string[] parts = stats[1].Split(',');
-                        sb = "";
-
-                        for (int i = 0; i < parts[0].Length; i++)
-                            sb += parts[i];
-
-                        // Convert status reason byte to a numeric value
-                        int statusval = Int32.Parse(sb);
-
-                        // Lookup status reason byte pass or fail reason
-                        iplist[ipd.TabIndex].Result = StatusLookup(statusval);
-                        SetText("status", source, ipd.TabIndex);
-                    }
-
-                    if (sb.Contains("cc="))
-                    {
-                        IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
-                        if (ipd.Result.Contains("Programming") && !ipd.Written)
-                        {
-                            //Message in format of MAC,MODEL,SERIAL,VERSION,CAT,CCURI,PROV...ETC
-                            string[] parts = sb.Replace(" ", "").Split(',');
-                            string[] vers = parts[3].Split('|');
-                            string[] cc = parts[5].Split('=');
-                            bool changed = false;
-
-                            if (ipd.CCURI != cc[1])
-                                ipd.CCURI = cc[1];
-                            if (ipd.Version != vers[0])
-                            {
-                                changed = true;
-                                ipd.Version = vers[0];
-                            }
-                            if (changed)
-                            {
-                                if (ipd.Version == TB_Version.Text)
-                                    ipd.Result = "PASS - Version changed to correct final version but final status message was not received.";
-                                else
-                                    ipd.Result = "FAIL - Version changed but to a different version than the input target.";
-                            }
-
-                            else
-                                return;
-
-                            ipd.Written = true;
-                            SetText("udp", source, ipd.TabIndex);
-                        }
-                        if (!ipd.Done)
-                        {
-                            if (ipd.Result.Contains("PASS") || ipd.Result.Contains("FAIL"))
-                            {
-                                //Message in format of MAC,MODEL,SERIAL,VERSION,CAT,CCURI,PROV...ETC
-                                string[] parts = sb.Replace(" ", "").Split(',');
-                                string[] vers = parts[3].Split('|');
-                                string[] cc = parts[5].Split('=');
-                                {
-                                    if (ipd.CCURI != cc[1])
-                                        ipd.CCURI = cc[1];
-                                    if (ipd.Version != vers[0])
-                                        ipd.Version = vers[0];
-                                    else
-                                        return;
-
-                                    SetText("udp", source, ipd.TabIndex);
-                                }
-                            }
-
-                        }
-
-                    }
-
-                    if (sb.Contains("version "))
-                    {
-                        IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
-                        if (ipd.Result.Contains("Programming") && !ipd.Written)
-                        {
-                            string[] parts = sb.Split(' ');
-                            string s = parts[1];
-                            bool changed = false;
-
-                            if (ipd.Version != s)
-                            {
-                                changed = true;
-                                ipd.Version = s;
-                            }
-                            if (changed)
-                            {
-                                if (ipd.Version == TB_Version.Text)
-                                    ipd.Result = "PASS - Version changed to correct final version but final status message was not received.";
-                                else
-                                    ipd.Result = "FAIL - Version changed but to a different version than the input target.";
-                            }
-
-                            else
-                                return;
-                            ipd.Written = true;
-                            SetText("udp", source, ipd.TabIndex);
-                        }
-
-                        if (!ipd.Done)
-                        {
-                            if (ipd.Result.Contains("PASS") || ipd.Result.Contains("FAIL"))
-                            {
-                                string[] parts = sb.Split(' ');
-                                string s = parts[1];
-                                {
-                                    if (ipd.Version != s)
-                                        ipd.Version = s;
-                                    else
-                                        return;
-
-                                    SetText("udp", source, ipd.TabIndex);
-                                }
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    MessageBox.Show("Catastrophic ProcessPayload error.", "Error",
-                                                MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-            }
-            
-        }
-        public string StatusLookup(int statusval)
-        {
-            string statusb = "";
-            // Status enumerations for various error or success states of OTA result
-            switch (statusval)
-            {
-                case 0:
-                    statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS.";
-                    break;
-                case 1:
-                    statusb = "PASS " + statusval.ToString() + " PA_UPDATE_SUCCESS_REBOOT_NEEDED.";
-                    break;
-                case 2:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MEMORY_ALLOCATION.";
-                    break;
-                case 3:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_INPUT.";
-                    break;
-                case 4:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_RETRIEVING_FILE_FROM_SERVER.";
-                    break;
-                case 5:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_CRC_MISMATCH.";
-                    break;
-                case 6:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_BDF_PARSING.";
-                    break;
-                case 7:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_WAIT_FOR_RESPONSE_TIMED_OUT.";
-                    break;
-                case 8:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_SENDING_MESSAGE.";
-                    break;
-                case 9:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MODEL_DOES_NOT_MATCH.";
-                    break;
-                case 10:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_INVALID_NODE.";
-                    break;
-                case 11:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NODE_IS_NOT_UPDATEABLE.";
-                    break;
-                case 12:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ECM_UPDATE_FAILED.";
-                    break;
-                case 13:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PART_NUMBER_MISMATCH.";
-                    break;
-                case 14:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_MC200_UPDATE_FAILED_BUT_CONTINUE_UPDATE.";
-                    break;
-                case 15:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NOT_ENOUGH_MEMORY_TO_DOWNLOAD_ALL_RESOURCES.";
-                    break;
-                case 16:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_LENGTH_ERROR_IN_DESCRIPTOR_FILE.";
-                    break;
-                case 17:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_POST_UPDATE_VERIFICATION_FAILED.";
-                    break;
-                case 18:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_IS_NOT_SUPPORTED.";
-                    break;
-                case 19:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILETYPE_REQUIRES_PROG_ADDR_IN_UBD.";
-                    break;
-                case 20:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_ADDR_NOT_IN_FIT_TABLE.";
-                    break;
-                case 21:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PROG_END_ADDR_EXCEED_FIT_TABLE.";
-                    break;
-                case 22:
-                    statusb = "FAIL " + statusval.ToString() + " PA_NEED_APPLICATION_PERMISSION_BEFORE_UPDATE.";
-                    break;
-                case 23:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_SUPPORTED.";
-                    break;
-                case 24:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FILE_EXTENSION_NOT_DSA.";
-                    break;
-                case 25:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_DSA_VERIFICATION_FAILED.";
-                    break;
-                case 26:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_APPLIANCE_PART_NUMBER_MISMATCH.";
-                    break;
-                case 27:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UBD_GOT_CORRUPTED.";
-                    break;
-                case 28:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_IAP_FAILURE.";
-                    break;
-                case 29:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_SCRIPT_FAILURE.";
-                    break;
-                case 30:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR_TO_USB.";
-                    break;
-                case 31:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHDIR.";
-                    break;
-                case 32:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNABLE_CHMOD.";
-                    break;
-                case 33:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_NO_BDF_IN_PSM.";
-                    break;
-                case 34:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_DOWNLOAD.";
-                    break;
-                case 35:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_WAITING_FOR_APPL_PERMISSION.";
-                    break;
-                case 36:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_RESTART_DURING_IAP.";
-                    break;
-                case 37:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_WIFI_SW.";
-                    break;
-                case 38:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_UPDATING_RADIO_SW.";
-                    break;
-                case 39:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP.";
-                    break;
-                case 40:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_ALL_NECESSARY_IAP_NODE_NOT_PRESENT_IN_WMSP_AFTER_SPEED_CHANGE.";
-                    break;
-                case 41:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASE_NO_RESP.";
-                    break;
-                case 42:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_FAILED_ERASING_FLASH.";
-                    break;
-                case 43:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_HANDLER_IS_NULL.";
-                    break;
-                case 80:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_BEGIN.";
-                    break;
-                case 99:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_PASSIVE_UPDATE_FAILURE_RANGE_END.";
-                    break;
-                case 100:
-                    statusb = "FAIL " + statusval.ToString() + " PA_ERROR_UNKNOWN.";
-                    break;
-                default:
-                    break;
-            }
-
-            return statusb;
-        }
         private void BTN_LogDir_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog fbd = new FolderBrowserDialog();
@@ -696,105 +334,48 @@ namespace VenomNamespace
             }
             
         }
-        public void WriteFile(int listindex)
+        public void WriteFile(int listindex, string final)
         {
-            using (StreamWriter sw = File.AppendText(curfilename))
+            try
             {
-                sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
-                iplist[listindex].MAC + "," +
-                iplist[listindex].Model + "," +
-                iplist[listindex].Serial + "," +
-                iplist[listindex].CCURI + "," +
-                iplist[listindex].Version + "," +
-                iplist[listindex].Result + "," +
-                iplist[listindex].Payload);
-            }
-        }
-        public void SetText(string type, string source, int listindex)
-        {
-            lock (setobj)
-            {
-                try
+                using (StreamWriter sw = File.AppendText(curfilename))
                 {
-                    //Final Update for total run
-                    if (source == "Final")
+                    if (final == null)
                     {
-                        string[] results = type.Split('\t');
-                        using (StreamWriter sw = File.AppendText(curfilename))
+                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
+                        iplist[listindex].MAC + "," +
+                        iplist[listindex].Model + "," +
+                        iplist[listindex].Serial + "," +
+                        iplist[listindex].Version + "," +
+                        iplist[listindex].Result + "," +
+                        iplist[listindex].Payload);
+                        return;
+                    }
+                    else
+                    {
+                        string[] results = final.Split('\t');
                         {
                             sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + ", " +
-                                iplist.Count() + " OTA Update(s) ran with a total running time of " + results[0] +
+                                totalran + " OTA Update(s) ran with a total running time of " + results[0] +
                                 "  that resulted in an average run time per OTA Update of " + results[1]
                                 + ".");
                         }
-
                         return;
                     }
-                    //Thread update for downloading/programming
-                    if (type.Equals("update"))
-                    {
-                        results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
-                    }
-                    //Thread update for OTA completed status
-                    if (type.Equals("status"))
-                    {
-                        results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
-                        iplist[listindex].Written = true;
-                    }
-                    //Thread update for forced ending of OTA run
-                    if (type.Equals("force") && !iplist[listindex].Written)
-                    {
-                        results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
-                        iplist[listindex].Written = true;
-                        iplist[listindex].Done = true;
-                        if (iplist[listindex].Result.Contains("PASS") || iplist[listindex].Result.Contains("FAIL"))
-                            WriteFile(listindex);
-                    }
-                    //Thread update for final version change and thread release
-                    if (!iplist[listindex].Done && type.Equals("udp") && iplist[listindex].Written)
-                    {
-
-                        WriteFile(listindex);
-                        results.Rows[listindex]["CCURI"] = iplist[listindex].CCURI;
-                        results.Rows[listindex]["Version"] = iplist[listindex].Version;
-                        iplist[listindex].Done = true;
-                        if (iplist[listindex].Signal != null)
-                            iplist[listindex].Signal.Set();
-
-                        long duration = g_time.ElapsedMilliseconds;
-                        TimeSpan t = TimeSpan.FromMilliseconds(duration);
-                        string s_dur = string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
-                                    t.Hours,
-                                    t.Minutes,
-                                    t.Seconds,
-                                    t.Milliseconds);
-                        Console.WriteLine("Thread release signal was sent at " + s_dur + ".");
-                    }
-
-                    Invoke((MethodInvoker)delegate
-                    {
-                        DGV_Data.Refresh();
-                    });
-                }
-                catch
-                {
-                    MessageBox.Show("Catastrophic SetText error.", "Error",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
                 }
             }
-        }       
+            catch
+            {
+                MessageBox.Show("The file could not be written.", "Error: File Write",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
         public bool IsEmpty()
         {
             if (String.IsNullOrEmpty(TB_Version.Text))
             {
                 MessageBox.Show("No Target Version input. Please input a Target Version and try again.", "Error: Target Version Empty",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return true;
-            }
-            if (String.IsNullOrEmpty(TB_Max.Text))
-            {
-                MessageBox.Show("No Maximum amount of Targets input. Please input a Target Maximum and try again.", "Error: Target Maximum Empty",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return true;
             }
@@ -807,114 +388,279 @@ namespace VenomNamespace
 
             return false;
         }
+        public void StartLog()
+        {
+            //Write info to log
+            if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
+            {
+                {
+                    // Verify directory exists, if not, throw exception
+                    curfilename = TB_LogDir.Text + "\\" + "OTALog_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
+                    try
+                    {
+                        using (StreamWriter sw = File.CreateText(curfilename))
+                        {
+                            sw.WriteLine("Time,IP,MAC,Model,Serial Number,CCURI,SW Version,Result,Payload");
+                        }
+                    }
+                    catch
+                    {
+                        MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
+            }
+        }
+        public void CancelRequest()
+        {
+            try
+            {
+                int stop = iplist.Count();
+                for (int i_base = 0; i_base < stop; i_base++)
+                {
+
+                    if (iplist[i_base].Result.Contains("PASS") || iplist[i_base].Result.Contains("FAIL"))
+                        continue;
+                    else
+                    {
+                        if (results.Rows.Count < 0)
+                            break;
+                        iplist[i_base].Result = "FAIL - Cancelled by User.";
+                        results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                        iplist[i_base].Done = true;
+                        WriteFile(i_base, null);
+                    }
+                }
+
+                DGV_Data.Refresh();
+
+                foreach (Thread thread in waits)
+                {
+                    //Wake sleeping wait threads that will no longer be used
+                    if (thread.IsAlive)
+                        thread.Interrupt();
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic thread closure error. Closing all threads and parent environment (Widebox).", "Error: Threads Failed to Close",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                //Environment.Exit(1);
+            }
+        }
         private void BTN_Start_Click(object sender, EventArgs e)
         {
             if (IsEmpty())
                 return;
             string TVers = TB_Version.Text;
-            int TAmt = Int32.Parse(TB_Max.Text);
             if (BTN_Start.Text == "Start")
             {
-
-                //Write info to log
-                if (!File.Exists(TB_LogDir.Text + "\\" + "OTALog" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
-                {
-                    {
-                        // Verify directory exists, if not, throw exception
-                        curfilename = TB_LogDir.Text + "\\" + "OTALog_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                        try
-                        {
-                            using (StreamWriter sw = File.CreateText(curfilename))
-                            {
-                                sw.WriteLine("Time,IP,MAC,Model,Serial Number,CCURI,SW Version,Result,Payload");
-                            }
-                        }
-                        catch
-                        {
-                            MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-                    }
-                }
+                StartLog();
                 BTN_Start.Text = "Stop Running";
                 TB_Payload.Enabled = false;
-                TB_Max.Enabled = false;
                 TB_Version.Enabled = false;
                 BTN_Clr.Enabled = false;
                 cancel_request = false;
-                g_time.Start();
+                g_time.Restart();
                 ResetForm(false, true);
-                
-                ProcessIP(TVers, TAmt);
+                ProcessCAI(TVers);
             }
             else
             {
-                DialogResult dialogResult = MessageBox.Show("This will dispose of all running threads and end the OTA list execution. Are you sure you want to exit?",
-                                                        "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                DialogResult dialogResult = MessageBox.Show("This will dispose of all running threads and may change log results to FAIL for in progress" +
+                                                            " OTA installs. Are you sure you want to exit?",
+                                                            "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
                 {
                     cancel_request = true;
                     TB_Payload.Enabled = true;
-                    TB_Max.Enabled = true;
                     TB_Version.Enabled = true;
                     BTN_Clr.Enabled = true;
-                    g_time.Stop();
-                    g_time.Reset();
                     BTN_Start.Text = "Start";
 
-                    try
-                    {
-                        int stop = iplist.Count();
-                        for (int i_base = 0; i_base < stop; i_base++)
-                        {
-
-                            if (iplist[i_base].Result.Contains("PASS") || iplist[i_base].Result.Contains("FAIL"))
-                            {
-                                if (iplist[i_base].Signal == null)
-                                    continue;
-                                if (!iplist[i_base].Signal.IsSet)
-                                    iplist[i_base].Signal.Set();
-                            }
-                            else
-                            {
-                                if (results.Rows.Count < 0)
-                                    break;
-                                iplist[i_base].Result = "FAIL - Cancelled by User.";
-                                results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
-                                iplist[i_base].Done = true;
-                                WriteFile(i_base);
-                                if (iplist[i_base].Signal == null)
-                                    continue;
-                                if (!iplist[i_base].Signal.IsSet)
-                                    iplist[i_base].Signal.Set();
-                            }
-                        }
-
-                        Invoke((MethodInvoker)delegate
-                        {
-                            DGV_Data.Refresh();
-                        });
-
-                        foreach (Thread thread in waits)
-                        {
-                            //Wake sleeping wait threads that will no longer be used
-                            if (thread.IsAlive)
-                                thread.Interrupt();
-                        }
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Catastrophic thread closure error. Closing all threads and parent environment (Widebox).", "Error: Threads Failed to Close",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        //Environment.Exit(1);
-                    }
+                    CancelRequest();
                 }
                 else //Dialog was Yes
                     return;
 
             }
-        } 
+        }
+        public bool RunCAITask(string TVers, ConnectedApplianceInfo cai, ref byte[] paybytes)
+        {
+            try
+            {
+                string[] parts;
+                IPData ipd;
+                if (cai != null)
+                {
+                    parts = cai.VersionNumber.Replace(" ", "").Split('|');
+                    if (parts[0] == TVers)
+                        return false;
+                    ipd = AddResult(cai, TB_Payload.Text);
+                    if (!RevelationConnect(cai))
+                    {
+                        ipd.Result = "FAIL - Revelation unable to connect.";
+                        ipd.Done = true;
+                        results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
+                        WriteFile(ipd.TabIndex, null);
+                        return false;
+                    }
+                    else
+                    {
+                        if (SendRevelation(cai, ref paybytes))
+                        {
+                            ipd.Result = "Revelation OTA payload sent.";
+                            ipd.Sent = true;
+                            results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
+                        }
+                        else
+                        {
+                            ipd.Result = "FAIL - Revelation unable to connect.";
+                            ipd.Done = true;
+                            results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
+                            WriteFile(ipd.TabIndex, null);
+                            return false;
+                        }
+                    }
+                    DGV_Data.Refresh();
+                    return true;
+                }
+                else
+                {
+                    ipd = AddResult(cai, TB_Payload.Text);
+                    ipd.Result = "FAIL - " + cai.IPAddress + " was unable to connect from WifiBasic.";
+                    ipd.Done = true;
+                    results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
+                    DGV_Data.Refresh();
+                    WriteFile(ipd.TabIndex, null);
+                    return false;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic CAITask error.", "Error: RunCAITask",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
+        }
+        public void StartTimer()
+        {
+            TimeSpan t = TimeSpan.FromMilliseconds(TWAIT);
+            LBL_Time.Text = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                    t.Hours,
+                    t.Minutes,
+                    t.Seconds);
+            timeleft = TWAIT;
+            TMR_Tick.Enabled = true;
+            TMR_Tick.Start();
+        }
+        public void Build(string TVers, ref byte[] paybytes)
+        {
+            try
+            {
+                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                ConnectedApplianceInfo cai = null;
+                int number = Math.Min(cio.Count, AMT);
+                //Start a batch
+                for (int i = 0; i < number; i++)
+                {
+                    if (cancel_request)
+                        break;
+                    cai = cio[i];
+                    if (cai != null)
+                    {
+                        IPData ipd = iplist.FirstOrDefault(x => x.MAC == cai.MacAddress);
+                        if (ipd != null && ipd.Sent)
+                            continue;
+                        if (RunCAITask(TVers, cai, ref paybytes))
+                            totalran++;
+                    }
+                    else
+                        continue;
+                }
+            }
+
+            catch
+            {
+                MessageBox.Show("Catastrophic Remove error.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        public void Remove(string TVers)
+        {
+            try
+            {
+                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                ConnectedApplianceInfo cai = null;
+                int number = iplist.Count;
+                for (int i = 0; i < number; i++)
+                {
+                    if (cancel_request)
+                        break;
+                    cai = cio[i];
+                    if (cai != null)
+                    {
+                        IPData ipd = iplist.FirstOrDefault(x => x.MAC == cai.MacAddress);
+                        if (ipd != null && !ipd.Done)
+                        {
+                            string[] vers = cai.VersionNumber.Replace(" ", "").Split('|');
+                            if (vers[0] == TVers)
+                            {
+                                ipd.Version = vers[0];
+                                ipd.Done = true;
+                                ipd.Result = "PASS - Product Version changed to final version.";
+                                WriteFile(ipd.TabIndex, null);
+                                DataRow dr = results.Rows[ipd.TabIndex];
+                                results.Rows.Remove(dr);
+                            }
+                        }
+                        DGV_Data.Refresh();
+                        iplist.RemoveAll(x => x.Done);
+                    }
+                    else
+                        continue;
+                }
+            }           
+
+
+            catch
+            {
+                MessageBox.Show("Catastrophic Remove error.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        public void ProcessCAI(string TVers)
+        {
+            try
+            {
+                //Parse payload into byte array
+                byte[] paybytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
+                
+                while (!cancel_request)
+                {
+                    Build(TVers, ref paybytes);
+                    StartTimer();
+
+                    Wait(TWAIT);
+                    TMR_Tick.Stop();
+
+                    Scan();
+
+                    Remove(TVers);
+                }
+
+                DGV_Data.Refresh();
+                FinalResult();
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic ProcessCAI error.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+        }
         public void Wait(int timeout)
         {
             try
@@ -934,8 +680,6 @@ namespace VenomNamespace
                 thread.Start();
                 while (thread.IsAlive)
                 {
-                    if (cancel_request)
-                        return;
                     Application.DoEvents();
                 }
             }
@@ -946,40 +690,20 @@ namespace VenomNamespace
                 return;
             }
             
-        }
-        private static void ProgressThread(object sender, ElapsedEventArgs e, IPData ipd)
-        {
-            try
-            {
-                Console.WriteLine("End Thread was called for signal " + ipd.Signal.WaitHandle.Handle +
-                              " and thread was released (set).");
-                if (!ipd.Result.Contains("PASS") || !ipd.Result.Contains("FAIL"))
-                    ipd.Result = "FAIL - Thread timeout maximum reached. Unknown issue caused thread to be stuck. Moving to next in list.";
-                if (ipd.Signal != null)
-                    ipd.Signal.Set();
-            }
-            catch
-            {
-                MessageBox.Show("Catastrophic ProgressThread error.", "Error",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-        }
+        }       
         public IPData AddResult(ConnectedApplianceInfo cai, string payload)
         {
             try
             {
 
-                IPData ipd = new IPData(cai.IPAddress, payload); //MQTT Forced as type at value[1] add Revelation logic if supported
+                IPData ipd = new IPData(cai.IPAddress, payload); 
                 iplist.Add(ipd);
                 ipd.TabIndex = iplist.IndexOf(ipd);
                 ipd.IPAddress = cai.IPAddress;
                 ipd.Payload = TB_Payload.Text;
                 ipd.Model = cai.ModelNumber;
-                ipd.Serial = cai.SerialNumber;                
+                ipd.Serial = cai.SerialNumber.Replace(" ","");                
                 ipd.MAC = cai.MacAddress;
-                ipd.CCURI = cai.CC_URI;
                 ipd.Result = "PENDING";
 
                 string[] vers = cai.VersionNumber.Replace(" ", "").Split('|');
@@ -994,7 +718,6 @@ namespace VenomNamespace
                 dr["Serial"] = ipd.Serial;
                 dr["MAC"] = ipd.MAC;
                 dr["Version"] = ipd.Version;
-                dr["CCURI"] = ipd.CCURI;
                 dr["OTA Result"] = ipd.Result;
                 results.Rows.Add(dr);
 
@@ -1007,209 +730,42 @@ namespace VenomNamespace
             }
 
         }
-        public void RunTask(ConnectedApplianceInfo cai, Barrier barrier, IPData ipd, ref byte[] paybytes)
-        {
-            try
-            {
-                if (cancel_request)
-                {
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
-                    return;
-                }
-                bool thread_waits = true;   // Indicates this is a thread that will require a reboot time for the product
-
-                //Force each thread to live only two hours (process somehow got stuck)
-                System.Timers.Timer timer = new System.Timers.Timer();
-                timer.Interval = TMAX;
-                timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
-                timer.Start();
-
-                if (SendRevelation(cai, ref paybytes))
-                    thread_waits = true;
-
-                else
-                {
-                    //Otherwise IP changed, use MAC address to map to new IP
-                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_m = WifiLocal.ConnectedAppliances;
-                    ConnectedApplianceInfo cai_m = cio_m.FirstOrDefault(x => x.MacAddress == ipd.MAC);
-                    if (cai_m != null)
-                    {
-                        if (SendRevelation(cai_m, ref paybytes))
-                            thread_waits = true;
-                    }
-                    else
-                    {
-                        MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
-                            "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                        ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
-                        SetText("force", "Bad IP Address", ipd.TabIndex);
-                        thread_waits = false;
-                    }
-                }
-
-                // Set wait signal to be unlocked by thread after job is complete (result seen from log)
-                if (thread_waits)
-                {
-                    Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
-                       " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
-                    ipd.Signal.Wait();
-
-                    if (ipd.Result.Contains("timeout"))
-                        SetText("force", "Force Close", ipd.TabIndex);
-                }
-
-                timer.Stop();
-                timer.Dispose();
-                // Check to see if thread should be cancelled
-                if (cancel_request)
-                {
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
-                    barrier.SignalAndWait();
-                    return;
-                }
-
-                Wait(RECONWAIT); //Wait two minutes for prodcut to come back on after reboot out of IAP
-
-
-                Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
-                ipd.Signal.Reset();
-
-                Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " reached barrier.");
-
-                //Thread task cancelled or completed, signal others it is done
-                barrier.SignalAndWait();
-                lock (lockObj)
-                {
-                    FinalResult();
-                }
-            }
-            catch
-            {
-                MessageBox.Show("Catastrophic RunTask error.", "Error",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                barrier.SignalAndWait();
-                return;
-            }
-
-        }
-        public void ProcessIP(string TVers, int TAmt)
-        {
-            int number;
-            try
-            {
-
-                //Parse payload into byte array
-                byte[] paybytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
-                string[] parts;
-
-                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-                number = Math.Min(cio.Count, TAmt);
-
-                //Set barrier to wait for all threads to complete
-                Barrier barrier = new Barrier(participantCount: number);
-                IPData ipd;
-                ConnectedApplianceInfo cai = null;
-
-                for (int i = 0; i < number; i++)
-                {
-                    cai = cio[i];
-                    if (cai != null)
-                    {
-                        parts = cio[i].VersionNumber.Replace(" ", "").Split('|');
-                        if (parts[0] == TVers)
-                        {
-                            ipd = AddResult(cai, TB_Payload.Text);
-                            ipd.Result = "FAIL - Version already installed.";
-                            SetText("force", "Force Close", ipd.TabIndex);
-                            continue;
-                        }
-                        if (cai.IsTraceOn || cai.IsRevelationConnected)
-                            CycleWifi();
-                        if (!RevelationConnect(cai))
-                        {
-                            /*MessageBox.Show("Revelation was unable to connect. You may need to press 'Close All' and then" +
-                                "'Data Start' on Widebox.", "Error: Unable to start Trace",
-                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);*/
-                            ipd = AddResult(cai, TB_Payload.Text);
-                            ipd.Result = "FAIL - Revelation unable to connect.";
-                            SetText("force", "Force Close", ipd.TabIndex);
-                            continue;
-                        }
-
-                        else
-                        {
-                            ipd = AddResult(cai, TB_Payload.Text);
-                            ManualResetEventSlim sig = new ManualResetEventSlim();
-                            ipd.Signal = sig;
-                            Thread th = new Thread(() => RunTask(cai, barrier, ipd, ref paybytes));
-                            th.Name = i.ToString();
-                            ipd.IPIndex = Int32.Parse(th.Name);
-                            th.IsBackground = true;
-                            th.Start();
-                        }
-                    }
-                    else
-                    {
-                        ipd = AddResult(cai, TB_Payload.Text);
-                        ipd.Result = "FAIL - " + cio[i].IPAddress + " was unable to connect from WifiBasic.";
-                        SetText("force", "Force Close", ipd.TabIndex);
-                        continue;
-                    }
-                }
-            }
-            catch
-            {
-                MessageBox.Show("Catastrophic ProcessIP error.", "Error",
-                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
         bool RevelationConnect(ConnectedApplianceInfo cai)
         {
-            int traceattempt = 0;
+            int revatt = 0;
 
-            while (traceattempt < ATTEMPTMAX)
+            while (revatt < ATTEMPTMAX)
             {
                 try
                 {
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return false;
                     }
 
-                    traceattempt++;
+                    revatt++;
                     if (cai != null)
                     {
-                        if (!cai.IsTraceOn)
+                        //if it's not and Revelation is also not enabled, enable Revelation
+                        if (!cai.IsRevelationConnected)
                         {
-                            //if it's not and Revelation is also not enabled, enable Revelation
-                            if (!cai.IsRevelationConnected)
-                            {
-                                if (traceattempt > (ATTEMPTMAX / 2))
-                                    //CycleWifi();
-                                WifiLocal.ConnectTo(cai);
-                                Wait(3000);
-                            }
-                            if (cai.IsRevelationConnected)
-                            {
-                                //If Revelation is enabled, enable Trace
-                                WifiLocal.EnableTrace(cai, true);
-                                Wait(3000);
-                            }
+                            WifiLocal.ConnectTo(cai);
+                            Wait(2000);
                         }
-                        else
+                        if (!cai.IsRevelationConnected)
                         {
-                            //If the Trace is enabled and Revelation is also connected return
-                            if (cai.IsRevelationConnected)
-                                return true;
+                            //If Revelation is enabled, enable Trace
+                            continue;
                         }
 
+                        //If the Trace is enabled and Revelation is also connected return
+                        if (cai.IsRevelationConnected)
+                            return true;
                     }
                     else
                     {
-                        MessageBox.Show("Trace was not able to start.  Please verify the socket can be " +
-                                "opened and it is not in use (UITracer is not running). You may need to close" +
-                                "Widebox and try again.", "Error: Unable to start Trace",
+                        MessageBox.Show("Revelation was not able to be connected due to error in WifiBasic." +
+                                "If persists, you may need to close Widebox and try again.", "Error: Unable to start",
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         return false;
                     }
@@ -1219,9 +775,8 @@ namespace VenomNamespace
 
                 catch
                 {
-                    MessageBox.Show("Trace was not able to start.  Please verify the socket can be " +
-                                    "opened and it is not in use (UITracer is not running). You may need to close" +
-                                "Widebox and try again.", "Error: Unable to start Trace",
+                    MessageBox.Show("Revelation was not able to be connected due to error in WifiBasic." +
+                                "If persists, you may need to close Widebox and try again.", "Error: Unable to start",
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     return false;
                 }
@@ -1273,36 +828,6 @@ namespace VenomNamespace
                 return false;
             }
         }
-        public void CycleWifi()
-        {
-            string localIP = WifiLocal.Localhost.ToString();
-            try
-            {
-                // Close all WifiBasic connections
-                WifiLocal.CloseAll(true);
-                //WifiLocal.Close(cai);
-                Wait(3000);
-                // Get new cert to restart WifiBasic connections
-                CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
-
-                // Restart Wifi Connection
-                if (certMgr.IsLocalValid)
-                {
-                    WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
-                    Wait(3000);
-                    return;
-                }
-            }
-
-            catch
-            {
-                MessageBox.Show("Catastrophic CycleWifi error.", "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            
-        }
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("This will clear all IPs and their results from all windows. Press Yes to Clear or No to Cancel.",
@@ -1315,8 +840,8 @@ namespace VenomNamespace
         }
         private void ResetForm(bool freset, bool resclear)
         {
-            Invoke((MethodInvoker)delegate {
-
+            try
+            {
                 if (freset)
                 {
                     BTN_Start.Text = "Start";
@@ -1324,7 +849,6 @@ namespace VenomNamespace
                     TB_LogDir.Enabled = true;
                     BTN_LogDir.Enabled = true;
                     TB_Payload.Enabled = true;
-                    TB_Max.Enabled = true;
                     TB_Version.Enabled = true;
                 }
 
@@ -1333,49 +857,45 @@ namespace VenomNamespace
                     results.Clear();
                     DGV_Data.Refresh();
                     iplist.Clear();
+                    waits.Clear();
                 }
-
-            });
-            
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic ResetForm error.", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
         }
         public void FinalResult()
         {
-            try {
+            try
+            {
+                ResetForm(true, false);
+                g_time.Stop();
+                long duration = g_time.ElapsedMilliseconds;
+                double average = 0.0;
+                g_time.Reset();
+                TimeSpan t = TimeSpan.FromMilliseconds(duration);
+                string s_dur = string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
+                            t.Hours,
+                            t.Minutes,
+                            t.Seconds,
+                            t.Milliseconds);
+                if (totalran != 0)
+                    average = (double)duration / totalran;
 
-                thread_done++;
-                if (thread_done == iplist.Count)
-                {
-                    thread_done = 0;
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " was last and reset form.");
-                    ResetForm(true, false);
-                    g_time.Stop();
-                    long duration = g_time.ElapsedMilliseconds;
-                    g_time.Reset();
-                    TimeSpan t = TimeSpan.FromMilliseconds(duration);
-                    string s_dur = string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
-                                t.Hours,
-                                t.Minutes,
-                                t.Seconds,
-                                t.Milliseconds);
-                    int totalran = iplist.Count();
-                    double average = 0.0;
-                    if (totalran != 0)
-                        average = (double)duration / totalran;
-                    TimeSpan a = TimeSpan.FromMilliseconds(average);
-                    string s_avg = string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
-                                a.Hours,
-                                a.Minutes,
-                                a.Seconds,
-                                a.Milliseconds);
-                    SetText(s_dur + '\t' + s_avg, "Final", 0);
-                    MessageBox.Show(totalran + " OTA Update(s) ran with a total running time of " + s_dur +
-                                    "  that resulted in an average run time per OTA Update of " + s_avg
-                                    + ".", "Final Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    CycleWifi();
-                    cancel_request = true;
-                }
-                else
-                    return;                
+                TimeSpan a = TimeSpan.FromMilliseconds(average);
+                string s_avg = string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
+                            a.Hours,
+                            a.Minutes,
+                            a.Seconds,
+                            a.Milliseconds);
+                WriteFile(0, s_dur + '\t' + s_avg);
+                MessageBox.Show(totalran + " OTA Update(s) ran with a total running time of " + s_dur +
+                                "  that resulted in an average run time per OTA Update of " + s_avg
+                                + ".", "Final Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                          
             }
 
             catch
@@ -1386,9 +906,39 @@ namespace VenomNamespace
             }
 
         }
+        public void Scan()
+        {
+            try
+            {                
+                WifiLocal.ScanConnectedAppliances(true);
+                Wait(2000);
+            }
+
+            catch
+            {
+                MessageBox.Show("Catastrophic Scan error.", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+
+        }
         private void Venom_Load(object sender, EventArgs e)
         {
             //ResetForm(true, true);
+        }
+        private void TMR_Tick_Tick(object sender, EventArgs e)
+        {
+            timeleft -= 1000;
+
+            if (timeleft < 0)
+                timeleft = 0;
+
+            TimeSpan t = TimeSpan.FromMilliseconds(timeleft);
+            LBL_Time.Text = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                t.Hours,
+                t.Minutes,
+                t.Seconds);
         }
 
     }

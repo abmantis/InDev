@@ -45,23 +45,11 @@ namespace VenomNamespace
             set { _model = value; }
         }
 
-        private string _ccuri;
-        public string CCURI
-        {
-            get { return _ccuri; }
-            set { _ccuri = value; }
-        }
         private string _mac;
         public string MAC
         {
             get { return _mac; }
             set { _mac = value; }
-        }
-        private ManualResetEventSlim _signal;
-        public ManualResetEventSlim Signal
-        {
-            get { return _signal; }
-            set { _signal = value; }
         }
         private int _ipindex;
         public int IPIndex
@@ -76,18 +64,17 @@ namespace VenomNamespace
             get { return _tabindex; }
             set { _tabindex = value; }
         }
-
+        private bool _sent;
+        public bool Sent
+        {
+            get { return _sent; }
+            set { _sent = value; }
+        }
         private bool _done;
         public bool Done
         {
             get { return _done; }
             set { _done = value; }
-        }
-        private bool _written;
-        public bool Written
-        {
-            get { return _written; }
-            set { _written = value; }
         }
         public IPData(string ip, string payload)
         {
@@ -100,10 +87,8 @@ namespace VenomNamespace
             _result = "";
             _ipindex = 0;
             _tabindex = 0;
-            _signal = null;
+            _sent = false;
             _done = false;
-            _written = false;
-            _ccuri = "";            
         }
 
     }

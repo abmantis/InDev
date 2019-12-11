@@ -31,6 +31,7 @@ namespace VenomNamespace
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.DGV_Data = new System.Windows.Forms.DataGridView();
             this.TB_LogDir = new System.Windows.Forms.TextBox();
             this.BTN_LogDir = new System.Windows.Forms.Button();
@@ -38,10 +39,11 @@ namespace VenomNamespace
             this.BTN_Clr = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.TB_Payload = new System.Windows.Forms.TextBox();
-            this.TB_Max = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.TB_Version = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.LBL_Time = new System.Windows.Forms.Label();
+            this.TMR_Tick = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -54,22 +56,22 @@ namespace VenomNamespace
             | System.Windows.Forms.AnchorStyles.Right)));
             this.DGV_Data.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.DGV_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.DGV_Data.Location = new System.Drawing.Point(143, 88);
+            this.DGV_Data.Location = new System.Drawing.Point(155, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(530, 214);
+            this.DGV_Data.Size = new System.Drawing.Size(518, 172);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
             // 
-            this.TB_LogDir.Location = new System.Drawing.Point(143, 12);
+            this.TB_LogDir.Location = new System.Drawing.Point(155, 12);
             this.TB_LogDir.Name = "TB_LogDir";
-            this.TB_LogDir.Size = new System.Drawing.Size(530, 20);
+            this.TB_LogDir.Size = new System.Drawing.Size(518, 20);
             this.TB_LogDir.TabIndex = 11;
             // 
             // BTN_LogDir
             // 
-            this.BTN_LogDir.Location = new System.Drawing.Point(18, 12);
+            this.BTN_LogDir.Location = new System.Drawing.Point(26, 12);
             this.BTN_LogDir.Name = "BTN_LogDir";
             this.BTN_LogDir.Size = new System.Drawing.Size(119, 23);
             this.BTN_LogDir.TabIndex = 10;
@@ -79,7 +81,7 @@ namespace VenomNamespace
             // 
             // BTN_Start
             // 
-            this.BTN_Start.Location = new System.Drawing.Point(12, 225);
+            this.BTN_Start.Location = new System.Drawing.Point(12, 183);
             this.BTN_Start.Name = "BTN_Start";
             this.BTN_Start.Size = new System.Drawing.Size(125, 35);
             this.BTN_Start.TabIndex = 14;
@@ -89,7 +91,7 @@ namespace VenomNamespace
             // 
             // BTN_Clr
             // 
-            this.BTN_Clr.Location = new System.Drawing.Point(12, 266);
+            this.BTN_Clr.Location = new System.Drawing.Point(12, 224);
             this.BTN_Clr.Name = "BTN_Clr";
             this.BTN_Clr.Size = new System.Drawing.Size(125, 36);
             this.BTN_Clr.TabIndex = 89;
@@ -108,53 +110,61 @@ namespace VenomNamespace
             // 
             // TB_Payload
             // 
-            this.TB_Payload.Location = new System.Drawing.Point(143, 55);
+            this.TB_Payload.Location = new System.Drawing.Point(155, 55);
             this.TB_Payload.Name = "TB_Payload";
-            this.TB_Payload.Size = new System.Drawing.Size(530, 20);
+            this.TB_Payload.Size = new System.Drawing.Size(518, 20);
             this.TB_Payload.TabIndex = 103;
-            // 
-            // TB_Max
-            // 
-            this.TB_Max.Location = new System.Drawing.Point(103, 127);
-            this.TB_Max.Name = "TB_Max";
-            this.TB_Max.Size = new System.Drawing.Size(34, 20);
-            this.TB_Max.TabIndex = 102;
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(7, 130);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(93, 13);
-            this.label2.TabIndex = 101;
-            this.label2.Text = "Maximum Amount:";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(18, 174);
+            this.label1.Location = new System.Drawing.Point(10, 129);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(70, 13);
+            this.label1.Size = new System.Drawing.Size(79, 13);
             this.label1.TabIndex = 100;
-            this.label1.Text = "Final Version:";
+            this.label1.Text = "Target Version:";
             // 
             // TB_Version
             // 
-            this.TB_Version.Location = new System.Drawing.Point(103, 171);
+            this.TB_Version.Location = new System.Drawing.Point(94, 126);
             this.TB_Version.Name = "TB_Version";
-            this.TB_Version.Size = new System.Drawing.Size(34, 20);
+            this.TB_Version.Size = new System.Drawing.Size(51, 20);
             this.TB_Version.TabIndex = 99;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(10, 87);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(78, 13);
+            this.label4.TabIndex = 106;
+            this.label4.Text = "Tick Time Left:";
+            // 
+            // LBL_Time
+            // 
+            this.LBL_Time.AutoSize = true;
+            this.LBL_Time.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.LBL_Time.Location = new System.Drawing.Point(94, 87);
+            this.LBL_Time.Name = "LBL_Time";
+            this.LBL_Time.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.LBL_Time.Size = new System.Drawing.Size(51, 15);
+            this.LBL_Time.TabIndex = 105;
+            this.LBL_Time.Text = "00:00:00";
+            // 
+            // TMR_Tick
+            // 
+            this.TMR_Tick.Interval = 1000;
+            this.TMR_Tick.Tick += new System.EventHandler(this.TMR_Tick_Tick);
             // 
             // Revelation_OTA
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(696, 318);
+            this.ClientSize = new System.Drawing.Size(696, 272);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.LBL_Time);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.TB_Payload);
-            this.Controls.Add(this.TB_Max);
-            this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.TB_Version);
             this.Controls.Add(this.BTN_Clr);
@@ -179,10 +189,11 @@ namespace VenomNamespace
         public System.Windows.Forms.TextBox TB_LogDir;
         private Label label3;
         private TextBox TB_Payload;
-        private TextBox TB_Max;
-        private Label label2;
         private Label label1;
         private TextBox TB_Version;
+        private Label label4;
+        private Label LBL_Time;
+        private Timer TMR_Tick;
     }
 }
 
