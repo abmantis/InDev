@@ -178,8 +178,8 @@ namespace VenomNamespace
             this.Controls.Add(this.TB_LogDir);
             this.Controls.Add(this.BTN_LogDir);
             this.Controls.Add(this.DGV_Data);
-            this.Name = "Revelation_OTA";
-            this.Text = "Revelation_OTA";
+            this.Name = "Venom.Rev_OTA";
+            this.Text = "Venom.Revelation_OTA";
             this.Load += new System.EventHandler(this.Venom_Load);
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).EndInit();
             this.ResumeLayout(false);

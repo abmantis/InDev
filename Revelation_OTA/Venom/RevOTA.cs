@@ -342,8 +342,8 @@ namespace VenomNamespace
                     {
                         sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
                         iplist[listindex].MAC + "," +
+                        iplist[listindex].Serial + "," +
                         iplist[listindex].Model + "," +
-                        iplist[listindex].Serial.Replace(System.Environment.NewLine, "") + "," +
                         iplist[listindex].Version + "," +
                         iplist[listindex].Result + "," +
                         iplist[listindex].Payload);
@@ -468,17 +468,19 @@ namespace VenomNamespace
                 TB_Payload.Enabled = true;
                 TB_Version.Enabled = true;
                 BTN_Clr.Enabled = true;
+                LBL_Time.Text = "00:00:00";
                 BTN_Start.Text = "Start";
             }
             
         }
         private void BTN_Start_Click(object sender, EventArgs e)
         {
-            if (IsEmpty())
-                return;
-
+            
             if (BTN_Start.Text == "Start")
             {
+                if (IsEmpty())
+                    return;
+
                 StartLog();
 
                 SetForm(false);
@@ -562,6 +564,8 @@ namespace VenomNamespace
         }
         public void StartTimer()
         {
+            if (cancel_request)
+                return;
             TimeSpan t = TimeSpan.FromMilliseconds(TWAIT);
             LBL_Time.Text = string.Format("{0:D2}:{1:D2}:{2:D2}",
                     t.Hours,
@@ -706,6 +710,7 @@ namespace VenomNamespace
                     StartTimer();
                     Wait(TWAIT);
                     TMR_Tick.Stop();
+                    LBL_Time.Text = "RUNNING";
 
                     Scan();
 
@@ -910,10 +915,16 @@ namespace VenomNamespace
                     BTN_LogDir.Enabled = true;
                     TB_Payload.Enabled = true;
                     TB_Version.Enabled = true;
+                    LBL_Time.Text = "00:00:00";
                 }
 
                 if (resclear)
                 {
+                    if (BTN_Start.Text == "Start")
+                    {
+                        TB_Payload.Text = "";
+                        TB_Version.Text = "";
+                    }
                     results.Clear();
                     DGV_Data.Refresh();
                     iplist.Clear();
@@ -931,6 +942,8 @@ namespace VenomNamespace
         {
             try
             {
+                if (cancel_request)
+                    return;
                 ResetForm(true, false);
                 g_time.Stop();
                 long duration = g_time.ElapsedMilliseconds;
@@ -952,9 +965,9 @@ namespace VenomNamespace
                             a.Seconds,
                             a.Milliseconds);
                 WriteFile(0, s_dur + '\t' + s_avg);
-                MessageBox.Show(totalran + " OTA Update(s) ran with a total running time of " + s_dur +
+                /*MessageBox.Show(totalran + " OTA Update(s) ran with a total running time of " + s_dur +
                                 "  that resulted in an average run time per OTA Update of " + s_avg
-                                + ".", "Final Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                + ".", "Final Result", MessageBoxButtons.OK, MessageBoxIcon.Information);*/
                           
             }
 
@@ -968,9 +981,11 @@ namespace VenomNamespace
         }
         public void Scan()
         {
+            if (cancel_request)
+                return;
             string localIP = WifiLocal.Localhost.ToString();
             try
-            {                
+            {   
                 WifiLocal.ScanConnectedAppliances(true, localIP);
                 Wait(2000);
             }
@@ -986,7 +1001,7 @@ namespace VenomNamespace
         }
         private void Venom_Load(object sender, EventArgs e)
         {
-            //ResetForm(true, true);
+            ResetForm(true, true);
         }
         private void TMR_Tick_Tick(object sender, EventArgs e)
         {
