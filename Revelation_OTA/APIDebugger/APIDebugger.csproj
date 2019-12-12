@@ -157,7 +157,7 @@
     <Content Include="libeay32.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Lib\CertManager.dll" />
+    <Content Include="Lib\CertManager.exe" />
     <Content Include="Lib\CertManager.XML" />
     <Content Include="Lib\ProgramAgentLib.dll" />
     <Content Include="Lib\SmartCableVersions.dll" />

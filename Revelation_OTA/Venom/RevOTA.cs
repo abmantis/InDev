@@ -592,20 +592,31 @@ namespace VenomNamespace
                         {
                             Remove(cai, ipd);
                             i--;
+                            j++;
                             continue;
                         }
                         if (ipd != null && ipd.Sent)
                         {
                             i--;
+                            j++;
                             continue;
                         }
                         if (RunCAITask(cai))
+                        {
+                            j++;
                             totalran++;
+                        }
                         else
+                        {
+                            j++;
                             i--;
+                        }
                     }
                     else
+                    {
+                        j++;
                         continue;
+                    }
                 }
             }
 
@@ -647,25 +658,36 @@ namespace VenomNamespace
             {
                 System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                 ConnectedApplianceInfo cai = null;
+                int j = 0;
                 int number = iplist.Count;
                 for (int i = 0; i < number; i++)
                 {
                     if (cancel_request)
                         break;
-                    cai = cio.ElementAtOrDefault(i);
+                    cai = cio.ElementAtOrDefault(j);
                     if (cai != null)
                     {
                         IPData ipd = iplist.FirstOrDefault(x => x.MAC == cai.MacAddress);
                         if (ipd != null && !ipd.Done)
+                        {
+                            j++;
                             if (Remove(cai, ipd))
                                 iplist.RemoveAt(ipd.TabIndex);
+                        }
+                        else
+                        {
+                            j++;
+                            i--;
+                            continue;
+                        }
                     }
                     else
+                    {
+                        j++;
                         continue;
+                    }
                 }
-            }           
-
-
+            }
             catch
             {
                 MessageBox.Show("Catastrophic Check error.", "Error",
@@ -946,9 +968,10 @@ namespace VenomNamespace
         }
         public void Scan()
         {
+            string localIP = WifiLocal.Localhost.ToString();
             try
             {                
-                WifiLocal.ScanConnectedAppliances(true);
+                WifiLocal.ScanConnectedAppliances(true, localIP);
                 Wait(2000);
             }
 

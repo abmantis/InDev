@@ -64,6 +64,9 @@ namespace VenomNamespace
             // 
             // TB_LogDir
             // 
+            this.TB_LogDir.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.TB_LogDir.Location = new System.Drawing.Point(155, 12);
             this.TB_LogDir.Name = "TB_LogDir";
             this.TB_LogDir.Size = new System.Drawing.Size(518, 20);
@@ -110,6 +113,9 @@ namespace VenomNamespace
             // 
             // TB_Payload
             // 
+            this.TB_Payload.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.TB_Payload.Location = new System.Drawing.Point(155, 55);
             this.TB_Payload.Name = "TB_Payload";
             this.TB_Payload.Size = new System.Drawing.Size(518, 20);
