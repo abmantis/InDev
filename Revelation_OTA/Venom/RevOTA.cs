@@ -433,7 +433,7 @@ namespace VenomNamespace
                         WriteFile(i_base, null);
                     }
                 }
-
+                LBL_Time.Text = "00:00:00";
                 DGV_Data.Refresh();
 
                 foreach (Thread thread in waits)
@@ -517,10 +517,10 @@ namespace VenomNamespace
                     ipd = AddResult(cai);
                     if (!RevelationConnect(cai))
                     {
-                        ipd.Result = "FAIL - Revelation unable to connect.";
+                        /*ipd.Result = "FAIL - Revelation unable to connect.";
                         ipd.Done = true;
                         results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
-                        WriteFile(ipd.TabIndex, null);
+                        WriteFile(ipd.TabIndex, null);*/
                         return false;
                     }
                     else
@@ -609,9 +609,14 @@ namespace VenomNamespace
                         {
                             j++;
                             totalran++;
+                            Wait(5000);
                         }
                         else
                         {
+                            DataRow dr = results.Rows[ipd.TabIndex];
+                            results.Rows.Remove(dr);
+                            DGV_Data.Refresh();
+                            iplist.RemoveAt(j);
                             j++;
                             i--;
                         }

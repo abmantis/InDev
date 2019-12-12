@@ -169,9 +169,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Venom\RevOTA.csproj">
+    <ProjectReference Include="..\Venom\Venom.Revelation_OTA.csproj">
       <Project>{1a8e93f3-d466-4d34-ac50-d99afd7e9928}</Project>
-      <Name>RevOTA</Name>
+      <Name>Venom.Revelation_OTA</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
