@@ -70,6 +70,13 @@ namespace VenomNamespace
             get { return _done; }
             set { _done = value; }
         }
+
+        private int _retry;
+        public int Retry
+        {
+            get { return _retry; }
+            set { _retry = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -82,6 +89,7 @@ namespace VenomNamespace
             _tabindex = 0;
             _sent = false;
             _done = false;
+            _retry = 0;
         }
 
     }

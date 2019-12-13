@@ -19,7 +19,8 @@ namespace VenomNamespace
         public static int ATTEMPTMAX = 3;
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
         public static int TWAIT = 1 * 60000; //Time interval to check for update
-        public static int AMT = 10;
+        public static int AMT = 3;
+        public static int WATTRIB = 8;
         public int timeleft = TWAIT;
 
         //Global timer
@@ -340,13 +341,23 @@ namespace VenomNamespace
                 {
                     if (final == null)
                     {
-                        sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
-                        iplist[listindex].MAC + "," +
-                        iplist[listindex].Serial + "," +
-                        iplist[listindex].Model + "," +
-                        iplist[listindex].Version + "," +
-                        iplist[listindex].Result + "," +
-                        iplist[listindex].Payload);
+                        /*sw.Write(write);
+                        for (int i = 0; i < WATTRIB; i++)
+                        {
+                            write = iplist.ElementAtOrDefault(listindex).;
+                            if (write != null)
+                                sw.Write(write);
+                        }*/
+                        if (iplist[listindex] != null)
+                        { 
+                            sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
+                            iplist[listindex].MAC + "," +
+                            iplist[listindex].Serial + "," +
+                            iplist[listindex].Model + "," +
+                            iplist[listindex].Version + "," +
+                            iplist[listindex].Result + "," +
+                            iplist[listindex].Payload);
+                           }
                         return;
                     }
                     else
@@ -401,7 +412,7 @@ namespace VenomNamespace
                     {
                         using (StreamWriter sw = File.CreateText(curfilename))
                         {
-                            sw.WriteLine("Time,IP,MAC,Model,Serial Number,SW Version,Result,Payload");
+                            sw.WriteLine("Time,IP,MAC,Serial Number,Model,SW Version,Result,Payload");
                         }
                     }
                     catch
@@ -529,14 +540,14 @@ namespace VenomNamespace
                         {
                             ipd.Result = "Revelation OTA payload sent.";
                             ipd.Sent = true;
-                            results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
+                            results.Rows[iplist.IndexOf(ipd)]["OTA Result"] = iplist[iplist.IndexOf(ipd)].Result;
                         }
                         else
                         {
-                            ipd.Result = "FAIL - Revelation unable to connect.";
+                            /*ipd.Result = "FAIL - Revelation unable to connect.";
                             ipd.Done = true;
                             results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
-                            WriteFile(ipd.TabIndex, null);
+                            WriteFile(ipd.TabIndex, null);*/
                             return false;
                         }
                     }
@@ -548,9 +559,9 @@ namespace VenomNamespace
                     ipd = AddResult(cai);
                     ipd.Result = "FAIL - " + cai.IPAddress + " was unable to connect from WifiBasic.";
                     ipd.Done = true;
-                    results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
+                    results.Rows[iplist.IndexOf(ipd)]["OTA Result"] = iplist[iplist.IndexOf(ipd)].Result;
                     DGV_Data.Refresh();
-                    WriteFile(ipd.TabIndex, null);
+                    WriteFile(iplist.IndexOf(ipd), null);
                     return false;
                 }
             }
@@ -582,6 +593,8 @@ namespace VenomNamespace
                 System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                 ConnectedApplianceInfo cai = null;
                 int number = Math.Min(cio.Count, (AMT - iplist.Count));
+                if (number < 0)
+                    number = 0;
                 //Start a batch
                 int j = 0;
                 for (int i = 0; i < number; i++)
@@ -594,10 +607,13 @@ namespace VenomNamespace
                         IPData ipd = iplist.FirstOrDefault(x => x.MAC == cai.MacAddress);
                         if (ipd != null && ipd.Done)
                         {
-                            Remove(cai, ipd);
-                            i--;
-                            j++;
-                            continue;
+                            if (ipd.Result.Contains("PASS") || ipd.Result.Contains("FAIL"))
+                            {
+                                Remove(cai, ipd);
+                                i--;
+                                j++;
+                                continue;
+                            }
                         }
                         if (ipd != null && ipd.Sent)
                         {
@@ -613,10 +629,26 @@ namespace VenomNamespace
                         }
                         else
                         {
-                            DataRow dr = results.Rows[ipd.TabIndex];
-                            results.Rows.Remove(dr);
-                            DGV_Data.Refresh();
-                            iplist.RemoveAt(j);
+                            if (ipd != null && ipd.Retry < 5)
+                            {
+                                DataRow dr = results.Rows[iplist.IndexOf(ipd)];
+                                results.Rows.Remove(dr);
+                                DGV_Data.Refresh();
+                                iplist.RemoveAt(j);
+                            }
+                            else
+                            {
+                                if (ipd != null)
+                                {
+                                    iplist[j].Result = "FAIL - Cancelled by User.";
+                                    results.Rows[j]["OTA Result"] = iplist[j].Result;
+                                    iplist[j].Done = true;
+                                    DGV_Data.Refresh();
+                                    WriteFile(j, null);
+                                }
+                                
+                            }
+
                             j++;
                             i--;
                         }
@@ -631,34 +663,33 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("Catastrophic Remove error.", "Error",
+                MessageBox.Show("Catastrophic Build error.", "Error",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        public bool Remove(ConnectedApplianceInfo cai, IPData ipd)
+        public void Remove(ConnectedApplianceInfo cai, IPData ipd)
         {
-            bool changed = false;
             try
             {
                 string[] vers = cai.VersionNumber.Replace(" ", "").Split('|');
-                if (vers[0] == TVers)
+                if (ipd != null && vers[0] == TVers)
                 {
                     ipd.Version = vers[0];
                     ipd.Done = true;
                     ipd.Result = "PASS - Product Version changed to final version.";
-                    WriteFile(ipd.TabIndex, null);
-                    DataRow dr = results.Rows[ipd.TabIndex];
+                    WriteFile(iplist.IndexOf(ipd), null);
+                    DataRow dr = results.Rows[iplist.IndexOf(ipd)];
                     results.Rows.Remove(dr);
-                    changed = true;
                     DGV_Data.Refresh();
+                    iplist.RemoveAt(iplist.IndexOf(ipd));
                 }
-                return changed;
+                return;
             }
             catch
             {
                 MessageBox.Show("Catastrophic Remove error.", "Error",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
+                return;
             }
         }
         public void Check()
@@ -667,34 +698,48 @@ namespace VenomNamespace
             {
                 System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
                 ConnectedApplianceInfo cai = null;
-                int j = 0;
-                int number = iplist.Count;
+                int found = 0;
+                int number = cio.Count;
+                int iplistc = iplist.Count;
                 for (int i = 0; i < number; i++)
                 {
                     if (cancel_request)
                         break;
-                    cai = cio.ElementAtOrDefault(j);
+                    if (found >= iplistc)
+                        break;
+                    cai = cio.ElementAtOrDefault(i);
                     if (cai != null)
                     {
                         IPData ipd = iplist.FirstOrDefault(x => x.MAC == cai.MacAddress);
+                        if (ipd != null && ipd.Done)
+                        {
+                            if (ipd.Result.Contains("PASS") || ipd.Result.Contains("FAIL"))
+                            {
+                                found++;
+                                Remove(cai, ipd);
+                                continue;
+                            }                            
+                        }
                         if (ipd != null && !ipd.Done)
                         {
-                            j++;
-                            if (Remove(cai, ipd))
-                                iplist.RemoveAt(ipd.TabIndex);
-                        }
-                        else
-                        {
-                            j++;
-                            i--;
+                            if (ipd.Result.Contains("PENDING"))
+                            {
+                                DataRow dr = results.Rows[iplist.IndexOf(ipd)];
+                                results.Rows.Remove(dr);
+                                DGV_Data.Refresh();
+                                iplist.RemoveAt(iplist.IndexOf(ipd));
+                                continue;
+                            }
+                            found++;
+                            Remove(cai, ipd);
                             continue;
                         }
+                        else
+                            continue;
+                        
                     }
                     else
-                    {
-                        j++;
-                        continue;
-                    }
+                        continue;                    
                 }
             }
             catch
