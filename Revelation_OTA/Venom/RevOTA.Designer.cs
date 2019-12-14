@@ -44,6 +44,7 @@ namespace VenomNamespace
             this.label4 = new System.Windows.Forms.Label();
             this.LBL_Time = new System.Windows.Forms.Label();
             this.TMR_Tick = new System.Windows.Forms.Timer(this.components);
+            this.BTN_Import = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -116,6 +117,7 @@ namespace VenomNamespace
             this.TB_Payload.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.TB_Payload.Enabled = false;
             this.TB_Payload.Location = new System.Drawing.Point(155, 55);
             this.TB_Payload.Name = "TB_Payload";
             this.TB_Payload.Size = new System.Drawing.Size(518, 20);
@@ -124,7 +126,7 @@ namespace VenomNamespace
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(10, 129);
+            this.label1.Location = new System.Drawing.Point(10, 114);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(79, 13);
             this.label1.TabIndex = 100;
@@ -132,7 +134,8 @@ namespace VenomNamespace
             // 
             // TB_Version
             // 
-            this.TB_Version.Location = new System.Drawing.Point(94, 126);
+            this.TB_Version.Enabled = false;
+            this.TB_Version.Location = new System.Drawing.Point(94, 110);
             this.TB_Version.Name = "TB_Version";
             this.TB_Version.Size = new System.Drawing.Size(51, 20);
             this.TB_Version.TabIndex = 99;
@@ -140,11 +143,11 @@ namespace VenomNamespace
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(10, 87);
+            this.label4.Location = new System.Drawing.Point(1, 87);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(78, 13);
+            this.label4.Size = new System.Drawing.Size(91, 13);
             this.label4.TabIndex = 106;
-            this.label4.Text = "Tick Time Left:";
+            this.label4.Text = "Time Until Check:";
             // 
             // LBL_Time
             // 
@@ -162,11 +165,22 @@ namespace VenomNamespace
             this.TMR_Tick.Interval = 1000;
             this.TMR_Tick.Tick += new System.EventHandler(this.TMR_Tick_Tick);
             // 
+            // BTN_Import
+            // 
+            this.BTN_Import.Location = new System.Drawing.Point(13, 142);
+            this.BTN_Import.Name = "BTN_Import";
+            this.BTN_Import.Size = new System.Drawing.Size(125, 35);
+            this.BTN_Import.TabIndex = 107;
+            this.BTN_Import.Text = "Import";
+            this.BTN_Import.UseVisualStyleBackColor = true;
+            this.BTN_Import.Click += new System.EventHandler(this.BTN_Import_Click);
+            // 
             // Revelation_OTA
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(696, 272);
+            this.Controls.Add(this.BTN_Import);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.LBL_Time);
             this.Controls.Add(this.label3);
@@ -200,6 +214,7 @@ namespace VenomNamespace
         private Label label4;
         private Label LBL_Time;
         private Timer TMR_Tick;
+        private Button BTN_Import;
     }
 }
 

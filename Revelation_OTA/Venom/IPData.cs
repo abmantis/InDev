@@ -1,5 +1,5 @@
 ﻿
-using System.Threading;
+using System.Diagnostics;
 
 namespace VenomNamespace
 
@@ -52,12 +52,6 @@ namespace VenomNamespace
             set { _mac = value; }
         }
 
-        private int _tabindex;
-        public int TabIndex
-        {
-            get { return _tabindex; }
-            set { _tabindex = value; }
-        }
         private bool _sent;
         public bool Sent
         {
@@ -77,6 +71,13 @@ namespace VenomNamespace
             get { return _retry; }
             set { _retry = value; }
         }
+
+        private Stopwatch _watch;
+        public Stopwatch Watch
+        {
+            get { return _watch; }
+            set { _watch = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -86,10 +87,10 @@ namespace VenomNamespace
             _version = "";
             _mac = "";
             _result = "";
-            _tabindex = 0;
             _sent = false;
             _done = false;
             _retry = 0;
+            _watch = null;
         }
 
     }

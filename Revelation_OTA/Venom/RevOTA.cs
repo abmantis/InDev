@@ -17,15 +17,16 @@ namespace VenomNamespace
     {
         public const byte API_NUMBER = 0;
         public static int ATTEMPTMAX = 3;
-        public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
-        public static int TWAIT = 1 * 60000; //Time interval to check for update
-        public static int AMT = 3;
+        public static int AMT = 2;
         public static int WATTRIB = 8;
+        public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer (in minutes)
+        public static int TWAIT = 1 * 60000; //Time interval to check for update (in minutes)
+        public static int WATCHMAX = 45 * 60000; //MAX time before OTA is set to fail status (in minutes)
         public int timeleft = TWAIT;
 
         //Global timer
         public Stopwatch g_time = new Stopwatch();
-        
+
         // Entities used to store log and window data
         public DataTable results;
         public BindingSource sbind = new BindingSource();
@@ -75,11 +76,11 @@ namespace VenomNamespace
 
             // Generate lists
             iplist = new List<IPData>();
-            waits = new List<Thread> ();
+            waits = new List<Thread>();
 
 
-    }
-        
+        }
+
         /// <summary>
         /// Parse message from WideBoxInterface
         /// </summary>
@@ -88,7 +89,7 @@ namespace VenomNamespace
         {
             RevealPacket reveal_pkt = new RevealPacket();
             if (reveal_pkt.ParseSimpleWhirlpoolMessage(data))
-            {              
+            {
                 switch (reveal_pkt.API)
                 {
                     case API_NUMBER:   //parse opcodes to this API (already without the feedback bit, i.e. 0x25: reveal_pkt.OpCode = 5 , reveal_pkt.IsFeedback = true )
@@ -172,8 +173,8 @@ namespace VenomNamespace
         /// </summary>
         /// <param name="data">The data from the mqtt connected appliance.</param>
         public override void parseMqttMessages(ExtendedMqttMsgPublish data)
-        {            
-            switch (data.Topic) 
+        {
+            switch (data.Topic)
             {
                 /*case "iot-2/evt/isp/fmt/json":
                     // Process OTA-related messages
@@ -194,9 +195,9 @@ namespace VenomNamespace
                         }
                     break;*/
 
-               // case "iot-2/evt/cc_SetKvpResult/fmt/binary":
-                    //SetResult(data.Message[data.Message.Length - 1]);
-                   // break;
+                // case "iot-2/evt/cc_SetKvpResult/fmt/binary":
+                //SetResult(data.Message[data.Message.Length - 1]);
+                // break;
 
                 default:
                     break;
@@ -215,7 +216,7 @@ namespace VenomNamespace
 
         public override void parseTraceMessages(ExtendedTracePacket data)
         {
-            
+
         }
 
         #region WIRED BUS Message functions
@@ -322,7 +323,7 @@ namespace VenomNamespace
         }
 
         #endregion
-      
+
         private void BTN_LogDir_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog fbd = new FolderBrowserDialog();
@@ -331,7 +332,7 @@ namespace VenomNamespace
             {
                 TB_LogDir.Text = fbd.SelectedPath;
             }
-            
+
         }
         public void WriteFile(int listindex, string final)
         {
@@ -349,7 +350,7 @@ namespace VenomNamespace
                                 sw.Write(write);
                         }*/
                         if (iplist[listindex] != null)
-                        { 
+                        {
                             sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + "," + iplist[listindex].IPAddress + "," +
                             iplist[listindex].MAC + "," +
                             iplist[listindex].Serial + "," +
@@ -357,7 +358,7 @@ namespace VenomNamespace
                             iplist[listindex].Version + "," +
                             iplist[listindex].Result + "," +
                             iplist[listindex].Payload);
-                           }
+                        }
                         return;
                     }
                     else
@@ -441,10 +442,11 @@ namespace VenomNamespace
                         iplist[i_base].Result = "FAIL - Cancelled by User.";
                         results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
                         iplist[i_base].Done = true;
+                        iplist[i_base].Watch.Stop();
+                        iplist[i_base].Watch.Reset();
                         WriteFile(i_base, null);
                     }
                 }
-                LBL_Time.Text = "00:00:00";
                 DGV_Data.Refresh();
 
                 foreach (Thread thread in waits)
@@ -453,6 +455,7 @@ namespace VenomNamespace
                     if (thread.IsAlive)
                         thread.Interrupt();
                 }
+
             }
             catch
             {
@@ -466,27 +469,25 @@ namespace VenomNamespace
             if (!reset)
             {
                 BTN_Start.Text = "Stop Running";
-                TB_Payload.Enabled = false;
-                TB_Version.Enabled = false;
                 BTN_Clr.Enabled = false;
+                BTN_Import.Enabled = false;
                 cancel_request = false;
                 g_time.Restart();
+                LBL_Time.Text = "00:00:00";
                 ResetForm(false, true);
             }
             else
             {
                 cancel_request = true;
-                TB_Payload.Enabled = true;
-                TB_Version.Enabled = true;
                 BTN_Clr.Enabled = true;
-                LBL_Time.Text = "00:00:00";
+                BTN_Import.Enabled = true;
                 BTN_Start.Text = "Start";
             }
-            
+
         }
         private void BTN_Start_Click(object sender, EventArgs e)
         {
-            
+
             if (BTN_Start.Text == "Start")
             {
                 if (IsEmpty())
@@ -500,19 +501,43 @@ namespace VenomNamespace
             }
             else
             {
-                DialogResult dialogResult = MessageBox.Show("This will dispose of all running threads and may change log results to FAIL for in progress" +
-                                                            " OTA installs. Are you sure you want to exit?",
+                DialogResult dialogResult = MessageBox.Show("This may change log results to FAIL for in progress" +
+                                                            " Updates. Are you sure you want to exit?",
                                                             "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
                 {
                     SetForm(true);
 
                     CancelRequest();
+
+                    LBL_Time.Text = "00:00:00";
                 }
                 else //Dialog was Yes
                     return;
 
             }
+        }
+        private bool SendOTA(ConnectedApplianceInfo cai, IPData ipd)
+        {
+
+            if (!RevelationConnect(cai))
+            {
+                return false;
+            }
+            else
+            {
+                if (SendRevelation(cai))
+                {
+                    ipd.Result = "Update Sent.";
+                    ipd.Sent = true;
+                    results.Rows[iplist.IndexOf(ipd)]["OTA Result"] = iplist[iplist.IndexOf(ipd)].Result;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         public bool RunCAITask(ConnectedApplianceInfo cai)
         {
@@ -526,31 +551,8 @@ namespace VenomNamespace
                     if (parts[0] == TVers)
                         return false;
                     ipd = AddResult(cai);
-                    if (!RevelationConnect(cai))
-                    {
-                        /*ipd.Result = "FAIL - Revelation unable to connect.";
-                        ipd.Done = true;
-                        results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
-                        WriteFile(ipd.TabIndex, null);*/
+                    if (!SendOTA(cai, ipd))
                         return false;
-                    }
-                    else
-                    {
-                        if (SendRevelation(cai))
-                        {
-                            ipd.Result = "Revelation OTA payload sent.";
-                            ipd.Sent = true;
-                            results.Rows[iplist.IndexOf(ipd)]["OTA Result"] = iplist[iplist.IndexOf(ipd)].Result;
-                        }
-                        else
-                        {
-                            /*ipd.Result = "FAIL - Revelation unable to connect.";
-                            ipd.Done = true;
-                            results.Rows[ipd.TabIndex]["OTA Result"] = iplist[ipd.TabIndex].Result;
-                            WriteFile(ipd.TabIndex, null);*/
-                            return false;
-                        }
-                    }
                     DGV_Data.Refresh();
                     return true;
                 }
@@ -559,6 +561,8 @@ namespace VenomNamespace
                     ipd = AddResult(cai);
                     ipd.Result = "FAIL - " + cai.IPAddress + " was unable to connect from WifiBasic.";
                     ipd.Done = true;
+                    ipd.Watch.Stop();
+                    ipd.Watch.Reset();
                     results.Rows[iplist.IndexOf(ipd)]["OTA Result"] = iplist[iplist.IndexOf(ipd)].Result;
                     DGV_Data.Refresh();
                     WriteFile(iplist.IndexOf(ipd), null);
@@ -629,26 +633,16 @@ namespace VenomNamespace
                         }
                         else
                         {
-                            if (ipd != null && ipd.Retry < 5)
+                            /*if (ipd != null)
                             {
-                                DataRow dr = results.Rows[iplist.IndexOf(ipd)];
-                                results.Rows.Remove(dr);
+                                iplist[j].Result = "FAIL - Unable to send update.";
+                                results.Rows[j]["OTA Result"] = iplist[j].Result;
+                                iplist[j].Done = true;
+                                ipd.Watch.Stop();
+                                ipd.Watch.Reset();
                                 DGV_Data.Refresh();
-                                iplist.RemoveAt(j);
-                            }
-                            else
-                            {
-                                if (ipd != null)
-                                {
-                                    iplist[j].Result = "FAIL - Cancelled by User.";
-                                    results.Rows[j]["OTA Result"] = iplist[j].Result;
-                                    iplist[j].Done = true;
-                                    DGV_Data.Refresh();
-                                    WriteFile(j, null);
-                                }
-                                
-                            }
-
+                                WriteFile(j, null);
+                            }*/
                             j++;
                             i--;
                         }
@@ -677,6 +671,8 @@ namespace VenomNamespace
                     ipd.Version = vers[0];
                     ipd.Done = true;
                     ipd.Result = "PASS - Product Version changed to final version.";
+                    ipd.Watch.Stop();
+                    ipd.Watch.Reset();
                     WriteFile(iplist.IndexOf(ipd), null);
                     DataRow dr = results.Rows[iplist.IndexOf(ipd)];
                     results.Rows.Remove(dr);
@@ -718,17 +714,46 @@ namespace VenomNamespace
                                 found++;
                                 Remove(cai, ipd);
                                 continue;
-                            }                            
+                            }
                         }
                         if (ipd != null && !ipd.Done)
                         {
                             if (ipd.Result.Contains("PENDING"))
                             {
-                                DataRow dr = results.Rows[iplist.IndexOf(ipd)];
-                                results.Rows.Remove(dr);
-                                DGV_Data.Refresh();
-                                iplist.RemoveAt(iplist.IndexOf(ipd));
+                                if (ipd.Retry < 3)
+                                {
+                                    /*DataRow dr = results.Rows[iplist.IndexOf(ipd)];
+                                    results.Rows.Remove(dr);
+                                    DGV_Data.Refresh();
+                                    iplist.RemoveAt(iplist.IndexOf(ipd));*/
+                                    int i_base = iplist.IndexOf(ipd);
+                                    iplist[i_base].Result = "FAIL - Retry limit reached.";
+                                    results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                                    iplist[i_base].Done = true;
+                                    ipd.Watch.Stop();
+                                    ipd.Watch.Reset();
+                                    WriteFile(i_base, null);
+                                    continue;
+                                }
+                                SendOTA(cai, ipd);
+                                ipd.Retry++;
                                 continue;
+                                
+                            }
+                            if (ipd.Result.Contains("Update Sent."))
+                            {
+                                ipd.Watch.Stop();
+                                if (ipd.Watch.ElapsedMilliseconds > WATCHMAX)
+                                {
+                                    int i_base = iplist.IndexOf(ipd);
+                                    iplist[i_base].Result = "FAIL - Max time limit reached.";
+                                    results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                                    iplist[i_base].Done = true;
+                                    WriteFile(i_base, null);
+                                    ipd.Watch.Reset();
+                                    continue;
+                                }
+                                ipd.Watch.Start();
                             }
                             found++;
                             Remove(cai, ipd);
@@ -736,10 +761,10 @@ namespace VenomNamespace
                         }
                         else
                             continue;
-                        
+
                     }
                     else
-                        continue;                    
+                        continue;
                 }
             }
             catch
@@ -752,7 +777,7 @@ namespace VenomNamespace
         {
             try
             {
-                
+
                 while (!cancel_request)
                 {
                     Build();
@@ -802,25 +827,27 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("Catastrophic Wait error.", "Error",MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Catastrophic Wait error.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            
-        }       
+
+        }
         public IPData AddResult(ConnectedApplianceInfo cai)
         {
             try
             {
 
-                IPData ipd = new IPData(cai.IPAddress, TB_Payload.Text); 
+                IPData ipd = new IPData(cai.IPAddress, TB_Payload.Text);
                 iplist.Add(ipd);
-                ipd.TabIndex = iplist.IndexOf(ipd);
+                Stopwatch watch = new Stopwatch();
                 ipd.IPAddress = cai.IPAddress;
                 ipd.Payload = TB_Payload.Text;
                 ipd.Model = cai.ModelNumber;
-                ipd.Serial = cai.SerialNumber.Replace(" ","");                
+                ipd.Serial = cai.SerialNumber.Replace(" ", "");
                 ipd.MAC = cai.MacAddress;
                 ipd.Result = "PENDING";
+                watch.Start();
+                ipd.Watch = watch;
 
                 string[] vers = cai.VersionNumber.Replace(" ", "").Split('|');
                 ipd.Version = vers[0];
@@ -945,13 +972,13 @@ namespace VenomNamespace
         }
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
-            DialogResult dialogResult = MessageBox.Show("This will clear all IPs and their results from all windows. Press Yes to Clear or No to Cancel.",
+            DialogResult dialogResult = MessageBox.Show("This will clear everything from all text boxes and tables. Press Yes to Clear or No to Cancel.",
                                                         "Verify Full Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (dialogResult == DialogResult.Yes)
             {
                 ResetForm(true, true);
             }
-            
+
         }
         private void ResetForm(bool freset, bool resclear)
         {
@@ -963,8 +990,7 @@ namespace VenomNamespace
                     BTN_Clr.Enabled = true;
                     TB_LogDir.Enabled = true;
                     BTN_LogDir.Enabled = true;
-                    TB_Payload.Enabled = true;
-                    TB_Version.Enabled = true;
+                    BTN_Import.Enabled = true;
                     LBL_Time.Text = "00:00:00";
                 }
 
@@ -1018,7 +1044,7 @@ namespace VenomNamespace
                 /*MessageBox.Show(totalran + " OTA Update(s) ran with a total running time of " + s_dur +
                                 "  that resulted in an average run time per OTA Update of " + s_avg
                                 + ".", "Final Result", MessageBoxButtons.OK, MessageBoxIcon.Information);*/
-                          
+
             }
 
             catch
@@ -1035,7 +1061,7 @@ namespace VenomNamespace
                 return;
             string localIP = WifiLocal.Localhost.ToString();
             try
-            {   
+            {
                 WifiLocal.ScanConnectedAppliances(true, localIP);
                 Wait(2000);
             }
@@ -1066,6 +1092,90 @@ namespace VenomNamespace
                 t.Minutes,
                 t.Seconds);
         }
+        public void BadImport(bool first)
+        {
+            if (first)
+                MessageBox.Show("Import failed due to invalid payload on first line of the file. Verify the import file has not been corrupted or is in an incorrect format" +
+                                        "then retry importing. Clearing import values.", "Error: Import Failed",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            else
+                MessageBox.Show("Import failed due to invalid version on second line of the file. Verify the import file has not been corrupted or is in an incorrect format" +
+                                    "then retry importing. Clearing import values.", "Error: Import Failed",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+            TB_Payload.Text = "";
+            TB_Version.Text = "";
+        }
+        public bool CheckImport()
+        {
+            if (TB_Version.Text != "" && TB_Payload.Text != "")
+                return true;
+            else
+                return false;
+        }
+        private void BTN_Import_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    //Read the contents of the file into a stream
+                    var fileStream = ofd.OpenFile();
+                    using (StreamReader reader = new StreamReader(fileStream))
+                    {
+                        string value;
+                        bool first = true;
+                        int checknumer = 0;
 
+                        while (!reader.EndOfStream)
+                        {
+                            value = reader.ReadLine();
+                            if (first)
+                            {
+                                if (value.Contains("update"))
+                                {
+                                    TB_Payload.Text = value;
+                                    first = false;
+                                }
+                                else
+                                {
+                                    BadImport(first);
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                bool result = int.TryParse(value, out checknumer);
+                                if (result)
+                                {
+                                    TB_Version.Text = value;
+                                    if (CheckImport())
+                                        break;
+                                    else
+                                    {
+                                        BadImport(first);
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    BadImport(first);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Import failed due to unkown error. Verify the import file has not been corrupted or in an incorrect format" +
+                                    "then retry importing. Clearing IP Address list.", "Error: Import Failed",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    TB_Payload.Text = "";
+                    TB_Version.Text = "";
+                }
+            }
+        }
     }
 }
