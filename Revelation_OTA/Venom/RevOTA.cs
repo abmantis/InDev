@@ -396,6 +396,16 @@ namespace VenomNamespace
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return true;
             }
+            System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+            if (cio.Count < 1)
+            {
+                MessageBox.Show("No products listed in WiFiBasic. Please verify that you have pressed 'Data Start' and " +
+                                "'Scan Appliances' and try again. If you have, press 'Close All' then 'Data Start' then " +
+                                "'Scan Appliances' and try again or close WideBox and try again.", "Error: Nothing in WiFiBasic list.",
+                               MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return true;
+            }
+            totalran = 0;
             //Parse payload into byte array
             paybytes = Encoding.ASCII.GetBytes(TB_Payload.Text);
             //Set version
@@ -504,7 +514,8 @@ namespace VenomNamespace
             else
             {
                 DialogResult dialogResult = MessageBox.Show("This may change log results to FAIL for any Updates" +
-                                                            " in the list. Are you sure you want to exit?",
+                                                            " in the Running list. This will also CLOSE ALL connections and remove everything" +
+                                                            "listed in WiFiBasic. Are you sure you want to exit?",
                                                             "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
                 {
@@ -513,6 +524,8 @@ namespace VenomNamespace
                     CancelRequest();
 
                     LBL_Time.Text = "00:00:00";
+
+                    WifiLocal.CloseAll(true);
                 }
                 else //Dialog was Yes
                     return;
