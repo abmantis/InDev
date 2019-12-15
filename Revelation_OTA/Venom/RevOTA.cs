@@ -18,7 +18,7 @@ namespace VenomNamespace
     {
         public const byte API_NUMBER = 0;
         public static int ATTEMPTMAX = 3;
-        public static int AMT = 2;
+        public static int AMT = 10; //MAX AMOUNT TO RUN AT A TIME
         public static int WATTRIB = 8;
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer (in minutes)
         public static int TWAIT = 1 * 60000; //Time interval to check for update (in minutes)
