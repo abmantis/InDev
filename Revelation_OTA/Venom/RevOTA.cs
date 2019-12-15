@@ -10,6 +10,7 @@ using WirelessLib;
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace VenomNamespace
 {
@@ -59,7 +60,7 @@ namespace VenomNamespace
             results.Columns.Add("Model");
             results.Columns.Add("Serial");
             results.Columns.Add("Version");
-            results.Columns.Add("OTA Result");
+            results.Columns.Add("Update Result");
 
             // Generate tables
             sbind.DataSource = results;
@@ -440,7 +441,8 @@ namespace VenomNamespace
                         if (results.Rows.Count < 0)
                             break;
                         iplist[i_base].Result = "FAIL - Cancelled by User.";
-                        results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                        results.Rows[i_base]["Update Result"] = iplist[i_base].Result;
+                        DGV_Data.Rows[i_base].Cells[6].Style.BackColor = Color.Red;
                         iplist[i_base].Done = true;
                         iplist[i_base].Watch.Stop();
                         iplist[i_base].Watch.Reset();
@@ -501,8 +503,8 @@ namespace VenomNamespace
             }
             else
             {
-                DialogResult dialogResult = MessageBox.Show("This may change log results to FAIL for in progress" +
-                                                            " Updates. Are you sure you want to exit?",
+                DialogResult dialogResult = MessageBox.Show("This may change log results to FAIL for any Updates" +
+                                                            " in the list. Are you sure you want to exit?",
                                                             "Verify Exiting", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
                 {
@@ -530,7 +532,9 @@ namespace VenomNamespace
                 {
                     ipd.Result = "Update Sent.";
                     ipd.Sent = true;
-                    results.Rows[iplist.IndexOf(ipd)]["OTA Result"] = iplist[iplist.IndexOf(ipd)].Result;
+                    results.Rows[iplist.IndexOf(ipd)]["Update Result"] = iplist[iplist.IndexOf(ipd)].Result;
+                    DGV_Data.Rows[iplist.IndexOf(ipd)].Cells[6].Style.BackColor = Color.Yellow;
+                    DGV_Data.Refresh();
                 }
                 else
                 {
@@ -563,7 +567,8 @@ namespace VenomNamespace
                     ipd.Done = true;
                     ipd.Watch.Stop();
                     ipd.Watch.Reset();
-                    results.Rows[iplist.IndexOf(ipd)]["OTA Result"] = iplist[iplist.IndexOf(ipd)].Result;
+                    results.Rows[iplist.IndexOf(ipd)]["Update Result"] = iplist[iplist.IndexOf(ipd)].Result;
+                    DGV_Data.Rows[iplist.IndexOf(ipd)].Cells[6].Style.BackColor = Color.Red;
                     DGV_Data.Refresh();
                     WriteFile(iplist.IndexOf(ipd), null);
                     return false;
@@ -636,7 +641,8 @@ namespace VenomNamespace
                             /*if (ipd != null)
                             {
                                 iplist[j].Result = "FAIL - Unable to send update.";
-                                results.Rows[j]["OTA Result"] = iplist[j].Result;
+                                DGV_Data.Rows[j].Cells[6].Style.BackColor = Color.Red;
+                                results.Rows[j]["Update Result"] = iplist[j].Result;
                                 iplist[j].Done = true;
                                 ipd.Watch.Stop();
                                 ipd.Watch.Reset();
@@ -728,11 +734,13 @@ namespace VenomNamespace
                                     iplist.RemoveAt(iplist.IndexOf(ipd));*/
                                     int i_base = iplist.IndexOf(ipd);
                                     iplist[i_base].Result = "FAIL - Retry limit reached.";
-                                    results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                                    results.Rows[i_base]["Update Result"] = iplist[i_base].Result;
+                                    DGV_Data.Rows[i_base].Cells[6].Style.BackColor = Color.Red;
                                     iplist[i_base].Done = true;
                                     ipd.Watch.Stop();
                                     ipd.Watch.Reset();
                                     WriteFile(i_base, null);
+                                    DGV_Data.Refresh();
                                     continue;
                                 }
                                 SendOTA(cai, ipd);
@@ -747,10 +755,12 @@ namespace VenomNamespace
                                 {
                                     int i_base = iplist.IndexOf(ipd);
                                     iplist[i_base].Result = "FAIL - Max time limit reached.";
-                                    results.Rows[i_base]["OTA Result"] = iplist[i_base].Result;
+                                    results.Rows[i_base]["Update Result"] = iplist[i_base].Result;
+                                    DGV_Data.Rows[i_base].Cells[6].Style.BackColor = Color.Red;
                                     iplist[i_base].Done = true;
                                     WriteFile(i_base, null);
                                     ipd.Watch.Reset();
+                                    DGV_Data.Refresh();
                                     continue;
                                 }
                                 ipd.Watch.Start();
@@ -785,7 +795,8 @@ namespace VenomNamespace
                     StartTimer();
                     Wait(TWAIT);
                     TMR_Tick.Stop();
-                    LBL_Time.Text = "RUNNING";
+                    if (!cancel_request)                        
+                        LBL_Time.Text = "RUNNING";
 
                     Scan();
 
@@ -861,7 +872,7 @@ namespace VenomNamespace
                 dr["Serial"] = ipd.Serial;
                 dr["MAC"] = ipd.MAC;
                 dr["Version"] = ipd.Version;
-                dr["OTA Result"] = ipd.Result;
+                dr["Update Result"] = ipd.Result;
                 results.Rows.Add(dr);
 
                 return ipd;
@@ -1018,8 +1029,6 @@ namespace VenomNamespace
         {
             try
             {
-                if (cancel_request)
-                    return;
                 ResetForm(true, false);
                 g_time.Stop();
                 long duration = g_time.ElapsedMilliseconds;
