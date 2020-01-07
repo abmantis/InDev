@@ -22,7 +22,7 @@ namespace VenomNamespace
         public static int WATTRIB = 8;
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer (in minutes)
         public static int TWAIT = 1 * 60000; //Time interval to check for update (in minutes)
-        public static int WATCHMAX = 45 * 60000; //MAX time before OTA is set to fail status (in minutes)
+        public static int WATCHMAX = 35 * 60000; //MAX time before OTA is set to fail status (in minutes)
         public int timeleft = TWAIT;
 
         //Global timer
@@ -561,9 +561,14 @@ namespace VenomNamespace
             try
             {
                 string[] parts;
+                string[] localIP = WifiLocal.Localhost.ToString().Split('.');
                 IPData ipd;
                 if (cai != null)
                 {
+                    //Only add to list if the prefix of the IP address matches (both are 192.x.x.x)
+                    parts = cai.IPAddress.Split('.');
+                    if (parts[0] != localIP[0])
+                        return false;
                     parts = cai.VersionNumber.Replace(" ", "").Split('|');
                     if (parts[0] == TVers)
                         return false;
