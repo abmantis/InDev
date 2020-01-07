@@ -45,6 +45,7 @@ namespace VenomNamespace
             this.LBL_Time = new System.Windows.Forms.Label();
             this.TMR_Tick = new System.Windows.Forms.Timer(this.components);
             this.BTN_Import = new System.Windows.Forms.Button();
+            this.BTN_Rmv = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -60,8 +61,9 @@ namespace VenomNamespace
             this.DGV_Data.Location = new System.Drawing.Point(155, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(518, 172);
+            this.DGV_Data.Size = new System.Drawing.Size(544, 213);
             this.DGV_Data.TabIndex = 2;
+            this.DGV_Data.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DGV_Data_CellContentClick);
             // 
             // TB_LogDir
             // 
@@ -70,7 +72,7 @@ namespace VenomNamespace
             | System.Windows.Forms.AnchorStyles.Right)));
             this.TB_LogDir.Location = new System.Drawing.Point(155, 12);
             this.TB_LogDir.Name = "TB_LogDir";
-            this.TB_LogDir.Size = new System.Drawing.Size(518, 20);
+            this.TB_LogDir.Size = new System.Drawing.Size(544, 20);
             this.TB_LogDir.TabIndex = 11;
             // 
             // BTN_LogDir
@@ -120,7 +122,7 @@ namespace VenomNamespace
             this.TB_Payload.Enabled = false;
             this.TB_Payload.Location = new System.Drawing.Point(155, 55);
             this.TB_Payload.Name = "TB_Payload";
-            this.TB_Payload.Size = new System.Drawing.Size(518, 20);
+            this.TB_Payload.Size = new System.Drawing.Size(544, 20);
             this.TB_Payload.TabIndex = 103;
             // 
             // label1
@@ -175,11 +177,23 @@ namespace VenomNamespace
             this.BTN_Import.UseVisualStyleBackColor = true;
             this.BTN_Import.Click += new System.EventHandler(this.BTN_Import_Click);
             // 
+            // BTN_Rmv
+            // 
+            this.BTN_Rmv.Enabled = false;
+            this.BTN_Rmv.Location = new System.Drawing.Point(13, 266);
+            this.BTN_Rmv.Name = "BTN_Rmv";
+            this.BTN_Rmv.Size = new System.Drawing.Size(125, 36);
+            this.BTN_Rmv.TabIndex = 108;
+            this.BTN_Rmv.Text = "Remove";
+            this.BTN_Rmv.UseVisualStyleBackColor = true;
+            this.BTN_Rmv.Click += new System.EventHandler(this.BTN_Rmv_Click);
+            // 
             // Revelation_OTA
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(696, 272);
+            this.ClientSize = new System.Drawing.Size(722, 313);
+            this.Controls.Add(this.BTN_Rmv);
             this.Controls.Add(this.BTN_Import);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.LBL_Time);
@@ -215,6 +229,7 @@ namespace VenomNamespace
         private Label LBL_Time;
         private Timer TMR_Tick;
         private Button BTN_Import;
+        private Button BTN_Rmv;
     }
 }
 

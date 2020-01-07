@@ -697,8 +697,8 @@ namespace VenomNamespace
                     results.Rows.Remove(dr);
                     DGV_Data.Refresh();
                     iplist.RemoveAt(iplist.IndexOf(ipd));
+                    return;
                 }
-                return;
             }
             catch
             {
@@ -1199,5 +1199,66 @@ namespace VenomNamespace
                 }
             }
         }
+        private void BTN_Rmv_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int idex = DGV_Data.CurrentRow.Index;
+                if (DGV_Data.CurrentCell == null ||
+                    DGV_Data.CurrentCell.Value == null ||
+                    idex == -1)
+                {
+                    MessageBox.Show("You may only remove an entry that has a FAIL (red) result. Please select a valid entry and try again.", "Error: Remove Failed",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (DGV_Data.Rows[idex].Cells[6].Value.ToString().Contains("FAIL"))
+                {
+                    DialogResult dialogResult = MessageBox.Show("This will Remove the selected row. Press Yes to Remove or No to Cancel.",
+                                                            "Verify Remove.", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (dialogResult == DialogResult.Yes)
+                    {
+                        DataRow dr = results.Rows[idex];
+                        results.Rows.Remove(dr);
+                        DGV_Data.Refresh();
+                        iplist.RemoveAt(idex);
+                        BTN_Rmv.Enabled = false;
+                    }
+                    else
+                        return;
+                }
+            }
+
+            catch
+            {
+                MessageBox.Show("Catastrophic Remove failure.", "Error: Remove Failed",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void DGV_Data_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            try
+            {
+
+                if (DGV_Data.CurrentCell == null ||
+                    DGV_Data.CurrentCell.Value == null ||
+                    e.RowIndex == -1)
+                    return;
+
+                if (DGV_Data.Rows[e.RowIndex].Cells[6].Value.ToString().Contains("FAIL"))
+                    BTN_Rmv.Enabled = true;
+                else
+                    BTN_Rmv.Enabled = false;
+
+            }
+
+            catch
+            {
+                MessageBox.Show("Catastrophic CellContent failure.", "Error: Remove Failed",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    
     }
 }
