@@ -1,5 +1,7 @@
 ﻿
 using System.Threading;
+using WideBoxLib;
+using WirelessLib;
 
 namespace VenomNamespace
 
@@ -117,6 +119,18 @@ namespace VenomNamespace
             get { return _bipadd; }
             set { _bipadd = value; }
         }
+        private byte[] _bpay;
+        public byte[] BytePay
+        {
+            get { return _bpay; }
+            set { _bpay = value; }
+        }
+        private ConnectedApplianceInfo _cai;
+        public ConnectedApplianceInfo CAI
+        {
+            get { return _cai; }
+            set { _cai = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -134,6 +148,8 @@ namespace VenomNamespace
             _typeres = "";
             _written = false;
             _bipadd = new byte[] { };
+            _bpay = new byte[] { };
+            _cai = null;
         }
 
     }

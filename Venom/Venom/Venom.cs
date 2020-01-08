@@ -26,7 +26,7 @@ namespace VenomNamespace
 
         //Global timer
         public Stopwatch g_time = new Stopwatch();
-        
+
         // Entities used to store log and window data
         public DataTable results;
         public BindingSource sbind = new BindingSource();
@@ -81,11 +81,11 @@ namespace VenomNamespace
             // Generate lists
             iplist = new List<IPData>();
             signal = new List<ManualResetEventSlim>();
-            waits = new List<Thread> ();
+            waits = new List<Thread>();
 
 
-    }
-        
+        }
+
         /// <summary>
         /// Parse message from WideBoxInterface
         /// </summary>
@@ -94,7 +94,7 @@ namespace VenomNamespace
         {
             RevealPacket reveal_pkt = new RevealPacket();
             if (reveal_pkt.ParseSimpleWhirlpoolMessage(data))
-            {              
+            {
                 switch (reveal_pkt.API)
                 {
                     case API_NUMBER:   //parse opcodes to this API (already without the feedback bit, i.e. 0x25: reveal_pkt.OpCode = 5 , reveal_pkt.IsFeedback = true )
@@ -178,8 +178,8 @@ namespace VenomNamespace
         /// </summary>
         /// <param name="data">The data from the mqtt connected appliance.</param>
         public override void parseMqttMessages(ExtendedMqttMsgPublish data)
-        {            
-            switch (data.Topic) 
+        {
+            switch (data.Topic)
             {
                 /*case "iot-2/evt/isp/fmt/json":
                     // Process OTA-related messages
@@ -200,9 +200,9 @@ namespace VenomNamespace
                         }
                     break;
 
-               // case "iot-2/evt/cc_SetKvpResult/fmt/binary":
-                    //SetResult(data.Message[data.Message.Length - 1]);
-                   // break;
+                // case "iot-2/evt/cc_SetKvpResult/fmt/binary":
+                //SetResult(data.Message[data.Message.Length - 1]);
+                // break;
 
                 default:
                     break;
@@ -220,7 +220,7 @@ namespace VenomNamespace
         }
 
         public override void parseTraceMessages(ExtendedTracePacket data)
-        {           
+        {
 
             // Filter on relevant OTA topics only
             if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:"))
@@ -236,6 +236,14 @@ namespace VenomNamespace
                 lock (writeobj)
                 {
                     ProcessPayload(sb, data.Source.ToString(), "Trace Message", data.ContentAsString);
+                }
+            }
+
+            if (data.ContentAsString.StartsWith("pa_core.c:download_all_processes_asset:1766"))
+            {
+                lock (writeobj)
+                {
+                    ProcessPayload("\"update\"", data.Source.ToString(), "Trace Message", data.ContentAsString);
                 }
             }
         }
@@ -344,7 +352,7 @@ namespace VenomNamespace
         }
 
         #endregion
-      
+
         public void ProcessPayload(string sb, string ip, string source, string raw)
         {
             try
@@ -352,82 +360,40 @@ namespace VenomNamespace
                 // Locate if OTA payload has been sent and update status
                 if (sb.Contains("\"update\""))
                 {
-                    // Lookup status reason byte pass or fail reason
-
-                    foreach (var member in iplist)
-                    {
-                        if (member.IPAddress.ToString().Equals(ip))
-                        {
-                            if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
-                                continue;
-                            else if (member.Result.Contains("Programming"))
-                                break;
-                            else
-                            {
-                                // Write info to widebox window
-                                iplist[member.TabIndex].Result = "Downloading";
-                                SetText("update", source, member.TabIndex);
-                                break;
-                            }
-                        }
-                    }
-
-
+                    IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
+                    // Write info to widebox window
+                    iplist[ipd.TabIndex].Result = "Downloading";
+                    SetText("update", source, ipd.TabIndex);
                 }
 
                 if (sb.Contains("Programming") || sb.Contains("IAP_MODE"))
                 {
-                    // Lookup status reason byte pass or fail reason
-
-                    foreach (var member in iplist)
-                    {
-                        if (member.IPAddress.ToString().Equals(ip))
-                        {
-                            if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
-                                continue;
-                            else
-                            {
-                                // Write info to widebox window
-                                iplist[member.TabIndex].Result = "Programming";
-                                SetText("update", source, member.TabIndex);
-                                break;
-                            }
-                        }
-                    }
+                    IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
+                    iplist[ipd.TabIndex].Result = "Programming";
+                    SetText("update", source, ipd.TabIndex);
                 }
 
                 if (sb.Contains("\"progress\"") && source.Equals("MQTT Message"))
                 {
+                    IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
                     sb = sb.Replace("\"progress\":[", "@");
                     string[] stats = sb.Split('@');
                     string[] parts = stats[1].Split(',');
                     sb = "";
 
-                    foreach (var member in iplist)
-                    {
-                        if (member.IPAddress.ToString().Equals(ip))
-                        {
-                            if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
-                                continue;
-                            else
-                            {
-                                // Write info to widebox window
-                                if (!parts[6].Equals("0"))
-                                    iplist[member.TabIndex].Result = "Programming";
-                                else
-                                    iplist[member.TabIndex].Result = "Downloading";
+                    // Write info to widebox window
+                    if (!parts[6].Equals("0"))
+                        iplist[ipd.TabIndex].Result = "Programming";
+                    else
+                        iplist[ipd.TabIndex].Result = "Downloading";
 
-                                SetText("update", source, member.TabIndex);
-                                break;
-                            }
-                        }
-                    }
-
+                    SetText("update", source, ipd.TabIndex);
                 }
 
                 //Locate the MQTT status message in the Trace and grab the reason byte immediately after it
                 if (sb.Contains("\"status\""))
                 {
+                    IPData ipd = iplist.FirstOrDefault(x => x.IPAddress == ip);
                     // Overwrite status portion to have a point of reference directly next to status reason byte
                     sb = sb.Replace("\"status\":[", "@");
                     string[] stats = sb.Split('@');
@@ -441,28 +407,8 @@ namespace VenomNamespace
                     int statusval = Int32.Parse(sb);
 
                     // Lookup status reason byte pass or fail reason
-                    foreach (var member in iplist)
-                    {
-                        if (member.IPAddress.ToString().Equals(ip))
-                        {
-                            if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
-                                continue;
-                            else if (member.Result.Contains("PENDING"))
-                            {
-                                iplist[member.TabIndex].Result = "FAIL - MQTT Message was never sent in Trace log for final result.";
-                                SetText("status", source, member.TabIndex);
-                                break;
-                            }
-                            else
-                            {
-                                // Write info to widebox window
-                                iplist[member.TabIndex].Result = StatusLookup(statusval);
-                                SetText("status", source, member.TabIndex);
-                                break;
-                            }
-                        }
-                    }
-
+                    iplist[ipd.TabIndex].Result = StatusLookup(statusval);
+                    SetText("status", source, ipd.TabIndex);
                 }
 
                 /*if (sb.Contains("cc_SetKvpResult"))
@@ -505,7 +451,7 @@ namespace VenomNamespace
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            
+
         }
         public string StatusLookup(int statusval)
         {
@@ -668,14 +614,14 @@ namespace VenomNamespace
             {
                 TB_LogDir.Text = fbd.SelectedPath;
             }
-            
+
         }
         public void SetText(string type, string source, int listindex)
         {
-                lock (setobj)
+            lock (setobj)
+            {
+                try
                 {
-                    try
-                    {
                     if (source == "Final")
                     {
                         string[] results = type.Split('\t');
@@ -723,15 +669,15 @@ namespace VenomNamespace
                         Console.WriteLine("Thread release signal was sent at " + s_dur + ".");
                     }
                 }
-                    catch
-                    {
-                        MessageBox.Show("Catastrophic SetText error.", "Error",
-                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
+                catch
+                {
+                    MessageBox.Show("Catastrophic SetText error.", "Error",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
+            }
 
-        }       
+        }
         private void BTN_Payload_Click(object sender, EventArgs e)
         {
             // Begin processing all IPs on list
@@ -784,8 +730,8 @@ namespace VenomNamespace
                         DGV_Data.Refresh();
                     }
                     //After first time press, force reset results in DGV (only reset if ResetForm(true) is called)
-                    rerun = true;    
-            
+                    rerun = true;
+
                     ProcessIP();
                 }
 
@@ -859,7 +805,7 @@ namespace VenomNamespace
                 }
 
             }
-                        
+
             else
             {
                 if (iplist.Count > 0)
@@ -871,12 +817,12 @@ namespace VenomNamespace
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-        } 
-        public bool SendMQTT(byte[] ipbytes, string topic, byte[] paybytes, ConnectedApplianceInfo cai, IPData ipd)
+        }
+        public bool SendMQTT(string topic, IPData ipd)
         {
             try
             {
-                System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
+                System.Net.IPAddress ip = new System.Net.IPAddress(ipd.ByteIP);
                 //string ips = ip.ToString();
 
 
@@ -886,10 +832,10 @@ namespace VenomNamespace
                     return true;
                 }
                 //If IP Address exists, send to that IP
-                if (cai != null)
+                if (ipd.CAI != null)
                 //Send payload
                 {
-                    WifiLocal.SendMqttMessage(ip, topic, paybytes);
+                    WifiLocal.SendMqttMessage(ip, topic, ipd.BytePay);
                     Wait(2000);
                     return true;
                     /*for (int i = 0; i < MQTTMAX; i++)
@@ -922,8 +868,6 @@ namespace VenomNamespace
                 return false;
             }
 
-            return false;
-            
         }
         public void Wait(int timeout)
         {
@@ -952,7 +896,7 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("Catastrophic Wait error.", "Error",MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Catastrophic Wait error.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -991,9 +935,9 @@ namespace VenomNamespace
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            
+
         }
-        public void RunTask(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex, Barrier barrier)
+        public void RunTask(ManualResetEventSlim sig, string ipindex, Barrier barrier)
         {
             try
             {
@@ -1010,8 +954,9 @@ namespace VenomNamespace
                         Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
-                    if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
+                    if (ipd.MAC.Equals(ipd.CAI.MacAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
                     {
+                        Console.WriteLine("MAC " + ipd.MAC + " and NAME " + Thread.CurrentThread.Name + " and ipindex " + ipindex + ".");
                         ipd.IPIndex = Int32.Parse(ipindex);
                         ipd.Signal = sig;
                         ipd.TabIndex = iplist.IndexOf(ipd);
@@ -1024,12 +969,12 @@ namespace VenomNamespace
                         timer.Start();
 
                         //Parse payload into byte array
-                        byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+                        ipd.BytePay = Encoding.ASCII.GetBytes(ipd.Payload);
 
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
-                            if (SendMQTT(ipd.ByteIP, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                            if (SendMQTT("iot-2/cmd/isp/fmt/json", ipd))
                                 thread_waits = true;
 
                             else
@@ -1045,12 +990,15 @@ namespace VenomNamespace
                                     {
                                         n_ipbytes[j] = byte.Parse(n_ipad[j]);
                                     }
-                                    if (SendMQTT(n_ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai_m, ipd))
+                                    ipd.ByteIP = n_ipbytes;
+                                    ipd.IPAddress = cai_m.IPAddress;
+                                    ipd.CAI = cai_m;
+                                    if (SendMQTT("iot-2/cmd/isp/fmt/json", ipd))
                                         thread_waits = true;
                                 }
                                 else
                                 {
-                                    MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
+                                    MessageBox.Show("OTA target IP Address of " + ipd.CAI.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
                                         "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                                     ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
                                     SetText("status", "Bad IP Address", ipd.TabIndex);
@@ -1059,7 +1007,7 @@ namespace VenomNamespace
                             }
 
                         }
-                        
+
                         // Set wait signal to be unlocked by thread after job is complete (result seen from log)
                         if (thread_waits)
                         {
@@ -1079,20 +1027,18 @@ namespace VenomNamespace
                             Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                             return;
                         }
-                        System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
-                        ConnectedApplianceInfo cai_n = cio_n.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
                         int REMOVEME = 0;
-                        Wait(2*RECONWAIT); //Wait two minutes for MQTT to come back on after reboot out of IAP
+                        Wait(2 * RECONWAIT); //Wait two minutes for MQTT to come back on after reboot out of IAP
                         for (int i = 0; i < MQTTMAX; i++)
                         {
-                            if (cai_n.IsMqttConnected)
+                            if (ipd.CAI.IsMqttConnected)
                                 break;
-                            CycleWifi();
+                            //CycleWifi();
                             Wait(RECONWAIT); //If not MQTT, give more time to reconnect
                             REMOVEME = i;
-                            
+
                         }
-                        
+
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task. MQTT reconnect called " + REMOVEME + " times.");
                         ipd.Signal.Reset();
                     }
@@ -1104,7 +1050,7 @@ namespace VenomNamespace
                 Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " reached barrier.");
 
                 //Thread task cancelled or completed, signal others it is done
-                 barrier.SignalAndWait();
+                barrier.SignalAndWait();
                 lock (lockObj)
                 {
                     FinalResult();
@@ -1114,23 +1060,22 @@ namespace VenomNamespace
             {
                 MessageBox.Show("Catastrophic RunTask error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-                barrier.SignalAndWait();                
+                barrier.SignalAndWait();
                 return;
             }
-            
-        } 
+
+        }
         public void ProcessIP()
         {
             try
             {
                 System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
 
-
                 foreach (IPData ipd in iplist)
                 {
                     //Selects the appliance based on IP address
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
-
+                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.MacAddress == ipd.MAC);
+                    ipd.CAI = cai;
                     if (cancel_request)
                     {
                         Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
@@ -1159,10 +1104,9 @@ namespace VenomNamespace
                 {
                     string ip = LB_IPs.Items[i].ToString();
                     string number = "";
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
                     ManualResetEventSlim sig = new ManualResetEventSlim();
                     signal.Add(sig);
-                    Thread th = new Thread(() => RunTask(cai, sig, number, barrier));
+                    Thread th = new Thread(() => RunTask(sig, number, barrier));
                     th.Name = i.ToString();
                     number = th.Name;
                     th.IsBackground = true;
@@ -1247,7 +1191,7 @@ namespace VenomNamespace
 
             return false;
         }
-        bool TraceConnect(ConnectedApplianceInfo cai) 
+        bool TraceConnect(ConnectedApplianceInfo cai)
         {
             try
             {
@@ -1283,7 +1227,7 @@ namespace VenomNamespace
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
-            
+
         }
         public void CycleWifi()
         {
@@ -1315,7 +1259,7 @@ namespace VenomNamespace
                 return;
             }
 
-            
+
         }
         private void BTN_Remove_Click(object sender, EventArgs e)
         {
@@ -1325,7 +1269,7 @@ namespace VenomNamespace
                                                         "Verify IP Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
                 {
-                    
+
                     for (int i = results.Rows.Count - 1; i >= 0; i--)
                     {
                         DataRow dr = results.Rows[i];
@@ -1349,7 +1293,7 @@ namespace VenomNamespace
             {
                 ResetForm(true);
             }
-            
+
         }
         private void BTN_MakeList_Click(object sender, EventArgs e)
         {
@@ -1454,7 +1398,7 @@ namespace VenomNamespace
                     iplist.Clear();
                     LB_IPs.Items.Clear();
                 }
-                
+
             }
         }
         private void ResetForm(bool operation)
@@ -1478,11 +1422,12 @@ namespace VenomNamespace
                     rerun = false;
                 }
             });
-            
+
         }
         public void FinalResult()
         {
-            try {
+            try
+            {
 
                 thread_done++;
                 if (thread_done == LB_IPs.Items.Count)
@@ -1516,7 +1461,7 @@ namespace VenomNamespace
                     cancel_request = true;
                 }
                 else
-                    return;                
+                    return;
             }
 
             catch
