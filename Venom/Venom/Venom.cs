@@ -1026,18 +1026,10 @@ namespace VenomNamespace
                         //Parse payload into byte array
                         byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
 
-                        //Prepare IP address for sending via MQTT
-                        string[] ipad = ipd.IPAddress.Split('.');
-                        byte[] ipbytes = new byte[4];
-                        for (int j = 0; j < 4; j++)
-                        {
-                            ipbytes[j] = byte.Parse(ipad[j]);
-                        }
-
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
-                            if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                            if (SendMQTT(ipd.ByteIP, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                                 thread_waits = true;
 
                             else
@@ -1072,7 +1064,7 @@ namespace VenomNamespace
                         if (thread_waits)
                         {
                             Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
-                               " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+                               " and this index " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
                             ipd.Signal.Wait();
 
                             if (ipd.Result.Contains("timeout"))
@@ -1090,7 +1082,7 @@ namespace VenomNamespace
                         System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                         ConnectedApplianceInfo cai_n = cio_n.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
                         int REMOVEME = 0;
-                        Wait(2*RECONWAIT); //Wait two minutes for MQTT to come back on after reboout out of IAP
+                        Wait(2*RECONWAIT); //Wait two minutes for MQTT to come back on after reboot out of IAP
                         for (int i = 0; i < MQTTMAX; i++)
                         {
                             if (cai_n.IsMqttConnected)
@@ -1101,9 +1093,8 @@ namespace VenomNamespace
                             
                         }
                         
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task. MQTT reconnect called " + REMOVEME + " times.");
                         ipd.Signal.Reset();
-                        Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
                     }
                     else
                     {
@@ -1150,6 +1141,15 @@ namespace VenomNamespace
                     // Enable Trace for IP address in list
                     if (!TraceConnect(cai))
                         return;
+
+                    //Prepare IP address for sending via MQTT
+                    string[] ipad = ipd.IPAddress.Split('.');
+                    byte[] ipbytes = new byte[4];
+                    for (int j = 0; j < 4; j++)
+                    {
+                        ipbytes[j] = byte.Parse(ipad[j]);
+                    }
+                    ipd.ByteIP = ipbytes;
                 }
 
                 //Set barrier to wait for all threads to complete
@@ -1201,13 +1201,13 @@ namespace VenomNamespace
                             if (!cai.IsRevelationConnected)
                             {
                                 WifiLocal.ConnectTo(cai);
-                                Wait(2000);
+                                Wait(3000);
                             }
                             if (cai.IsRevelationConnected)
                             {
                                 //If Revelation is enabled, enable Trace
                                 WifiLocal.EnableTrace(cai, true);
-                                Wait(2000);
+                                Wait(3000);
                             }
                         }
                         else
@@ -1293,7 +1293,7 @@ namespace VenomNamespace
                 // Close all WifiBasic connections
                 WifiLocal.CloseAll(true);
                 //WifiLocal.Close(cai);
-                Wait(2000);
+                Wait(3000);
                 // Get new cert to restart WifiBasic connections
                 CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
 
@@ -1301,7 +1301,9 @@ namespace VenomNamespace
                 if (certMgr.IsLocalValid)
                 {
                     WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
-                    Wait(5000);
+                    Wait(2000);
+                    WifiLocal.ScanConnectedAppliances(true);
+                    Wait(2000);
                     return;
                 }
             }

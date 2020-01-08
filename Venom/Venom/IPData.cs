@@ -110,6 +110,13 @@ namespace VenomNamespace
             get { return _written; }
             set { _written = value; }
         }
+
+        private byte[] _bipadd;
+        public byte[] ByteIP
+        {
+            get { return _bipadd; }
+            set { _bipadd = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -126,6 +133,7 @@ namespace VenomNamespace
             _waittype = "";
             _typeres = "";
             _written = false;
+            _bipadd = new byte[] { };
         }
 
     }
