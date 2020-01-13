@@ -777,6 +777,7 @@ namespace VenomNamespace
                         {
                             if (iplist[i].Result != "PENDING")
                             {
+                                iplist[i].Written = false;
                                 iplist[i].Result = "PENDING";
                                 results.Rows[i]["OTA Result"] = "PENDING";
                             }
@@ -1090,12 +1091,12 @@ namespace VenomNamespace
                         System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                         ConnectedApplianceInfo cai_n = cio_n.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
                         int REMOVEME = 0;
-                        Wait(2*RECONWAIT); //Wait two minutes for MQTT to come back on after reboout out of IAP
+                        Wait(5*RECONWAIT); //Wait two minutes for MQTT to come back on after reboout out of IAP
                         for (int i = 0; i < MQTTMAX; i++)
                         {
                             if (cai_n.IsMqttConnected)
                                 break;
-                            CycleWifi();
+                            //CycleWifi();
                             Wait(RECONWAIT); //If not MQTT, give more time to reconnect
                             REMOVEME = i;
                             
