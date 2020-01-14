@@ -40,6 +40,7 @@ namespace VenomNamespace
             this.BTN_Clr = new System.Windows.Forms.Button();
             this.BTN_MakeList = new System.Windows.Forms.Button();
             this.BTN_Import = new System.Windows.Forms.Button();
+            this.BTN_Auto = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -133,11 +134,22 @@ namespace VenomNamespace
             this.BTN_Import.UseVisualStyleBackColor = true;
             this.BTN_Import.Click += new System.EventHandler(this.BTN_Import_Click);
             // 
+            // BTN_Auto
+            // 
+            this.BTN_Auto.Location = new System.Drawing.Point(576, 53);
+            this.BTN_Auto.Name = "BTN_Auto";
+            this.BTN_Auto.Size = new System.Drawing.Size(97, 23);
+            this.BTN_Auto.TabIndex = 98;
+            this.BTN_Auto.Text = "Auto Test List";
+            this.BTN_Auto.UseVisualStyleBackColor = true;
+            this.BTN_Auto.Click += new System.EventHandler(this.BTN_Auto_Click);
+            // 
             // Venom
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(693, 361);
+            this.Controls.Add(this.BTN_Auto);
             this.Controls.Add(this.BTN_Import);
             this.Controls.Add(this.BTN_MakeList);
             this.Controls.Add(this.BTN_Clr);
@@ -166,6 +178,7 @@ namespace VenomNamespace
         public System.Windows.Forms.ListBox LB_IPs;
         public System.Windows.Forms.DataGridView DGV_Data;
         public System.Windows.Forms.TextBox TB_LogDir;
+        private Button BTN_Auto;
     }
 }
 

@@ -10,6 +10,7 @@ using WirelessLib;
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace VenomNamespace
 {
@@ -34,10 +35,11 @@ namespace VenomNamespace
         // Entities used to store the list of targeted IPs and their progress
         public List<IPData> iplist;
         public List<Thread> waits;
-        public List<ManualResetEventSlim> signal;
+        //public List<ManualResetEventSlim> signal;
 
         public string curfilename;
         public PayList plist;
+        public AutoGen auto;
         public bool cancel_request = false;
 
         static object lockObj = new object();
@@ -80,7 +82,7 @@ namespace VenomNamespace
 
             // Generate lists
             iplist = new List<IPData>();
-            signal = new List<ManualResetEventSlim>();
+            //signal = new List<ManualResetEventSlim>();
             waits = new List<Thread> ();
 
 
@@ -344,7 +346,6 @@ namespace VenomNamespace
         }
 
         #endregion
-      
         public void ProcessPayload(string sb, string ip, string source, string raw)
         {
             try
@@ -992,17 +993,96 @@ namespace VenomNamespace
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            
+
+        }
+        public void RunCycle(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes)
+        {
+            //Send subscribe message before sending cycle
+            byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, cai, ipd);
+            Wait(4000);
+
+            //paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);for (int i = 0; i < bytes.Length; i++)
+
+            byte[] bytes = new byte[ipd.MQTTPay.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+            }
+
+            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes, cai, ipd);
+            Wait(ipd.Wait);
+        }
+        public void TestInit(byte[] ipbytes, ConnectedApplianceInfo cai, IPData ipd)
+        {
+            string[] csplit = ipd.Name.Split(' ');
+            int caseval = Int32.Parse(csplit[1]);
+            switch (caseval)
+            {
+                /*case 131814:    //Unit in Running state
+                    RunCycle(cai, ipd, ipbytes);
+                    break;*/
+
+                case 131842:    //Model/Serial Number check
+                    ipd.Model = cai.ModelNumber;
+                    ipd.Serial = cai.SerialNumber;
+                    break;
+
+                default:
+                    break;
+            }
+
+        }
+
+        public bool TestCheck(ConnectedApplianceInfo cai, IPData ipd)
+        {
+            string[] csplit = ipd.Name.Split(' ');
+            int caseval = Int32.Parse(csplit[1]);
+            bool ret = false;
+            switch (caseval)
+            {
+                /*case 131814:    //Unit in Running state
+                    RunCycle(cai, ipd, ipbytes);
+                    break;*/
+
+                case 131842:    //Model/Serial Number check
+                    if (cai.ModelNumber == ipd.Model)
+                        ret = true;
+                    else
+                    { 
+                        ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model + 
+                                     " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
+                        ret = false;
+                    }
+                    if (cai.SerialNumber == ipd.Serial)
+                        ret = true;
+                    else
+                    {
+                        ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
+                                     " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
+                        ret = false;
+                    }
+
+                    if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
+                    {
+                        ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied.";
+                        ret = false;
+                    }
+
+                    break;
+
+                default:
+                    ret = false;
+                    break;
+            }
+
+            return ret;
         }
         public void RunTask(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex, Barrier barrier)
         {
             try
             {
-                /*foreach (IPData ipd in iplist)
-                {
-                    if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
-                        ipd.TabIndex = iplist.IndexOf(ipd);
-                }*/
 
                 foreach (IPData ipd in iplist)
                 {
@@ -1038,9 +1118,11 @@ namespace VenomNamespace
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
+                            if (iplist[ipd.TabIndex].Name.Contains("Downloading"))
+                                TestInit(ipbytes, cai, ipd);                            
+
                             if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                                 thread_waits = true;
-
                             else
                             {
                                 //Otherwise IP changed, use MAC address to map to new IP
@@ -1066,6 +1148,13 @@ namespace VenomNamespace
                                     thread_waits = false;
                                 }
                             }
+
+                            if (iplist[ipd.TabIndex].Name.Contains("Programming"))
+                                if (TestCheck(cai, ipd))
+                                {
+                                    SetText("status", "Force Close", ipd.TabIndex);
+                                    continue;
+                                }
 
                         }
                         
@@ -1162,7 +1251,7 @@ namespace VenomNamespace
                     string number = "";
                     ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
                     ManualResetEventSlim sig = new ManualResetEventSlim();
-                    signal.Add(sig);
+                    //signal.Add(sig);
                     Thread th = new Thread(() => RunTask(cai, sig, number, barrier));
                     th.Name = i.ToString();
                     number = th.Name;
@@ -1530,6 +1619,18 @@ namespace VenomNamespace
         {
             ResetForm(true);
         }
+        private void BTN_Auto_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                auto.Show();
+            }
+            catch
+            {
 
+                auto = new AutoGen(this, this.WideLocal, this.WifiLocal);
+                auto.Show();
+            }
+        }
     }
 }

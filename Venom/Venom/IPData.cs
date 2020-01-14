@@ -1,5 +1,8 @@
-﻿
-using System.Threading;
+﻿using System.Threading;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace VenomNamespace
 
@@ -110,6 +113,24 @@ namespace VenomNamespace
             get { return _written; }
             set { _written = value; }
         }
+        private LinkedList<string> _llist;
+        public LinkedList<string> List
+        {
+            get { return _llist; }
+            set { _llist = value; }
+        }
+        private string _model;
+        public string Model
+        {
+            get { return _model; }
+            set { _model = value; }
+        }
+        private string _serial;
+        public string Serial
+        {
+            get { return _serial; }
+            set { _serial = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -126,6 +147,9 @@ namespace VenomNamespace
             _waittype = "";
             _typeres = "";
             _written = false;
+            _llist = null;
+            _model = "";
+            _serial = "";
         }
 
     }

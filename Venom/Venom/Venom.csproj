@@ -104,6 +104,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoGen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AutoGen.Designer.cs">
+      <DependentUpon>AutoGen.cs</DependentUpon>
+    </Compile>
     <Compile Include="PayList.cs">
       <SubType>Form</SubType>
     </Compile>
