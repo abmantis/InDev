@@ -173,12 +173,12 @@ namespace VenomNamespace
         private System.Windows.Forms.Button BTN_Payload;
         private System.Windows.Forms.Button BTN_Remove;
         private System.Windows.Forms.Button BTN_Clr;
-        private System.Windows.Forms.Button BTN_MakeList;
-        private System.Windows.Forms.Button BTN_Import;
         public System.Windows.Forms.ListBox LB_IPs;
         public System.Windows.Forms.DataGridView DGV_Data;
         public System.Windows.Forms.TextBox TB_LogDir;
         private Button BTN_Auto;
+        public Button BTN_MakeList;
+        public Button BTN_Import;
     }
 }
 

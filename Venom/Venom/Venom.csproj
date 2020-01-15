@@ -124,6 +124,9 @@
       <DependentUpon>Venom.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AutoGen.resx">
+      <DependentUpon>AutoGen.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PayList.resx">
       <DependentUpon>PayList.cs</DependentUpon>
     </EmbeddedResource>

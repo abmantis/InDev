@@ -17,37 +17,251 @@ namespace VenomNamespace
     public partial class AutoGen : WideInterface
     {
         public Venom parent;
-        public PayList plist;
-        public int TESTCASEMAX = 50;
+        private BindingSource sbind = new BindingSource();
+        public static int TESTCASEMAX = 30;    //Set equal to number of automatable test cases
         //private BindingSource sbind = new BindingSource();
-        List<IPData> iplist = new List<IPData>();
-        List<string> types = new List<string>();
-        List<string> sources = new List<string>();
+        string up = "";
+        string dwn = "";
+        string node = "";
 
         public AutoGen(Venom ParentForm, WideBox wideLocal, WhirlpoolWifi wifiLocal)
             : base(wideLocal, wifiLocal)
         {
             InitializeComponent();
             parent = ParentForm;
-            ResetForm();
             CB_Variant.Items.AddRange(new object[] {"NAR Cooking",
                                                     "EMEA Cooking", "NAR Laundry", "Other (any remote cycle)"});
+            // Generate tables
+            sbind.DataSource = parent.results;
+            parent.DGV_Data.AutoGenerateColumns = true;
+            parent.DGV_Data.DataSource = parent.results;
+            parent.DGV_Data.DataSource = sbind;
 
+            // Do not allow columns to be sorted
+            foreach (DataGridViewColumn column in parent.DGV_Data.Columns)
+            {
+                column.SortMode = DataGridViewColumnSortMode.NotSortable;
+            }
         }
 
-        private void ResetForm()
+        private void ResetForm(string type)
         {
-            TB_ACU_DWN.Text = "";
-            TB_ACU_UP.Text = "";
-            TB_EXP_DWN.Text = "";
-            TB_EXP_UP.Text = "";
-            TB_HMI_DWN.Text = "";
-            TB_HMI_UP.Text = "";
-            TB_IP.Text = "";
-            TB_Other.Text = "";
-            TB_WIFI_DWN.Text = "";
-            TB_WIFI_UP.Text = "";
-            CB_Variant.ResetText();
+            if (type == "all")
+            {
+                TB_ACU_DWN.Text = "";
+                TB_ACU_UP.Text = "";
+                TB_EXP_DWN.Text = "";
+                TB_EXP_UP.Text = "";
+                TB_HMI_DWN.Text = "";
+                TB_HMI_UP.Text = "";
+                TB_IP.Text = "";
+                TB_Other.Text = "";
+                TB_WIFI_DWN.Text = "";
+                TB_WIFI_UP.Text = "";
+                CB_Variant.ResetText();
+
+                CB_HMI.Checked = false;
+                CB_ACU.Checked = false;
+                CB_WIFI.Checked = false;
+                CB_EXP.Checked = false;
+
+                CB_HMI.Enabled = true;
+                CB_ACU.Enabled = true;
+                CB_WIFI.Enabled = true;
+                CB_EXP.Enabled = true;
+
+                label6.Visible = false;
+                label7.Visible = false;
+                label8.Visible = false;
+                label9.Visible = false;
+                label10.Visible = false;
+                label11.Visible = false;
+                label12.Visible = false;
+                label13.Visible = false;
+
+                TB_HMI_DWN.Enabled = false;
+                TB_HMI_UP.Enabled = false;
+                TB_ACU_UP.Enabled = false;
+                TB_ACU_DWN.Enabled = false;
+                TB_ACU_UP.Enabled = false;
+                TB_EXP_DWN.Enabled = false;
+                TB_EXP_UP.Enabled = false;
+                TB_WIFI_DWN.Enabled = false;
+                TB_WIFI_UP.Enabled = false;
+
+                TB_HMI_DWN.Visible = false;
+                TB_HMI_UP.Visible = false;
+                TB_ACU_DWN.Visible = false;
+                TB_ACU_UP.Visible = false;
+                TB_EXP_DWN.Visible = false;
+                TB_EXP_UP.Visible = false;
+                TB_WIFI_DWN.Visible = false;
+                TB_WIFI_UP.Visible = false;
+            }
+            if (type == "hmi")
+            {
+                TB_ACU_DWN.Text = "";
+                TB_ACU_UP.Text = "";
+                TB_EXP_DWN.Text = "";
+                TB_EXP_UP.Text = "";
+                TB_WIFI_DWN.Text = "";
+                TB_WIFI_UP.Text = "";
+
+                TB_HMI_DWN.Enabled = true;
+                TB_HMI_UP.Enabled = true;
+                TB_ACU_UP.Enabled = false;
+                TB_ACU_DWN.Enabled = false;
+                TB_ACU_UP.Enabled = false;
+                TB_EXP_DWN.Enabled = false;
+                TB_EXP_UP.Enabled = false;
+                TB_WIFI_DWN.Enabled = false;
+                TB_WIFI_UP.Enabled = false;
+
+                TB_HMI_DWN.Visible = true;
+                TB_HMI_UP.Visible = true;
+                TB_ACU_DWN.Visible = false;
+                TB_ACU_UP.Visible = false;
+                TB_EXP_DWN.Visible = false;
+                TB_EXP_UP.Visible = false;
+                TB_WIFI_DWN.Visible = false;
+                TB_WIFI_UP.Visible = false;
+
+                label6.Visible = true;
+                label7.Visible = true;
+                label8.Visible = false;
+                label9.Visible = false;
+                label10.Visible = false;
+                label11.Visible = false;
+                label12.Visible = false;
+                label13.Visible = false;
+
+                CB_ACU.Checked = false;
+                CB_WIFI.Checked = false;
+                CB_EXP.Checked = false;
+            }
+            if (type == "acu")
+            {
+                TB_HMI_DWN.Text = "";
+                TB_HMI_UP.Text = "";
+                TB_EXP_DWN.Text = "";
+                TB_EXP_UP.Text = "";
+                TB_WIFI_DWN.Text = "";
+                TB_WIFI_UP.Text = "";
+
+                TB_HMI_DWN.Enabled = false;
+                TB_HMI_UP.Enabled = false;
+                TB_ACU_UP.Enabled = true;
+                TB_ACU_DWN.Enabled = true;
+                TB_EXP_DWN.Enabled = false;
+                TB_EXP_UP.Enabled = false;
+                TB_WIFI_DWN.Enabled = false;
+                TB_WIFI_UP.Enabled = false;
+
+                TB_HMI_DWN.Visible = false;
+                TB_HMI_UP.Visible = false;
+                TB_ACU_DWN.Visible = true;
+                TB_ACU_UP.Visible = true;
+                TB_EXP_DWN.Visible = false;
+                TB_EXP_UP.Visible = false;
+                TB_WIFI_DWN.Visible = false;
+                TB_WIFI_UP.Visible = false;
+
+                label6.Visible = false;
+                label7.Visible = false;
+                label8.Visible = true;
+                label9.Visible = true;
+                label10.Visible = false;
+                label11.Visible = false;
+                label12.Visible = false;
+                label13.Visible = false;
+
+                CB_HMI.Checked = false;
+                CB_WIFI.Checked = false;
+                CB_EXP.Checked = false;
+            }
+            if (type == "wifi")
+            {
+                TB_ACU_DWN.Text = "";
+                TB_ACU_UP.Text = "";
+                TB_EXP_DWN.Text = "";
+                TB_EXP_UP.Text = "";
+                TB_HMI_DWN.Text = "";
+                TB_HMI_UP.Text = "";
+
+                TB_HMI_DWN.Enabled = false;
+                TB_HMI_UP.Enabled = false;
+                TB_ACU_UP.Enabled = false;
+                TB_ACU_DWN.Enabled = false;
+                TB_ACU_UP.Enabled = false;
+                TB_EXP_DWN.Enabled = false;
+                TB_EXP_UP.Enabled = false;
+                TB_WIFI_DWN.Enabled = true;
+                TB_WIFI_UP.Enabled = true;
+
+                TB_HMI_DWN.Visible = false;
+                TB_HMI_UP.Visible = false;
+                TB_ACU_DWN.Visible = false;
+                TB_ACU_UP.Visible = false;
+                TB_EXP_DWN.Visible = false;
+                TB_EXP_UP.Visible = false;
+                TB_WIFI_DWN.Visible = true;
+                TB_WIFI_UP.Visible = true;
+
+                label6.Visible = false;
+                label7.Visible = false;
+                label8.Visible = false;
+                label9.Visible = false;
+                label10.Visible = true;
+                label11.Visible = true;
+                label12.Visible = false;
+                label13.Visible = false;
+
+                CB_ACU.Checked = false;
+                CB_HMI.Checked = false;
+                CB_EXP.Checked = false;
+            }
+            if (type == "exp")
+            {
+                TB_ACU_DWN.Text = "";
+                TB_ACU_UP.Text = "";
+                TB_HMI_DWN.Text = "";
+                TB_HMI_UP.Text = "";
+                TB_WIFI_DWN.Text = "";
+                TB_WIFI_UP.Text = "";
+
+                TB_HMI_DWN.Enabled = false;
+                TB_HMI_UP.Enabled = false;
+                TB_ACU_UP.Enabled = false;
+                TB_ACU_DWN.Enabled = false;
+                TB_ACU_UP.Enabled = false;
+                TB_EXP_DWN.Enabled = true;
+                TB_EXP_UP.Enabled = true;
+                TB_WIFI_DWN.Enabled = false;
+                TB_WIFI_UP.Enabled = false;
+
+                TB_HMI_DWN.Visible = false;
+                TB_HMI_UP.Visible = false;
+                TB_ACU_DWN.Visible = false;
+                TB_ACU_UP.Visible = false;
+                TB_EXP_DWN.Visible = true;
+                TB_EXP_UP.Visible = true;
+                TB_WIFI_DWN.Visible = false;
+                TB_WIFI_UP.Visible = false;
+
+                label6.Visible = false;
+                label7.Visible = false;
+                label8.Visible = false;
+                label9.Visible = false;
+                label10.Visible = false;
+                label11.Visible = false;
+                label12.Visible = true;
+                label13.Visible = true;
+
+                CB_ACU.Checked = false;
+                CB_WIFI.Checked = false;
+                CB_HMI.Checked = false;
+            }
+
         }
         public void CB_Variant_SelectedValueChanged(object sender, EventArgs e)
         {
@@ -67,7 +281,13 @@ namespace VenomNamespace
             }
 
         }
-
+        private void ClearAll()
+        {
+            parent.results.Clear();
+            parent.iplist.Clear();
+            parent.LB_IPs.Items.Clear();
+            parent.DGV_Data.Refresh();
+        }
         private bool CheckFill()
         {
             bool check = false;
@@ -78,8 +298,7 @@ namespace VenomNamespace
                 if (!TB_HMI_DWN.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("HMI\tUpgrade");
-                    sources.Add(TB_HMI_UP.Text);
+                    up = TB_HMI_UP.Text;
                 }
                 else
                     check = false;
@@ -90,8 +309,8 @@ namespace VenomNamespace
                 if (!TB_HMI_UP.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("HMI\tDowngrade");
-                    sources.Add(TB_HMI_DWN.Text);
+                    dwn = TB_HMI_DWN.Text;
+                    node = "HMI";
                 }
                 else
                     check = false;
@@ -102,8 +321,7 @@ namespace VenomNamespace
                 if (!TB_ACU_DWN.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("ACU\tUpgrade");
-                    sources.Add(TB_ACU_UP.Text);
+                    up = TB_ACU_UP.Text;
                 }
                 else
                     check = false;
@@ -114,8 +332,8 @@ namespace VenomNamespace
                 if (!TB_ACU_UP.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("ACU\tDowngrade");
-                    sources.Add(TB_ACU_DWN.Text);
+                    dwn = TB_ACU_DWN.Text;
+                    node = "ACU";
                 }
                 else
                     check = false;
@@ -126,8 +344,7 @@ namespace VenomNamespace
                 if (!TB_WIFI_DWN.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("Wifi\tUpgrade");
-                    sources.Add(TB_WIFI_UP.Text);
+                    up = TB_WIFI_UP.Text;
                 }
                 else
                     check = false;
@@ -138,8 +355,8 @@ namespace VenomNamespace
                 if (!TB_WIFI_UP.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("Wifi\tDowngrade");
-                    sources.Add(TB_WIFI_DWN.Text);
+                    dwn = TB_WIFI_DWN.Text;
+                    node = "WIFI";
                 }
                 else
                     check = false;
@@ -150,8 +367,7 @@ namespace VenomNamespace
                 if (!TB_EXP_DWN.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("Expansion\tUpgrade");
-                    sources.Add(TB_EXP_UP.Text);
+                    up = TB_EXP_UP.Text;
                 }
                 else
                     check = false;
@@ -162,8 +378,8 @@ namespace VenomNamespace
                 if (!TB_EXP_UP.Text.Equals(""))
                 {
                     check = true;
-                    types.Add("Expansion\tDowngrade");
-                    sources.Add(TB_EXP_DWN.Text);
+                    dwn = TB_EXP_DWN.Text;
+                    node = "EXP";
                 }
                 else
                     check = false;
@@ -171,6 +387,32 @@ namespace VenomNamespace
 
             return check;
         }
+        private void BuildList(ConnectedApplianceInfo cai, string name, string mqttpay, int i)
+        {
+            IPData newip = new IPData(cai.IPAddress, up);
+            newip.MAC = cai.MacAddress;
+            newip.Node = node;
+            newip.MQTTPay = mqttpay;
+            newip.Type = "AutoGen Test";
+            newip.TabIndex = i;
+            newip.Name = name;
+            newip.Down = dwn;
+            parent.iplist.Add(newip);
+
+
+            //Update window for added IP
+            DataRow dr = parent.results.NewRow();
+
+            dr["IP Address"] = newip.IPAddress;
+            dr["OTA Payload"] = newip.Payload;
+            dr["Delivery Method"] = "MQTT";
+            dr["OTA Type"] = newip.Type;
+            dr["Node"] = newip.Node;
+            dr["Name"] = newip.Name;
+            dr["OTA Result"] = "PENDING";
+            parent.results.Rows.Add(dr);
+        }
+
         private void BTN_Gen_Click(object sender, EventArgs e)
         {
             //  DialogResult dialogResult = MessageBox.Show("This will automatically create a new test plan run from the current IP. " +
@@ -192,27 +434,16 @@ namespace VenomNamespace
                 return;
             }
 
-
-            bool check = CheckFill();
-
-            if (!check)
+            if (!CheckFill())
             {
                 DialogResult checkresult = MessageBox.Show("You have NOT provided both an upgrade and downgrade OTA version. " +
                                                             "Please check each text box and retry again.", "Error: Missing an Upgrade or Downgrade Payload",
                                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-                types.Clear();
                 return;
             }
 
-            //parent.results.Clear();
-            // parent.responses.Clear();
-            // parent.iplist.Clear();
-            // parent.LB_IPs.Items.Clear();
-            // parent.DGV_Data.Refresh();
-            //plist.DGV_Data.Refresh();
-
-            //Set MQTT payload to start standard bake 350 for whatever product or allow user to input one
             string mqttpay = "";
+            //Set MQTT payload to start standard bake 350 for whatever product or allow user to input one            
 
             if (CB_Variant.Text.Equals("NAR Cooking"))
                 mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
@@ -227,450 +458,142 @@ namespace VenomNamespace
 
             try
             {
-                //if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
-                //parent.LB_IPs.Items.Add(cai.IPAddress);
+                ClearAll();
+                if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
+                    parent.LB_IPs.Items.Add(cai.IPAddress);
 
-                int listindex = 0;
-                foreach (String type in types)
+                for (int i = 0; i < TESTCASEMAX; i++)
                 {
-                    IPData newip = new IPData(cai.IPAddress, sources[listindex]);
-                    string[] parts = type.Split('\t');
-                    newip.MAC = cai.MacAddress;
-                    newip.Node = parts[0];
-                    newip.Type = parts[1];
-                    newip.MQTTPay = mqttpay;
-                    iplist.Add(newip);
-
-                    /* Update window for added IP
-                    DataRow dr = parent.results.NewRow();
-
-                    dr["IP Address"] = newip.IPAddress;
-                    dr["OTA Payload"] = sources[count];
-                    dr["Delivery Method"] = "MQTT";
-                    dr["OTA Type"] = type;
-                    dr["OTA Result"] = "PENDING";
-                    parent.results.Rows.Add(dr);*/
-                    listindex++;
-                }
-                //Write info to log
-                if (!File.Exists(parent.TB_LogDir.Text + "\\" + "AUTOGEN_Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv"))
-                {
-
-                    // Verify directory exists, if not, throw exception
-                    string curfilename = parent.TB_LogDir.Text + "\\" + "AUTOGEN_Payload_List_" + DateTime.Now.ToString("MMddyyhhmmss") + ".csv";
-                    try
+                    switch (i)
                     {
-                        using (StreamWriter sw = File.CreateText(curfilename))
-                        {
-                            string content = "";
-                            listindex = 0;
-                            sw.WriteLine("IP\tOTA_Payload\tNode\tType\tCycle_Payload\tName\tMAC\tCycle_Wait\tWait_Type");
-                            /* foreach (IPData ipd in iplist)
-                             {
-                                 sw.WriteLine(ipd.IPAddress + "\t" +
-                                              ipd.Payload + "\t" +
-                                              ipd.Node + "\t" +
-                                              ipd.Type + "\t" +
-                                              ipd.MQTTPay);
-                             }*/
-                            for (int i = 0; i < (sources.Count / 2); i++)
-                            {
-                                for (int count = 0; count < TESTCASEMAX; count++)
-                                {
+                        case 0:
+                            BuildList(cai, "RQM 131812 OTA : Generic : Forced Update : Unit in Idle State", mqttpay, i);
+                            break;
+                        case 1:
+                            BuildList(cai, "RQM 131821 OTA : Generic : Forced Update : HMI Update", mqttpay, i);
+                            break;
+                        case 2:
+                            BuildList(cai, "RQM 131822 OTA : Generic : Forced Update : ACU Update", mqttpay, i);
+                            break;
+                        case 3:
+                            BuildList(cai, "RQM 131834 OTA : Downloading : User Starts Cycle from HMI", mqttpay, i);
+                            break;
+                        case 4:
+                            BuildList(cai, "RQM 131835 OTA : Downloading : User Starts Cycle from App", mqttpay, i);
+                            break;
+                        case 5:
+                            BuildList(cai, "RQM 131837 OTA : Downloading : User Changes Settings from App", mqttpay, i);
+                            break;
+                        case 6:
+                            BuildList(cai, "RQM 131839 OTA : Programming & Progress Status : User Starts Cycle from App", mqttpay, i);
+                            break;
+                        case 7:
+                            BuildList(cai, "RQM 131840 OTA : Programming & Progress Status : User Changes Settings from HMI", mqttpay, i);
+                            break;
+                        case 8:
+                            BuildList(cai, "RQM 131841 OTA : Programming & Progress Status : User Changes Settings from App", mqttpay, i);
+                            break;
+                        case 9:
+                            BuildList(cai, "RQM 131844 OTA : Generic : Forced Update : Upgrade : Model/Serial Consistency Check", mqttpay, i);
+                            break;
+                        case 10:
+                            BuildList(cai, "RQM 131845 OTA : Generic : Forced Update : Upgrade : Version Number Check", mqttpay, i);
+                            break;
+                        case 11:
+                            BuildList(cai, "RQM 131846 OTA : Generic : Forced Update : Downgrade : Model/Serial Consistency Check", mqttpay, i);
+                            break;
+                        case 12:
+                            BuildList(cai, "RQM 131847 OTA : Generic : Forced Update : Downgrade : Version Number Check", mqttpay, i);
+                            break;
+                        case 13:
+                            BuildList(cai, "RQM 131849 OTA : Generic : Forced Update : Upgrade : CCURI Check", mqttpay, i);
+                            break;
+                        case 14:
+                            BuildList(cai, "RQM 131850 OTA : Generic : Forced Update : Downgrade : CCURI Check", mqttpay, i);
+                            break;
+                        case 15:
+                            BuildList(cai, "RQM 131851 OTA : Post Update : Check Provision State", mqttpay, i);
+                            break;
+                        case 16:
+                            BuildList(cai, "RQM 131852 OTA : Post Update : Check Claimed Status", mqttpay, i);
+                            break;
+                        case 17:
+                            BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay, i);
+                            break;
+                        case 18:
+                            BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay, i);
+                            break;
+                        case 19:
+                            BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay, i);
+                            break;
+                        case 20:
+                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay, i);
+                            break;
+                        case 21:
+                            BuildList(cai, "RQM 132549 OTA : Generic : Forced Update : Wifi Radio", mqttpay, i);
+                            break;
+                        case 22:
+                            BuildList(cai, "RQM 132550 OTA : Generic : Forced Update : All Updatable Modules Updated", mqttpay, i);
+                            break;
+                        case 23:
+                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay, i);
+                            break;
+                        case 24:
+                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay, i);
+                            break;
+                        case 25:
+                            BuildList(cai, "RQM 133399 OTA : Post Update : Connection Reset", mqttpay, i);
+                            break;
+                        case 26:
+                            BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay, i);
+                            break;
+                        case 27:
+                            BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay, i);
+                            break;
+                        case 28:
+                            BuildList(cai, "RQM 154697 OTA : Generic : Scheduled OTA Payload Sent Multiple Times", mqttpay, i);
+                            break;
+                        case 29:
+                            BuildList(cai, "RQM 131836 OTA : Downloading : User Changes Settings from HMI", mqttpay, i);
+                            break;
 
-                                    switch (count)
-                                    {
-                                        //Start of - 131812 - OTA : Generic : Forced Update : Unit in Idle State
-                                        //Set OTA upgrade
-                                        case 0:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      iplist[listindex].Payload + "\t" +
-                                                      iplist[listindex].Node + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131812 - OTA : Generic : Forced Update : Unit in Idle State - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 1:
-                                            content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      iplist[listindex + 1].Payload + "\t" +
-                                                      iplist[listindex + 1].Node + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131812 - OTA : Generic : Forced Update : Unit in Idle State - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //End of - 131812 - OTA : Generic : Forced Update : Unit in Idle State
-
-                                        //Start of - 131813 - OTA : Generic : Forced Update : Unit in Programming State
-                                        //Set Programming state -TODOGET THIS WORKING
-                                        /* case 2: 
-                                             content = iplist[listindex].IPAddress + "\t" +
-                                                       "No OTA Payload - Non-OTA Cycle" + "\t" + //Not a ota do not save
-                                                       iplist[listindex].Node + "\t" +
-                                                       "Cycle" + "\t" +
-                                                       iplist[listindex].MQTTPay + "\t" +
-                                                       "RQM 131813 - OTA : Generic : Forced Update : Unit in Programming State - Part 1" + "\t" +
-                                                       iplist[listindex].MAC + "\t" +
-                                                       "25" + "\t" +
-                                                       "";
-                                             break;
-
-                                         //Set OTA upgrade
-                                         case 3:
-                                             content = iplist[listindex].IPAddress + "\t" +
-                                                       iplist[listindex].Payload + "\t" +
-                                                       iplist[listindex].Node + "\t" +
-                                                       iplist[listindex].Type + "\t" +
-                                                       "NA" + "\t" + //Not a cycle do not save
-                                                       "RQM 131813 - OTA : Generic : Forced Update : Unit in Programming State - Part 2" + "\t" +
-                                                       iplist[listindex].MAC + "\t" +
-                                                       "0" + "\t" +
-                                                       "";
-                                             break;
-                                         //Set OTA  downgrade (return to SOP)
-                                         case 4:
-                                             content = iplist[listindex+1].IPAddress + "\t" +
-                                                       iplist[listindex+1].Payload + "\t" +
-                                                       iplist[listindex+1].Node + "\t" +
-                                                       iplist[listindex+1].Type + "\t" +
-                                                       "NA" + "\t" + //Not a cycle do not save
-                                                       "RQM 131813 - OTA : Generic : Forced Update : Unit in Programming State - Part 3" + "\t" +
-                                                       iplist[listindex].MAC + "\t" +
-                                                       "0" + "\t" +
-                                                       "";
-                                             break;
-                                        //End of - 131813 - OTA : Generic : Forced Update : Unit in Programming State
-
-                                        //Start of - 131814 - OTA : Generic : Forced Update : Unit in Running State
-                                        case 5:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
-                                                      iplist[listindex].Node + "\t" +
-                                                      "Cycle" + "\t" +
-                                                      iplist[listindex].MQTTPay + "\t" +
-                                                      "RQM 131814 - OTA : Generic : Forced Update : Unit in Running State - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "25000" + "\t" +
-                                                      "";
-                                            break;
-
-                                        //Set OTA upgrade
-                                        case 6:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      iplist[listindex].Payload + "\t" +
-                                                      iplist[listindex].Node + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131814 - OTA : Generic : Forced Update : Unit in Running State - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 7:
-                                            content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      iplist[listindex + 1].Payload + "\t" +
-                                                      iplist[listindex + 1].Node + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131814 - OTA : Generic : Forced Update : Unit in Running State  - Part 3" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //End of - 131814 - OTA : Generic : Forced Update : Unit in Running State
-
-                                        //Start of - 131815 - OTA : Generic : Forced Update : Unit in Post-Cycle Running State
-                                        case 8:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
-                                                      iplist[listindex].Node + "\t" +
-                                                      "Cycle" + "\t" +
-                                                      iplist[listindex].MQTTPay + "\t" +
-                                                      "RQM 131815 - OTA : Generic : Forced Update : Unit in Post-Cycle Running State - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "70000" + "\t" +
-                                                      "";
-                                            break;
-
-                                        //Set OTA upgrade
-                                        case 9:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      iplist[listindex].Payload + "\t" +
-                                                      iplist[listindex].Node + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131815 - OTA : Generic : Forced Update : Unit in Post-Cycle Running State - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 10:
-                                            content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      iplist[listindex + 1].Payload + "\t" +
-                                                      iplist[listindex + 1].Node + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131815 - OTA : Generic : Forced Update : Unit in Post-Cycle Running State  - Part 3" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //End of - 131815 - OTA : Generic : Forced Update : Unit in Post-Cycle Running State
-
-
-                                        //Start of - 131816 - OTA : Generic : Forced Update : Unit in Non-Running Complete State
-                                        case 11:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      "No OTA Payload - Non-OTA Cycle" + "\t" + //Not an ota do not save
-                                                      iplist[listindex].Node + "\t" +
-                                                      "Cycle" + "\t" +
-                                                      iplist[listindex].MQTTPay + "\t" +
-                                                      "RQM 131816 - OTA : Generic : Forced Update : Unit in Non-Running Complete State - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "360000" + "\t" +
-                                                      "";
-                                            break;
-
-                                        //Set OTA upgrade
-                                        case 12:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      iplist[listindex].Payload + "\t" +
-                                                      iplist[listindex].Node + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131816 - OTA : Generic : Forced Update : Unit in Non-Running Complete State - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 13:
-                                            content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      iplist[listindex + 1].Payload + "\t" +
-                                                      iplist[listindex + 1].Node + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131816 - OTA : Generic : Forced Update : Unit in Non-Running Complete State  - Part 3" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //End of - 131815 - OTA : Generic : Forced Update : Unit in Non-Running Complete State
-
-
-                                        //Start of - 131817 - OTA : Generic : Forced Update : Unit in Low Power Idle State
-                                        case 14:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      "No OTA Payload - Wait Till Low Power Idle State" + "\t" + //Not an ota do not save
-                                                      iplist[listindex].Node + "\t" +
-                                                      "Wait" + "\t" +
-                                                      "NA" + "\t" +
-                                                      "RQM 131817 - OTA : Generic : Forced Update : Unit in Low Power Idle State - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "360000" + "\t" +
-                                                      "";
-                                            break;
-
-                                        //Set OTA upgrade
-                                        case 15:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      iplist[listindex].Payload + "\t" +
-                                                      iplist[listindex].Node + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131817 - OTA : Generic : Forced Update : Unit in Low Power Idle State - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 16:
-                                            content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      iplist[listindex + 1].Payload + "\t" +
-                                                      iplist[listindex + 1].Node + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131817 - OTA : Generic : Forced Update : Unit in Low Power Idle State  - Part 3" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //End of - 131817 - OTA : Generic : Forced Update : Unit in Low Power Idle State
-
-                                        //Start of - 131821 - OTA : Generic : Forced Update : HMI Update
-                                        //Set OTA upgrade
-                                        case 17:
-                                            if (!TB_HMI_UP.Text.Equals(""))
-                                                content = iplist[listindex].IPAddress + "\t" +
-                                                      TB_HMI_UP.Text + "\t" +
-                                                      "HMI" + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131821 - OTA : Generic : Forced Update : HMI Update - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            else
-                                                content = null;
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 18:
-                                            if (!TB_HMI_DWN.Text.Equals(""))
-                                                content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      TB_HMI_DWN.Text + "\t" +
-                                                      "HMI" + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131821 - OTA : Generic : Forced Update : HMI Update - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            else
-                                                content = null;
-                                            break;
-                                        //End of - 131821 - OTA : Generic : Forced Update : HMI Update
-
-                                        //Start of - 131822 - OTA : Generic : Forced Update : ACU Update
-                                        //Set OTA upgrade
-                                        case 19:
-                                            if (!TB_ACU_UP.Text.Equals(""))
-                                                content = iplist[listindex].IPAddress + "\t" +
-                                                      TB_ACU_UP.Text + "\t" +
-                                                      "ACU" + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131822 - OTA : Generic : Forced Update : ACU Update - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            else
-                                                content = null;
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 20:
-                                            if (!TB_ACU_DWN.Text.Equals(""))
-                                                content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      TB_ACU_DWN.Text + "\t" +
-                                                      "ACU" + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131822 - OTA : Generic : Forced Update : ACU Update - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            else
-                                                content = null;
-                                            break;
-                                        //End of - 131822 - OTA : Generic : Forced Update : ACU Update
-
-                                        //Start of - 131835 - OTA : Downloading : Forced Update : User starts cycle from App
-                                        //Set OTA upgrade
-                                        case 21:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      iplist[listindex].Payload + "\t" +
-                                                      iplist[listindex].Node + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      iplist[listindex].MQTTPay + "\t" +
-                                                      "RQM 131835 - OTA : Downloading : Forced Update : User Starts Cycle from App - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "3000" + "\t" +
-                                                      "Cycle";
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 22:
-                                            content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      iplist[listindex + 1].Payload + "\t" +
-                                                      iplist[listindex + 1].Node + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131835 - OTA : Downloading : Forced Update : User Starts Cycle from App - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //End of - 131835 - OTA : Downloading : Forced Update : User starts cycle from App
-
-                                        //Start of - 131837 - OTA : Downloading : Forced Update : User Changes Settings from App
-                                        //Set OTA upgrade
-                                        case 23:
-                                            content = iplist[listindex].IPAddress + "\t" +
-                                                      iplist[listindex].Payload + "\t" +
-                                                      iplist[listindex].Node + "\t" +
-                                                      iplist[listindex].Type + "\t" +
-                                                      "0021FF333301070001323031392D30312D30315431393A33323A34382B30303A303000" + "\t" +
-                                                      "RQM 131837 - OTA : Downloading : Forced Update : User Changes Settings from App - Part 1" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "3000" + "\t" +
-                                                      "Setting";
-                                            break;
-                                        //Set OTA  downgrade (return to SOP)
-                                        case 24:
-                                            content = iplist[listindex + 1].IPAddress + "\t" +
-                                                      iplist[listindex + 1].Payload + "\t" +
-                                                      iplist[listindex + 1].Node + "\t" +
-                                                      iplist[listindex + 1].Type + "\t" +
-                                                      "NA" + "\t" + //Not a cycle do not save
-                                                      "RQM 131837 - OTA : Downloading : Forced Update : User Changes Settings from App - Part 2" + "\t" +
-                                                      iplist[listindex].MAC + "\t" +
-                                                      "0" + "\t" +
-                                                      "";
-                                            break;
-                                        //End of - 131837 - OTA : Downloading : Forced Update : User Changes Settings from App
-                                        */
-                                        default:
-                                            content = null;
-                                            break;
-
-                                    }
-
-                                    if (content != null)
-                                        sw.WriteLine(content);
-
-                                }
-
-                                //Bound checking to control max possible bundle sources is iterated max number of node times
-                                if ((listindex / 2) + 1 < sources.Count / 2)
-                                    listindex += 2;
-                            }
-
-                        }
-
-                        MessageBox.Show("AutoGeneration has been completed for " + TB_IP.Text + " with the payload list saved at " + curfilename + ".", "AutoGenerate: Generation Complete.",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        iplist.Clear();
-                        sources.Clear();
-                        types.Clear();
-
+                        default:
+                            break;
                     }
-                    catch
-                    {
-                        MessageBox.Show("The chosen directory path does not exist. Please browse to a path that DOES exist and try again.", "Error: Directory Path Not Found",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
                 }
-
-
-
+                parent.DGV_Data.Refresh();
+                parent.autogen = true;
+                parent.BTN_MakeList.Enabled = false;
+                parent.BTN_Import.Enabled = false;
             }
             catch
             {
             }
-            //}
         }
-
         private void AutoGen_Load(object sender, EventArgs e)
         {
-            //ResetForm(); //ENABLE WHEN UPLOADING TO STORE
+            //ResetForm("all"); //ENABLE WHEN UPLOADING TO STORE
         }
+        private void CB_HMI_CheckedChanged(object sender, EventArgs e)
+        {
+            if (CB_HMI.Checked)
+                ResetForm("hmi");
+        }
+        private void CB_ACU_CheckedChanged(object sender, EventArgs e)
+        {
+            if (CB_ACU.Checked)
+                ResetForm("acu");
+        }
+        private void CB_WIFI_CheckedChanged(object sender, EventArgs e)
+        {
+            if (CB_WIFI.Checked)
+                ResetForm("wifi");
+        }
+        private void CB_EXP_CheckedChanged(object sender, EventArgs e)
+        {
+            if (CB_EXP.Checked)
+                ResetForm("exp");
+        }
+
     }
 }

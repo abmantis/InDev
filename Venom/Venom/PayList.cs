@@ -118,8 +118,16 @@ namespace VenomNamespace
                         break;
                 }
 
-                if (found <= 1)                
+                if (found <= 1)
+                {
                     parent.LB_IPs.Items.RemoveAt(DGV_Data.CurrentCell.RowIndex);
+                    if (parent.autogen)
+                    {
+                        parent.autogen = false;
+                        parent.BTN_MakeList.Enabled = true;
+                        parent.BTN_Import.Enabled = true;
+                    }
+                }
                 
                 parent.iplist.RemoveAt(DGV_Data.CurrentCell.RowIndex);
                 parent.results.Rows.RemoveAt(DGV_Data.CurrentCell.RowIndex);
@@ -141,6 +149,12 @@ namespace VenomNamespace
                 parent.iplist.Clear();
                 parent.LB_IPs.Items.Clear();
                 DGV_Data.Refresh();
+                if (parent.autogen)
+                {
+                    parent.autogen = false;
+                    parent.BTN_MakeList.Enabled = true;
+                    parent.BTN_Import.Enabled = true;
+                }
             }
         }
         private void BTN_Save_Click(object sender, EventArgs e)

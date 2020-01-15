@@ -30,10 +30,6 @@
         {
             this.TB_IP = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
             this.TB_HMI_UP = new System.Windows.Forms.TextBox();
             this.TB_HMI_DWN = new System.Windows.Forms.TextBox();
             this.TB_ACU_DWN = new System.Windows.Forms.TextBox();
@@ -55,6 +51,10 @@
             this.CB_Variant = new System.Windows.Forms.ComboBox();
             this.TB_Other = new System.Windows.Forms.TextBox();
             this.label15 = new System.Windows.Forms.Label();
+            this.CB_HMI = new System.Windows.Forms.CheckBox();
+            this.CB_ACU = new System.Windows.Forms.CheckBox();
+            this.CB_WIFI = new System.Windows.Forms.CheckBox();
+            this.CB_EXP = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -73,97 +73,77 @@
             this.label1.TabIndex = 1;
             this.label1.Text = "IP Address:";
             // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(24, 67);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(62, 13);
-            this.label3.TabIndex = 3;
-            this.label3.Text = "Node - HMI";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(22, 172);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(64, 13);
-            this.label4.TabIndex = 4;
-            this.label4.Text = "Node - ACU";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(28, 284);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(60, 13);
-            this.label5.TabIndex = 5;
-            this.label5.Text = "Node - Wifi";
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 399);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(91, 13);
-            this.label2.TabIndex = 6;
-            this.label2.Text = "Node - Expansion";
-            // 
             // TB_HMI_UP
             // 
+            this.TB_HMI_UP.Enabled = false;
             this.TB_HMI_UP.Location = new System.Drawing.Point(195, 85);
             this.TB_HMI_UP.Name = "TB_HMI_UP";
             this.TB_HMI_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_HMI_UP.TabIndex = 7;
+            this.TB_HMI_UP.Visible = false;
             // 
             // TB_HMI_DWN
             // 
+            this.TB_HMI_DWN.Enabled = false;
             this.TB_HMI_DWN.Location = new System.Drawing.Point(195, 132);
             this.TB_HMI_DWN.Name = "TB_HMI_DWN";
             this.TB_HMI_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_HMI_DWN.TabIndex = 8;
+            this.TB_HMI_DWN.Visible = false;
             // 
             // TB_ACU_DWN
             // 
+            this.TB_ACU_DWN.Enabled = false;
             this.TB_ACU_DWN.Location = new System.Drawing.Point(195, 244);
             this.TB_ACU_DWN.Name = "TB_ACU_DWN";
             this.TB_ACU_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_ACU_DWN.TabIndex = 10;
+            this.TB_ACU_DWN.Visible = false;
             // 
             // TB_ACU_UP
             // 
+            this.TB_ACU_UP.Enabled = false;
             this.TB_ACU_UP.Location = new System.Drawing.Point(195, 194);
             this.TB_ACU_UP.Name = "TB_ACU_UP";
             this.TB_ACU_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_ACU_UP.TabIndex = 9;
+            this.TB_ACU_UP.Visible = false;
             // 
             // TB_WIFI_DWN
             // 
+            this.TB_WIFI_DWN.Enabled = false;
             this.TB_WIFI_DWN.Location = new System.Drawing.Point(195, 359);
             this.TB_WIFI_DWN.Name = "TB_WIFI_DWN";
             this.TB_WIFI_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_WIFI_DWN.TabIndex = 12;
+            this.TB_WIFI_DWN.Visible = false;
             // 
             // TB_WIFI_UP
             // 
+            this.TB_WIFI_UP.Enabled = false;
             this.TB_WIFI_UP.Location = new System.Drawing.Point(195, 312);
             this.TB_WIFI_UP.Name = "TB_WIFI_UP";
             this.TB_WIFI_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_WIFI_UP.TabIndex = 11;
+            this.TB_WIFI_UP.Visible = false;
             // 
             // TB_EXP_DWN
             // 
+            this.TB_EXP_DWN.Enabled = false;
             this.TB_EXP_DWN.Location = new System.Drawing.Point(195, 471);
             this.TB_EXP_DWN.Name = "TB_EXP_DWN";
             this.TB_EXP_DWN.Size = new System.Drawing.Size(584, 20);
             this.TB_EXP_DWN.TabIndex = 14;
+            this.TB_EXP_DWN.Visible = false;
             // 
             // TB_EXP_UP
             // 
+            this.TB_EXP_UP.Enabled = false;
             this.TB_EXP_UP.Location = new System.Drawing.Point(195, 428);
             this.TB_EXP_UP.Name = "TB_EXP_UP";
             this.TB_EXP_UP.Size = new System.Drawing.Size(584, 20);
             this.TB_EXP_UP.TabIndex = 13;
+            this.TB_EXP_UP.Visible = false;
             // 
             // label6
             // 
@@ -173,6 +153,7 @@
             this.label6.Size = new System.Drawing.Size(92, 13);
             this.label6.TabIndex = 15;
             this.label6.Text = "Upgrade Payload:";
+            this.label6.Visible = false;
             // 
             // label7
             // 
@@ -182,6 +163,7 @@
             this.label7.Size = new System.Drawing.Size(106, 13);
             this.label7.TabIndex = 16;
             this.label7.Text = "Downgrade Payload:";
+            this.label7.Visible = false;
             // 
             // label8
             // 
@@ -191,6 +173,7 @@
             this.label8.Size = new System.Drawing.Size(106, 13);
             this.label8.TabIndex = 18;
             this.label8.Text = "Downgrade Payload:";
+            this.label8.Visible = false;
             // 
             // label9
             // 
@@ -200,6 +183,7 @@
             this.label9.Size = new System.Drawing.Size(92, 13);
             this.label9.TabIndex = 17;
             this.label9.Text = "Upgrade Payload:";
+            this.label9.Visible = false;
             // 
             // label10
             // 
@@ -209,6 +193,7 @@
             this.label10.Size = new System.Drawing.Size(106, 13);
             this.label10.TabIndex = 20;
             this.label10.Text = "Downgrade Payload:";
+            this.label10.Visible = false;
             // 
             // label11
             // 
@@ -218,6 +203,7 @@
             this.label11.Size = new System.Drawing.Size(92, 13);
             this.label11.TabIndex = 19;
             this.label11.Text = "Upgrade Payload:";
+            this.label11.Visible = false;
             // 
             // label12
             // 
@@ -227,6 +213,7 @@
             this.label12.Size = new System.Drawing.Size(106, 13);
             this.label12.TabIndex = 22;
             this.label12.Text = "Downgrade Payload:";
+            this.label12.Visible = false;
             // 
             // label13
             // 
@@ -236,6 +223,7 @@
             this.label13.Size = new System.Drawing.Size(92, 13);
             this.label13.TabIndex = 21;
             this.label13.Text = "Upgrade Payload:";
+            this.label13.Visible = false;
             // 
             // label14
             // 
@@ -285,11 +273,59 @@
             this.label15.TabIndex = 27;
             this.label15.Text = "MQTT Payload Cycle Type";
             // 
+            // CB_HMI
+            // 
+            this.CB_HMI.AutoSize = true;
+            this.CB_HMI.Location = new System.Drawing.Point(43, 64);
+            this.CB_HMI.Name = "CB_HMI";
+            this.CB_HMI.Size = new System.Drawing.Size(81, 17);
+            this.CB_HMI.TabIndex = 28;
+            this.CB_HMI.Text = "Node - HMI";
+            this.CB_HMI.UseVisualStyleBackColor = true;
+            this.CB_HMI.CheckedChanged += new System.EventHandler(this.CB_HMI_CheckedChanged);
+            // 
+            // CB_ACU
+            // 
+            this.CB_ACU.AutoSize = true;
+            this.CB_ACU.Location = new System.Drawing.Point(41, 177);
+            this.CB_ACU.Name = "CB_ACU";
+            this.CB_ACU.Size = new System.Drawing.Size(83, 17);
+            this.CB_ACU.TabIndex = 29;
+            this.CB_ACU.Text = "Node - ACU";
+            this.CB_ACU.UseVisualStyleBackColor = true;
+            this.CB_ACU.CheckedChanged += new System.EventHandler(this.CB_ACU_CheckedChanged);
+            // 
+            // CB_WIFI
+            // 
+            this.CB_WIFI.AutoSize = true;
+            this.CB_WIFI.Location = new System.Drawing.Point(41, 289);
+            this.CB_WIFI.Name = "CB_WIFI";
+            this.CB_WIFI.Size = new System.Drawing.Size(79, 17);
+            this.CB_WIFI.TabIndex = 30;
+            this.CB_WIFI.Text = "Node - Wifi";
+            this.CB_WIFI.UseVisualStyleBackColor = true;
+            this.CB_WIFI.CheckedChanged += new System.EventHandler(this.CB_WIFI_CheckedChanged);
+            // 
+            // CB_EXP
+            // 
+            this.CB_EXP.AutoSize = true;
+            this.CB_EXP.Location = new System.Drawing.Point(41, 404);
+            this.CB_EXP.Name = "CB_EXP";
+            this.CB_EXP.Size = new System.Drawing.Size(110, 17);
+            this.CB_EXP.TabIndex = 31;
+            this.CB_EXP.Text = "Node - Expansion";
+            this.CB_EXP.UseVisualStyleBackColor = true;
+            this.CB_EXP.CheckedChanged += new System.EventHandler(this.CB_EXP_CheckedChanged);
+            // 
             // AutoGen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 509);
+            this.Controls.Add(this.CB_EXP);
+            this.Controls.Add(this.CB_WIFI);
+            this.Controls.Add(this.CB_ACU);
+            this.Controls.Add(this.CB_HMI);
             this.Controls.Add(this.label15);
             this.Controls.Add(this.TB_Other);
             this.Controls.Add(this.CB_Variant);
@@ -311,10 +347,6 @@
             this.Controls.Add(this.TB_ACU_UP);
             this.Controls.Add(this.TB_HMI_DWN);
             this.Controls.Add(this.TB_HMI_UP);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.label3);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.TB_IP);
             this.Name = "AutoGen";
@@ -329,10 +361,6 @@
 
         private System.Windows.Forms.TextBox TB_IP;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox TB_HMI_UP;
         private System.Windows.Forms.TextBox TB_HMI_DWN;
         private System.Windows.Forms.TextBox TB_ACU_DWN;
@@ -354,5 +382,9 @@
         private System.Windows.Forms.ComboBox CB_Variant;
         private System.Windows.Forms.TextBox TB_Other;
         private System.Windows.Forms.Label label15;
+        private System.Windows.Forms.CheckBox CB_HMI;
+        private System.Windows.Forms.CheckBox CB_ACU;
+        private System.Windows.Forms.CheckBox CB_WIFI;
+        private System.Windows.Forms.CheckBox CB_EXP;
     }
 }

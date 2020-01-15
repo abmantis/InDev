@@ -24,6 +24,7 @@ namespace VenomNamespace
 
         public int thread_done = 0; //Count of threads that have no more tasks
         public bool rerun = false;
+        public bool autogen = false;
 
         //Global timer
         public Stopwatch g_time = new Stopwatch();
@@ -802,8 +803,11 @@ namespace VenomNamespace
                         BTN_Clr.Enabled = true;
                         TB_LogDir.Enabled = true;
                         LB_IPs.Enabled = true;
-                        BTN_Import.Enabled = true;
-                        BTN_MakeList.Enabled = true;
+                        if (!autogen)
+                        {
+                            BTN_Import.Enabled = true;
+                            BTN_MakeList.Enabled = true;
+                        }
                         BTN_LogDir.Enabled = true;
                         cancel_request = true;
                         g_time.Stop();
@@ -879,39 +883,20 @@ namespace VenomNamespace
             try
             {
                 System.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
-                //string ips = ip.ToString();
-
 
                 if (cancel_request)
                 {
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                     return true;
                 }
+
                 //If IP Address exists, send to that IP
                 if (cai != null)
                 //Send payload
                 {
                     WifiLocal.SendMqttMessage(ip, topic, paybytes);
-                    Wait(2000);
+                    //Wait(2000);
                     return true;
-                    /*for (int i = 0; i < MQTTMAX; i++)
-                    {
-
-                        if (ipd.Result != "Downloading")
-                        {
-                            WifiLocal.SendMqttMessage(ip, topic, paybytes);
-                            Wait(2000);
-                        }
-
-                        if (ipd.Result != "Downloading")
-                        {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and signal " 
-                                + ipd.Signal.WaitHandle.Handle + " had a result of " + ipd.Result + ".");
-                            continue;
-                        }
-
-                        return true;
-                    }*/
 
                 }
                 else
@@ -924,7 +909,6 @@ namespace VenomNamespace
                 return false;
             }
 
-            return false;
             
         }
         public void Wait(int timeout)
@@ -1024,7 +1008,7 @@ namespace VenomNamespace
                     RunCycle(cai, ipd, ipbytes);
                     break;*/
 
-                case 131842:    //Model/Serial Number check
+                case 131844:    //Model/Serial Number check
                     ipd.Model = cai.ModelNumber;
                     ipd.Serial = cai.SerialNumber;
                     break;
@@ -1034,50 +1018,39 @@ namespace VenomNamespace
             }
 
         }
-
-        public bool TestCheck(ConnectedApplianceInfo cai, IPData ipd)
+        public void TestCheck(ConnectedApplianceInfo cai, IPData ipd)
         {
             string[] csplit = ipd.Name.Split(' ');
             int caseval = Int32.Parse(csplit[1]);
-            bool ret = false;
             switch (caseval)
             {
                 /*case 131814:    //Unit in Running state
                     RunCycle(cai, ipd, ipbytes);
                     break;*/
 
-                case 131842:    //Model/Serial Number check
-                    if (cai.ModelNumber == ipd.Model)
-                        ret = true;
-                    else
-                    { 
-                        ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model + 
-                                     " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
-                        ret = false;
-                    }
-                    if (cai.SerialNumber == ipd.Serial)
-                        ret = true;
-                    else
+                case 131844:    //Model/Serial Number check
+                    if (ipd.Result.Contains("PASS"))
                     {
-                        ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
-                                     " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
-                        ret = false;
-                    }
+                        if (cai.ModelNumber != ipd.Model)
+                            ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model +
+                                         " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
 
-                    if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
-                    {
-                        ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied.";
-                        ret = false;
+                        if (cai.SerialNumber != ipd.Serial)
+                            ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
+                                         " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
+
+                        if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
+                            ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied.";
+                        else
+                            ipd.Result = "PASS - BOTH Model Number and Serial Number were the same after OTA was applied.";
                     }
 
                     break;
 
                 default:
-                    ret = false;
                     break;
             }
 
-            return ret;
         }
         public void RunTask(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex, Barrier barrier)
         {
@@ -1118,9 +1091,6 @@ namespace VenomNamespace
                         // See if sending over MQTT or Revelation
                         if (ipd.Delivery.Equals("MQTT"))
                         {
-                            if (iplist[ipd.TabIndex].Name.Contains("Downloading"))
-                                TestInit(ipbytes, cai, ipd);                            
-
                             if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                                 thread_waits = true;
                             else
@@ -1148,16 +1118,8 @@ namespace VenomNamespace
                                     thread_waits = false;
                                 }
                             }
-
-                            if (iplist[ipd.TabIndex].Name.Contains("Programming"))
-                                if (TestCheck(cai, ipd))
-                                {
-                                    SetText("status", "Force Close", ipd.TabIndex);
-                                    continue;
-                                }
-
                         }
-                        
+
                         // Set wait signal to be unlocked by thread after job is complete (result seen from log)
                         if (thread_waits)
                         {
@@ -1216,8 +1178,136 @@ namespace VenomNamespace
                 barrier.SignalAndWait();                
                 return;
             }
-            
-        } 
+
+        }
+        public void RunAuto(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex)
+        {
+            try
+            {
+
+                foreach (IPData ipd in iplist)
+                {
+                    if (cancel_request)
+                    {
+                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                        return;
+                    }
+                    if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
+                    {
+                        ipd.IPIndex = Int32.Parse(ipindex);
+                        ipd.Signal = sig;
+                        ipd.TabIndex = iplist.IndexOf(ipd);
+                        bool thread_waits = true;   // Indicates this is a thread that will require a reboot time for the product
+
+                        //Force each thread to live only two hours (process somehow got stuck)
+                        System.Timers.Timer timer = new System.Timers.Timer();
+                        timer.Interval = TMAX;
+                        timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
+                        timer.Start();
+
+                        //Parse payload into byte array
+                        byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+
+                        //Prepare IP address for sending via MQTT
+                        string[] ipad = ipd.IPAddress.Split('.');
+                        byte[] ipbytes = new byte[4];
+                        for (int j = 0; j < 4; j++)
+                        {
+                            ipbytes[j] = byte.Parse(ipad[j]);
+                        }
+
+                        // See if sending over MQTT or Revelation
+                        if (ipd.Delivery.Equals("MQTT"))
+                        {
+                            if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                                thread_waits = true;
+                            else
+                            {
+                                //Otherwise IP changed, use MAC address to map to new IP
+                                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_m = WifiLocal.ConnectedAppliances;
+                                ConnectedApplianceInfo cai_m = cio_m.FirstOrDefault(x => x.MacAddress == ipd.MAC);
+                                if (cai_m != null)
+                                {
+                                    string[] n_ipad = cai_m.IPAddress.Split('.');
+                                    byte[] n_ipbytes = new byte[4];
+                                    for (int j = 0; j < 4; j++)
+                                    {
+                                        n_ipbytes[j] = byte.Parse(n_ipad[j]);
+                                    }
+                                    if (SendMQTT(n_ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai_m, ipd))
+                                        thread_waits = true;
+                                }
+                                else
+                                {
+                                    MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
+                                        "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                    ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
+                                    SetText("status", "Bad IP Address", ipd.TabIndex);
+                                    thread_waits = false;
+                                }
+                            }
+                        }
+
+                        // Set wait signal to be unlocked by thread after job is complete (result seen from log)
+                        if (thread_waits)
+                        {
+                            Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
+                               " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+                            ipd.Signal.Wait();
+
+                            if (ipd.Result.Contains("timeout"))
+                                SetText("status", "Force Close", ipd.TabIndex);
+                        }
+
+                        timer.Stop();
+                        timer.Dispose();
+                        // Check to see if thread should be cancelled
+                        if (cancel_request)
+                        {
+                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                            return;
+                        }
+                        System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
+                        ConnectedApplianceInfo cai_n = cio_n.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
+                        int REMOVEME = 0;
+                        Wait(5 * RECONWAIT); //Wait two minutes for MQTT to come back on after reboout out of IAP
+                        for (int i = 0; i < MQTTMAX; i++)
+                        {
+                            if (cai_n.IsMqttConnected)
+                                break;
+                            //CycleWifi();
+                            Wait(RECONWAIT); //If not MQTT, give more time to reconnect
+                            REMOVEME = i;
+
+                        }
+
+                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                        ipd.Signal.Reset();
+                        Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " reached barrier.");
+
+                //Thread task cancelled or completed, signal others it is done
+                barrier.SignalAndWait();
+                lock (lockObj)
+                {
+                    FinalResult();
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic RunTask error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                barrier.SignalAndWait();
+                return;
+            }
+
+        }
         public void ProcessIP()
         {
             try
@@ -1251,12 +1341,22 @@ namespace VenomNamespace
                     string number = "";
                     ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.IPAddress == ip);
                     ManualResetEventSlim sig = new ManualResetEventSlim();
-                    //signal.Add(sig);
-                    Thread th = new Thread(() => RunTask(cai, sig, number, barrier));
-                    th.Name = i.ToString();
-                    number = th.Name;
-                    th.IsBackground = true;
-                    th.Start();
+                    if (autogen)
+                    {
+                        Thread th = new Thread(() => RunAuto(cai, sig, number));
+                        th.Name = i.ToString();
+                        number = th.Name;
+                        th.IsBackground = true;
+                        th.Start();
+                    }
+                    else
+                    {
+                        Thread th = new Thread(() => RunTask(cai, sig, number, barrier));
+                        th.Name = i.ToString();
+                        number = th.Name;
+                        th.IsBackground = true;
+                        th.Start();
+                    }
                 }
 
                 return;
@@ -1424,6 +1524,12 @@ namespace VenomNamespace
 
                     iplist.RemoveAll(x => x.IPAddress == LB_IPs.SelectedItem.ToString());
                     LB_IPs.Items.Remove(LB_IPs.SelectedItem);
+                    if (autogen)
+                    {
+                        autogen = false;
+                        BTN_MakeList.Enabled = true;
+                        BTN_Import.Enabled = true;
+                    }
                 }
 
             }
@@ -1564,6 +1670,9 @@ namespace VenomNamespace
                     LB_IPs.Items.Clear();
                     DGV_Data.Refresh();
                     rerun = false;
+                    autogen = false;
+                    BTN_MakeList.Enabled = true;
+                    BTN_Import.Enabled = true;
                 }
             });
             

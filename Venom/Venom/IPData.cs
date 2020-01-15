@@ -131,6 +131,12 @@ namespace VenomNamespace
             get { return _serial; }
             set { _serial = value; }
         }
+        private string _down;
+        public string Down
+        {
+            get { return _down; }
+            set { _down = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -150,6 +156,7 @@ namespace VenomNamespace
             _llist = null;
             _model = "";
             _serial = "";
+            _down = "";
         }
 
     }
