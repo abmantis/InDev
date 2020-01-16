@@ -41,6 +41,10 @@ namespace VenomNamespace
             this.BTN_MakeList = new System.Windows.Forms.Button();
             this.BTN_Import = new System.Windows.Forms.Button();
             this.BTN_Auto = new System.Windows.Forms.Button();
+            this.LBL_Auto = new System.Windows.Forms.Label();
+            this.LBL_VAR = new System.Windows.Forms.Label();
+            this.LBL_OTA = new System.Windows.Forms.Label();
+            this.LBL_UD = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -136,7 +140,7 @@ namespace VenomNamespace
             // 
             // BTN_Auto
             // 
-            this.BTN_Auto.Location = new System.Drawing.Point(576, 53);
+            this.BTN_Auto.Location = new System.Drawing.Point(225, 53);
             this.BTN_Auto.Name = "BTN_Auto";
             this.BTN_Auto.Size = new System.Drawing.Size(97, 23);
             this.BTN_Auto.TabIndex = 98;
@@ -144,11 +148,57 @@ namespace VenomNamespace
             this.BTN_Auto.UseVisualStyleBackColor = true;
             this.BTN_Auto.Click += new System.EventHandler(this.BTN_Auto_Click);
             // 
+            // LBL_Auto
+            // 
+            this.LBL_Auto.AutoSize = true;
+            this.LBL_Auto.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.LBL_Auto.Location = new System.Drawing.Point(437, 58);
+            this.LBL_Auto.Name = "LBL_Auto";
+            this.LBL_Auto.Size = new System.Drawing.Size(58, 15);
+            this.LBL_Auto.TabIndex = 99;
+            this.LBL_Auto.Text = "PENDING";
+            this.LBL_Auto.Visible = false;
+            // 
+            // LBL_VAR
+            // 
+            this.LBL_VAR.AutoSize = true;
+            this.LBL_VAR.Location = new System.Drawing.Point(526, 58);
+            this.LBL_VAR.Name = "LBL_VAR";
+            this.LBL_VAR.Size = new System.Drawing.Size(34, 13);
+            this.LBL_VAR.TabIndex = 100;
+            this.LBL_VAR.Text = "Type:";
+            this.LBL_VAR.Visible = false;
+            // 
+            // LBL_OTA
+            // 
+            this.LBL_OTA.AutoSize = true;
+            this.LBL_OTA.Location = new System.Drawing.Point(366, 58);
+            this.LBL_OTA.Name = "LBL_OTA";
+            this.LBL_OTA.Size = new System.Drawing.Size(65, 13);
+            this.LBL_OTA.TabIndex = 101;
+            this.LBL_OTA.Text = "OTA Status:";
+            this.LBL_OTA.Visible = false;
+            // 
+            // LBL_UD
+            // 
+            this.LBL_UD.AutoSize = true;
+            this.LBL_UD.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.LBL_UD.Location = new System.Drawing.Point(566, 58);
+            this.LBL_UD.Name = "LBL_UD";
+            this.LBL_UD.Size = new System.Drawing.Size(62, 15);
+            this.LBL_UD.TabIndex = 102;
+            this.LBL_UD.Text = "UPGRADE";
+            this.LBL_UD.Visible = false;
+            // 
             // Venom
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(693, 361);
+            this.Controls.Add(this.LBL_UD);
+            this.Controls.Add(this.LBL_OTA);
+            this.Controls.Add(this.LBL_VAR);
+            this.Controls.Add(this.LBL_Auto);
             this.Controls.Add(this.BTN_Auto);
             this.Controls.Add(this.BTN_Import);
             this.Controls.Add(this.BTN_MakeList);
@@ -179,6 +229,10 @@ namespace VenomNamespace
         private Button BTN_Auto;
         public Button BTN_MakeList;
         public Button BTN_Import;
+        private Label LBL_Auto;
+        private Label LBL_VAR;
+        private Label LBL_OTA;
+        private Label LBL_UD;
     }
 }
 

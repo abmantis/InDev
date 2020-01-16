@@ -18,7 +18,6 @@ namespace VenomNamespace
     {
         public Venom parent;
         private BindingSource sbind = new BindingSource();
-        public static int TESTCASEMAX = 30;    //Set equal to number of automatable test cases
         //private BindingSource sbind = new BindingSource();
         string up = "";
         string dwn = "";
@@ -397,7 +396,13 @@ namespace VenomNamespace
             newip.TabIndex = i;
             newip.Name = name;
             newip.Down = dwn;
-            parent.iplist.Add(newip);
+            if (parent.LB_IPs.Items.Count == 0)
+            {
+                if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
+                    parent.LB_IPs.Items.Add(cai.IPAddress);
+
+                parent.iplist.Add(newip);
+            }
 
 
             //Update window for added IP
@@ -459,10 +464,7 @@ namespace VenomNamespace
             try
             {
                 ClearAll();
-                if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
-                    parent.LB_IPs.Items.Add(cai.IPAddress);
-
-                for (int i = 0; i < TESTCASEMAX; i++)
+                for (int i = 0; i < parent.TESTCASEMAX; i++)
                 {
                     switch (i)
                     {
