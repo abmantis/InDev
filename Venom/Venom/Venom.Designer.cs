@@ -152,7 +152,7 @@ namespace VenomNamespace
             // 
             this.LBL_Auto.AutoSize = true;
             this.LBL_Auto.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_Auto.Location = new System.Drawing.Point(437, 58);
+            this.LBL_Auto.Location = new System.Drawing.Point(602, 56);
             this.LBL_Auto.Name = "LBL_Auto";
             this.LBL_Auto.Size = new System.Drawing.Size(58, 15);
             this.LBL_Auto.TabIndex = 99;
@@ -162,7 +162,7 @@ namespace VenomNamespace
             // LBL_VAR
             // 
             this.LBL_VAR.AutoSize = true;
-            this.LBL_VAR.Location = new System.Drawing.Point(526, 58);
+            this.LBL_VAR.Location = new System.Drawing.Point(402, 56);
             this.LBL_VAR.Name = "LBL_VAR";
             this.LBL_VAR.Size = new System.Drawing.Size(34, 13);
             this.LBL_VAR.TabIndex = 100;
@@ -172,7 +172,7 @@ namespace VenomNamespace
             // LBL_OTA
             // 
             this.LBL_OTA.AutoSize = true;
-            this.LBL_OTA.Location = new System.Drawing.Point(366, 58);
+            this.LBL_OTA.Location = new System.Drawing.Point(531, 58);
             this.LBL_OTA.Name = "LBL_OTA";
             this.LBL_OTA.Size = new System.Drawing.Size(65, 13);
             this.LBL_OTA.TabIndex = 101;
@@ -183,11 +183,11 @@ namespace VenomNamespace
             // 
             this.LBL_UD.AutoSize = true;
             this.LBL_UD.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_UD.Location = new System.Drawing.Point(566, 58);
+            this.LBL_UD.Location = new System.Drawing.Point(442, 56);
             this.LBL_UD.Name = "LBL_UD";
-            this.LBL_UD.Size = new System.Drawing.Size(62, 15);
+            this.LBL_UD.Size = new System.Drawing.Size(58, 15);
             this.LBL_UD.TabIndex = 102;
-            this.LBL_UD.Text = "UPGRADE";
+            this.LBL_UD.Text = "PENDING";
             this.LBL_UD.Visible = false;
             // 
             // Venom

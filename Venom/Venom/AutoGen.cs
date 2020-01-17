@@ -386,14 +386,14 @@ namespace VenomNamespace
 
             return check;
         }
-        private void BuildList(ConnectedApplianceInfo cai, string name, string mqttpay, int i)
+        private void BuildList(ConnectedApplianceInfo cai, string name, string mqttpay)
         {
             IPData newip = new IPData(cai.IPAddress, up);
             newip.MAC = cai.MacAddress;
             newip.Node = node;
             newip.MQTTPay = mqttpay;
             newip.Type = "AutoGen Test";
-            newip.TabIndex = i;
+            newip.TabIndex = parent.AUTOINDEX;
             newip.Name = name;
             newip.Down = dwn;
             if (parent.LB_IPs.Items.Count == 0)
@@ -469,94 +469,94 @@ namespace VenomNamespace
                     switch (i)
                     {
                         case 0:
-                            BuildList(cai, "RQM 131812 OTA : Generic : Forced Update : Unit in Idle State", mqttpay, i);
+                            BuildList(cai, "RQM 131812 OTA : Generic : Forced Update : Unit in Idle State", mqttpay);
                             break;
                         case 1:
-                            BuildList(cai, "RQM 131821 OTA : Generic : Forced Update : HMI Update", mqttpay, i);
+                            BuildList(cai, "RQM 131821 OTA : Generic : Forced Update : HMI Update", mqttpay);
                             break;
                         case 2:
-                            BuildList(cai, "RQM 131822 OTA : Generic : Forced Update : ACU Update", mqttpay, i);
+                            BuildList(cai, "RQM 131822 OTA : Generic : Forced Update : ACU Update", mqttpay);
                             break;
                         case 3:
-                            BuildList(cai, "RQM 131834 OTA : Downloading : User Starts Cycle from HMI", mqttpay, i);
+                            BuildList(cai, "RQM 131834 OTA : Downloading : User Starts Cycle from HMI", mqttpay);
                             break;
                         case 4:
-                            BuildList(cai, "RQM 131835 OTA : Downloading : User Starts Cycle from App", mqttpay, i);
+                            BuildList(cai, "RQM 131835 OTA : Downloading : User Starts Cycle from App", mqttpay);
                             break;
                         case 5:
-                            BuildList(cai, "RQM 131837 OTA : Downloading : User Changes Settings from App", mqttpay, i);
+                            BuildList(cai, "RQM 131837 OTA : Downloading : User Changes Settings from App", mqttpay);
                             break;
                         case 6:
-                            BuildList(cai, "RQM 131839 OTA : Programming & Progress Status : User Starts Cycle from App", mqttpay, i);
+                            BuildList(cai, "RQM 131839 OTA : Programming & Progress Status : User Starts Cycle from App", mqttpay);
                             break;
                         case 7:
-                            BuildList(cai, "RQM 131840 OTA : Programming & Progress Status : User Changes Settings from HMI", mqttpay, i);
+                            BuildList(cai, "RQM 131840 OTA : Programming & Progress Status : User Changes Settings from HMI", mqttpay);
                             break;
                         case 8:
-                            BuildList(cai, "RQM 131841 OTA : Programming & Progress Status : User Changes Settings from App", mqttpay, i);
+                            BuildList(cai, "RQM 131841 OTA : Programming & Progress Status : User Changes Settings from App", mqttpay);
                             break;
                         case 9:
-                            BuildList(cai, "RQM 131844 OTA : Generic : Forced Update : Upgrade : Model/Serial Consistency Check", mqttpay, i);
+                            BuildList(cai, "RQM 131844 OTA : Generic : Forced Update : Upgrade : Model/Serial Consistency Check", mqttpay);
                             break;
                         case 10:
-                            BuildList(cai, "RQM 131845 OTA : Generic : Forced Update : Upgrade : Version Number Check", mqttpay, i);
+                            BuildList(cai, "RQM 131845 OTA : Generic : Forced Update : Upgrade : Version Number Check", mqttpay);
                             break;
                         case 11:
-                            BuildList(cai, "RQM 131846 OTA : Generic : Forced Update : Downgrade : Model/Serial Consistency Check", mqttpay, i);
+                            BuildList(cai, "RQM 131846 OTA : Generic : Forced Update : Downgrade : Model/Serial Consistency Check", mqttpay);
                             break;
                         case 12:
-                            BuildList(cai, "RQM 131847 OTA : Generic : Forced Update : Downgrade : Version Number Check", mqttpay, i);
+                            BuildList(cai, "RQM 131847 OTA : Generic : Forced Update : Downgrade : Version Number Check", mqttpay);
                             break;
                         case 13:
-                            BuildList(cai, "RQM 131849 OTA : Generic : Forced Update : Upgrade : CCURI Check", mqttpay, i);
+                            BuildList(cai, "RQM 131849 OTA : Generic : Forced Update : Upgrade : CCURI Check", mqttpay);
                             break;
                         case 14:
-                            BuildList(cai, "RQM 131850 OTA : Generic : Forced Update : Downgrade : CCURI Check", mqttpay, i);
+                            BuildList(cai, "RQM 131850 OTA : Generic : Forced Update : Downgrade : CCURI Check", mqttpay);
                             break;
                         case 15:
-                            BuildList(cai, "RQM 131851 OTA : Post Update : Check Provision State", mqttpay, i);
+                            BuildList(cai, "RQM 131851 OTA : Post Update : Check Provision State", mqttpay);
                             break;
                         case 16:
-                            BuildList(cai, "RQM 131852 OTA : Post Update : Check Claimed Status", mqttpay, i);
+                            BuildList(cai, "RQM 131852 OTA : Post Update : Check Claimed Status", mqttpay);
                             break;
                         case 17:
-                            BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay, i);
+                            BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay);
                             break;
                         case 18:
-                            BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay, i);
+                            BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay);
                             break;
                         case 19:
-                            BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay, i);
+                            BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay);
                             break;
                         case 20:
-                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay, i);
+                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay);
                             break;
                         case 21:
-                            BuildList(cai, "RQM 132549 OTA : Generic : Forced Update : Wifi Radio", mqttpay, i);
+                            BuildList(cai, "RQM 132549 OTA : Generic : Forced Update : Wifi Radio", mqttpay);
                             break;
                         case 22:
-                            BuildList(cai, "RQM 132550 OTA : Generic : Forced Update : All Updatable Modules Updated", mqttpay, i);
+                            BuildList(cai, "RQM 132550 OTA : Generic : Forced Update : All Updatable Modules Updated", mqttpay);
                             break;
                         case 23:
-                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay, i);
+                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay);
                             break;
                         case 24:
-                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay, i);
+                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay);
                             break;
                         case 25:
-                            BuildList(cai, "RQM 133399 OTA : Post Update : Connection Reset", mqttpay, i);
+                            BuildList(cai, "RQM 133399 OTA : Post Update : Connection Reset", mqttpay);
                             break;
                         case 26:
-                            BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay, i);
+                            BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay);
                             break;
                         case 27:
-                            BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay, i);
+                            BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);
                             break;
                         case 28:
-                            BuildList(cai, "RQM 154697 OTA : Generic : Scheduled OTA Payload Sent Multiple Times", mqttpay, i);
+                            BuildList(cai, "RQM 154697 OTA : Generic : Scheduled OTA Payload Sent Multiple Times", mqttpay);
                             break;
                         case 29:
-                            BuildList(cai, "RQM 131836 OTA : Downloading : User Changes Settings from HMI", mqttpay, i);
+                            BuildList(cai, "RQM 131836 OTA : Downloading : User Changes Settings from HMI", mqttpay);
                             break;
 
                         default:
