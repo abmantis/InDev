@@ -185,9 +185,9 @@ namespace VenomNamespace
             this.LBL_UD.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.LBL_UD.Location = new System.Drawing.Point(566, 58);
             this.LBL_UD.Name = "LBL_UD";
-            this.LBL_UD.Size = new System.Drawing.Size(62, 15);
+            this.LBL_UD.Size = new System.Drawing.Size(58, 15);
             this.LBL_UD.TabIndex = 102;
-            this.LBL_UD.Text = "UPGRADE";
+            this.LBL_UD.Text = "PENDING";
             this.LBL_UD.Visible = false;
             // 
             // Venom

@@ -113,12 +113,6 @@ namespace VenomNamespace
             get { return _written; }
             set { _written = value; }
         }
-        private LinkedList<string> _llist;
-        public LinkedList<string> List
-        {
-            get { return _llist; }
-            set { _llist = value; }
-        }
         private string _model;
         public string Model
         {
@@ -137,6 +131,12 @@ namespace VenomNamespace
             get { return _down; }
             set { _down = value; }
         }
+        private string _next;
+        public string Next
+        {
+            get { return _next; }
+            set { _next = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -153,10 +153,10 @@ namespace VenomNamespace
             _waittype = "";
             _typeres = "";
             _written = false;
-            _llist = null;
             _model = "";
             _serial = "";
             _down = "";
+            _next = "UPGRADE";
         }
 
     }
