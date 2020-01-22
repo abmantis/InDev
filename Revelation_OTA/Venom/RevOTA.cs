@@ -1213,12 +1213,12 @@ namespace VenomNamespace
                     DGV_Data.CurrentCell.Value == null ||
                     idex == -1)
                 {
-                    MessageBox.Show("You may only remove an entry that has a FAIL (red) result. Please select a valid entry and try again.", "Error: Remove Failed",
+                    MessageBox.Show("You may only remove an entry that has an Update Sent(yellow) or has a FAIL (red) result. Please select a valid entry and try again.", "Error: Remove Failed",
                                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                if (DGV_Data.Rows[idex].Cells[6].Value.ToString().Contains("FAIL"))
+                if (DGV_Data.Rows[idex].Cells[6].Value.ToString().Contains("FAIL") || DGV_Data.Rows[idex].Cells[6].Value.ToString().Contains("Update"))
                 {
                     DialogResult dialogResult = MessageBox.Show("This will Remove the selected row. Press Yes to Remove or No to Cancel.",
                                                             "Verify Remove.", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
@@ -1251,7 +1251,7 @@ namespace VenomNamespace
                     e.RowIndex == -1)
                     return;
 
-                if (DGV_Data.Rows[e.RowIndex].Cells[6].Value.ToString().Contains("FAIL"))
+                if (DGV_Data.Rows[e.RowIndex].Cells[6].Value.ToString().Contains("FAIL") || DGV_Data.Rows[e.RowIndex].Cells[6].Value.ToString().Contains("Update"))
                     BTN_Rmv.Enabled = true;
                 else
                     BTN_Rmv.Enabled = false;
