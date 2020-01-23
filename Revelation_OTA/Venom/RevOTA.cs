@@ -761,7 +761,11 @@ namespace VenomNamespace
                                     DGV_Data.Refresh();
                                     continue;
                                 }
-                                SendOTA(cai, ipd);
+                                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_m = WifiLocal.ConnectedAppliances;
+                                ConnectedApplianceInfo cai_m = cio_m.FirstOrDefault(x => x.MacAddress == ipd.MAC);
+                                if (cai_m != null)
+                                    SendOTA(cai_m, ipd);
+                                Wait(3000);
                                 ipd.Retry++;
                                 continue;
                                 
