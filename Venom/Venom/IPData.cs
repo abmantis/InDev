@@ -69,18 +69,7 @@ namespace VenomNamespace
             get { return _name; }
             set { _name = value; }
         }
-        private string _waittype;
-        public string WaitType
-        {
-            get { return _waittype; }
-            set { _waittype = value; }
-        }
-        private string _typeres;
-        public string Typeres
-        {
-            get { return _typeres; }
-            set { _typeres = value; }
-        }
+
         private ManualResetEventSlim _signal;
         public ManualResetEventSlim Signal
         {
@@ -101,12 +90,6 @@ namespace VenomNamespace
             set { _tabindex = value; }
         }
 
-        private int _wait;
-        public int Wait
-        {
-            get { return _wait; }
-            set { _wait = value; }
-        }
         private bool _written;
         public bool Written
         {
@@ -137,6 +120,24 @@ namespace VenomNamespace
             get { return _next; }
             set { _next = value; }
         }
+        private string _ccuri;
+        public string CCURI
+        {
+            get { return _ccuri; }
+            set { _ccuri = value; }
+        }
+        private string _vers;
+        public string Vers
+        {
+            get { return _vers; }
+            set { _vers = value; }
+        }
+        private string _ispp;
+        public string ISPP
+        {
+            get { return _ispp; }
+            set { _ispp = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -147,16 +148,16 @@ namespace VenomNamespace
             _result = "";
             _ipindex = 0;
             _mqttpay = "";
-            _wait = 0;
             _node = "";
             _name = "";
-            _waittype = "";
-            _typeres = "";
             _written = false;
             _model = "";
             _serial = "";
             _down = "";
             _next = "UPGRADE";
+            _ccuri = "";
+            _vers = "";
+            _ispp = "";
         }
 
     }
