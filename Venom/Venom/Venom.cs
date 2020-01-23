@@ -47,6 +47,8 @@ namespace VenomNamespace
         public string ccuri = "";
         public string vers = "";
         public string ispp = "";
+        public string prov = "";
+        public string clm = "";
         public string curfilename;
         public PayList plist;
         public AutoGen auto;
@@ -378,6 +380,10 @@ namespace VenomNamespace
                     string[] parts = raw.Split(' ');
                     string[] split = parts[6].Split('[');
                     ccuri = split[1].Replace("]", "");
+                    split = parts[4].Split('[');
+                    clm = split[1].Replace("]", "");
+                    split = parts[3].Split('[');
+                    prov = split[1].Replace("]", "");
                     return;
                 }
 
@@ -1249,6 +1255,12 @@ namespace VenomNamespace
                     case 14:    //Downgrade CCURI check
                         ipd.CCURI = ccuri;
                         break;
+                    case 15:    //Provision check
+                        ipd.Prov = prov;
+                        break;
+                    case 16:    //Claim check
+                        ipd.Clm = clm;
+                        break;
                     case 21:    //ApplianceUpdateVersion check
                         ipd.ISPP = ispp;
                         break;
@@ -1532,6 +1544,68 @@ namespace VenomNamespace
                         SetText("auto", "AutoGen Result", i);
 
                         break;
+
+                    case 15:    //Prov check
+                        if (!LBL_Auto.Text.Contains("FAIL"))
+                        {
+                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                            {                               
+
+                                if (prov != ipd.Prov)
+                                {
+                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    ipd.Result = "FAIL - Provision state was DIFFERENT than initial Provision= " + ipd.Prov + " and after OTA Provision= " + prov + ".";
+                                }
+                                else
+                                {
+                                    InvColor(iplist.IndexOf(ipd), "grn");
+                                    ipd.Result = "PASS - Provision state was the same after OTA was applied.";
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            InvColor(iplist.IndexOf(ipd), "red");
+                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                        }
+
+                        SetText("auto", "AutoGen Result", i);
+
+                        break;
+
+                    case 16:    //Claim check
+                        if (!LBL_Auto.Text.Contains("FAIL"))
+                        {
+                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+
+                                    if (clm != ipd.Clm)
+                                    {
+                                        InvColor(iplist.IndexOf(ipd), "red");
+                                        ipd.Result = "FAIL - Claim state was DIFFERENT than initial Claim= " + ipd.Clm + " and after OTA Claim= " + clm + ".";
+                                    }
+                                    else
+                                    {
+                                        InvColor(iplist.IndexOf(ipd), "grn");
+                                        ipd.Result = "PASS - Claim state was the same after OTA was applied.";
+                                    }
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            InvColor(iplist.IndexOf(ipd), "red");
+                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                        }
+
+                        SetText("auto", "AutoGen Result", i);
+
+                        break;
+
                     case 25:    //Node OTA success check
                         if (!LBL_Auto.Text.Contains("FAIL"))
                         {

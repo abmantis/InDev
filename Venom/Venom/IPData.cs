@@ -138,6 +138,18 @@ namespace VenomNamespace
             get { return _ispp; }
             set { _ispp = value; }
         }
+        private string _prov;
+        public string Prov
+        {
+            get { return _prov; }
+            set { _prov = value; }
+        }
+        private string _clm;
+        public string Clm
+        {
+            get { return _clm; }
+            set { _clm = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -158,6 +170,8 @@ namespace VenomNamespace
             _ccuri = "";
             _vers = "";
             _ispp = "";
+            _prov = "";
+            _clm = "";
         }
 
     }
