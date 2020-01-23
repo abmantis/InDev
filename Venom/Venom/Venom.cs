@@ -386,8 +386,8 @@ namespace VenomNamespace
                     string[] parts = sb.Replace("[", "").Split(':');
                     parts[2].Replace("]", "");
                     string[] split = parts[2].Split(',');
-                    string vers = split[0].Replace("\"", "");
-                    string ispp = split[1].Replace("\"", "");
+                    vers = split[0].Replace("\"", "");
+                    ispp = split[1].Replace("\"", "");
                     return;
                 }
                 // Locate if OTA payload has been sent and update status
@@ -870,7 +870,7 @@ namespace VenomNamespace
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
                                     results.Rows[i]["OTA Result"] = "PENDING";
 
-                                InvColor(i, "res");
+                                DGV_Data.Rows[i].Cells[6].Style.BackColor = default(Color);//InvColor(i, "res");
                             }
                             iplist[AUTOINDEX].Result = "PENDING";
                             iplist[AUTOINDEX].Model = "";
@@ -932,7 +932,7 @@ namespace VenomNamespace
                                     if (!results.Rows[i]["OTA Result"].ToString().Contains("PASS") || !results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
                                     {
                                         results.Rows[i]["OTA Result"] = "Cancelled by User.";
-                                        InvColor(i, "yll");
+                                        DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;//InvColor(i, "yll");
                                     }
                                 }
 
@@ -1157,16 +1157,29 @@ namespace VenomNamespace
             SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes, cai, ipd);
             Wait(CYCWAIT);
         }
-        public bool CheckBeat(string type)
+        public bool CheckBeat(byte[] ipbytes, string type, ConnectedApplianceInfo cai, IPData ipd)
         {
             if (type == "init")
             {
+                if (!mbeat)
+                {
+                    byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
+                    SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                    Wait(2000);
+                }
                 if (tbeat && mbeat)
                     return true;
                 else
                 {
                     for (int j = 0; j < RECONWAIT; j++)
                     {
+                        if (cancel_request)
+                            return false;
+                        if (!mbeat)
+                        {
+                            byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
+                            SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                        }
                         Wait(5000);
                         if (tbeat && mbeat)
                             return true;
@@ -1183,8 +1196,17 @@ namespace VenomNamespace
             {
                 tbeat = false;
                 mbeat = false;
+
                 for (int j = 0; j < RECONWAIT; j++)
                 {
+                    if (cancel_request)
+                        return false;
+                    if (!mbeat)
+                    {
+                        byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
+                        SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                    }
+                        
                     Wait(5000);
                     if (tbeat && mbeat)
                         return true;
@@ -1200,7 +1222,8 @@ namespace VenomNamespace
         {
             for(int i = 0; i < TESTCASEMAX; i++)
             {
-
+                if (cancel_request)
+                    return;
                 switch (i)
                 {
                     case 0:    //OTA in Idle
@@ -1243,7 +1266,8 @@ namespace VenomNamespace
         {
             for (int i = 0; i < TESTCASEMAX; i++)
             {
-
+                if (cancel_request)
+                    return;
                 switch (i)
                 {
                     case 0:    //Idle OTA upgrade success check
@@ -1709,7 +1733,7 @@ namespace VenomNamespace
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
                     {
-                        CheckBeat("init");
+                        CheckBeat(ipbytes, "init", cai, ipd);
                         TestInit(ipbytes, cai, ipd);
                         if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                             thread_waits = true;
@@ -1721,6 +1745,7 @@ namespace VenomNamespace
                             if (cai_m != null)
                             {
                                 string[] n_ipad = cai_m.IPAddress.Split('.');
+                                ipd.IPAddress = cai_m.IPAddress;
                                 byte[] n_ipbytes = new byte[4];
                                 for (int j = 0; j < 4; j++)
                                 {
@@ -1771,17 +1796,19 @@ namespace VenomNamespace
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                     ConnectedApplianceInfo cai_n;
                     cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
+                    ipd.IPAddress = cai_n.IPAddress;
                     if (cai_n != null)
                     {
                         for (int j = 0; j < MQTTMAX; j++)
                         {
+                            if (cancel_request)
+                                return;
                             if (cai_n.IsMqttConnected && cai_n.IsTraceOn)
                                 break;
                             MqttRecon(cai_n);
                             Wait(RECONWAIT); //If not MQTT, give more time to reconnect
                             cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
                             REMOVEME = j;
-
                         }
 
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
@@ -1789,7 +1816,7 @@ namespace VenomNamespace
                         Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
                         if (!res.Contains("FAIL"))
                             InvLabel("auto", "CHECK");
-                        CheckBeat("check");
+                        CheckBeat(ipbytes, "check", cai_n, ipd);
                         TestCheck(cai_n, ipd);
                         ipd.Result = "";
                         InvLabel("auto", "PENDING");
@@ -2027,6 +2054,13 @@ namespace VenomNamespace
 
             
         }
+        public void SizeCol()
+        {
+            DGV_Data.Columns[0].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            DGV_Data.Columns[2].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            DGV_Data.Columns[3].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            DGV_Data.Columns[4].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+        }
         private void BTN_Remove_Click(object sender, EventArgs e)
         {
             try
@@ -2162,6 +2196,8 @@ namespace VenomNamespace
                                 "that were skipped are connected and listed in Wifibasic or expected, then retry importing.", "Error: WifiBasic IP Address(es) Not Found or File Has Empty Lines",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
+
+                        SizeCol();
                     }
                 }
                 catch

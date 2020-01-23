@@ -572,6 +572,7 @@ namespace VenomNamespace
                 parent.autogen = true;
                 parent.BTN_MakeList.Enabled = false;
                 parent.BTN_Import.Enabled = false;
+                parent.SizeCol();
             }
             catch
             {
