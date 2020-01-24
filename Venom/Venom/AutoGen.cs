@@ -478,12 +478,6 @@ namespace VenomNamespace
                         case 1:
                             BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay);
                             break;
-                        case 2:
-                            BuildList(cai, "RQM 131836 OTA : Downloading : User Changes Settings from HMI", mqttpay);
-                            break;
-                        case 3:
-                            BuildList(cai, "RQM 131834 OTA : Downloading : User Starts Cycle from HMI", mqttpay);
-                            break;
                         case 4:
                             BuildList(cai, "RQM 131835 OTA : Downloading : User Starts Cycle from App", mqttpay);
                             break;
@@ -492,9 +486,6 @@ namespace VenomNamespace
                             break;
                         case 6:
                             BuildList(cai, "RQM 131839 OTA : Programming & Progress Status : User Starts Cycle from App", mqttpay);
-                            break;
-                        case 7:
-                            BuildList(cai, "RQM 131840 OTA : Programming & Progress Status : User Changes Settings from HMI", mqttpay);
                             break;
                         case 8:
                             BuildList(cai, "RQM 131841 OTA : Programming & Progress Status : User Changes Settings from App", mqttpay);
