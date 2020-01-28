@@ -762,7 +762,7 @@ namespace VenomNamespace
                             iplist[AUTOINDEX].Type + "," +
                             iplist[AUTOINDEX].Node + "," +
                             DGV_Data.Rows[listindex].Cells[5].ToString() + "," +
-                            iplist[AUTOINDEX].Result);;
+                            iplist[AUTOINDEX].Result); ;
                         }
                         Invoke((MethodInvoker)delegate
                         {
@@ -1220,7 +1220,7 @@ namespace VenomNamespace
                         byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
                         SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
                     }
-                        
+
                     Wait(5000);
                     if (tbeat && mbeat)
                         return true;
@@ -1228,13 +1228,13 @@ namespace VenomNamespace
                         continue;
                 }
             }
-            
+
 
             return false;
         }
         public void TestInit(byte[] ipbytes, ConnectedApplianceInfo cai, IPData ipd)
         {
-            for(int i = 0; i < TESTCASEMAX; i++)
+            for (int i = 0; i < TESTCASEMAX; i++)
             {
                 if (cancel_request)
                     return;
@@ -1289,8 +1289,11 @@ namespace VenomNamespace
         {
             for (int i = 0; i < TESTCASEMAX; i++)
             {
+                ipd.Result = "PENDING";
+
                 if (cancel_request)
                     return;
+
                 switch (i)
                 {
                     case 0:    //Idle OTA upgrade success check
@@ -1300,7 +1303,7 @@ namespace VenomNamespace
                             {
                                 InvColor(iplist.IndexOf(ipd), "grn");
                                 ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state.";
-                            }                           
+                            }
                         }
 
                         else
@@ -1488,7 +1491,7 @@ namespace VenomNamespace
 
                     case 10:    //Upgrade CCURI check
                         if (!LBL_Auto.Text.Contains("FAIL"))
-                        {                            
+                        {
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
                             {
                                 if (!tbeat)
@@ -1525,7 +1528,7 @@ namespace VenomNamespace
                         if (!LBL_Auto.Text.Contains("FAIL"))
                         {
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
-                            {                               
+                            {
                                 if (!tbeat)
                                     ccuri = null;
                                 if (string.IsNullOrEmpty(ccuri))
@@ -1560,7 +1563,7 @@ namespace VenomNamespace
                         if (!LBL_Auto.Text.Contains("FAIL"))
                         {
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
-                            {                               
+                            {
 
                                 if (prov != ipd.Prov)
                                 {
@@ -1761,7 +1764,7 @@ namespace VenomNamespace
                         System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                         ConnectedApplianceInfo cai_n = cio_n.FirstOrDefault(x => x.IPAddress == ipd.IPAddress);
                         int REMOVEME = 0;
-                        Wait(3*RECONWAIT); //Wait X minutes for MQTT to come back on after reboout out of IAP
+                        Wait(3 * RECONWAIT); //Wait X minutes for MQTT to come back on after reboout out of IAP
                         for (int i = 0; i < MQTTMAX; i++)
                         {
                             if (cai_n.IsMqttConnected)
@@ -1769,9 +1772,9 @@ namespace VenomNamespace
                             //CycleWifi();
                             Wait(RECONWAIT); //If not MQTT, give more time to reconnect
                             REMOVEME = i;
-                            
+
                         }
-                        
+
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
                         ipd.Signal.Reset();
                         Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
@@ -1784,7 +1787,7 @@ namespace VenomNamespace
                 Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " reached barrier.");
 
                 //Thread task cancelled or completed, signal others it is done
-                 barrier.SignalAndWait();
+                barrier.SignalAndWait();
                 lock (lockObj)
                 {
                     FinalResult();
@@ -1794,7 +1797,7 @@ namespace VenomNamespace
             {
                 MessageBox.Show("Catastrophic RunTask error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-                barrier.SignalAndWait();                
+                barrier.SignalAndWait();
                 return;
             }
 
@@ -1894,7 +1897,7 @@ namespace VenomNamespace
                         Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
-                    
+
                     int REMOVEME = 0;
                     string res = LBL_Auto.Text;
 
@@ -1903,23 +1906,33 @@ namespace VenomNamespace
 
                     InvLabel("ud", "PENDING");
 
-                    Wait(3 * RECONWAIT); //Wait X minutes for MQTT to come back on after reboot out out of IAP
+                    MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
 
+                    Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
+
+                    MqttRecon(cai, "con"); //Reconnect MQTT
+
+                    //Find updated product on list again
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                     ConnectedApplianceInfo cai_n;
                     cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
-                    ipd.IPAddress = cai_n.IPAddress;
+
+                    MqttRecon(cai_n, "con"); //Establish MQTT with new CAI
 
                     if (cai_n != null)
                     {
+                        ipd.IPAddress = cai_n.IPAddress;
+
                         for (int j = 0; j < MQTTMAX; j++)
                         {
                             if (cancel_request)
                                 return;
                             if (cai_n.IsMqttConnected && cai_n.IsTraceOn)
                                 break;
-                            MqttRecon(cai_n);
-                            Wait(RECONWAIT); //If not MQTT, give more time to reconnect
+
+                            MqttRecon(cai_n, "dis");  //Disconnect MQTT to prepare for reconnect
+                            MqttRecon(cai_n, "con");    //Reconnect MQTT
+                            Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
                             cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
                             REMOVEME = j;
                         }
@@ -1943,8 +1956,10 @@ namespace VenomNamespace
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
                         ipd.Signal.Reset();
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
-                    }           
-                                        
+                        ipd.Result = "";
+                        InvLabel("auto", "PENDING");
+                    }
+
                 }
                 FinalResult();
             }
@@ -2087,7 +2102,7 @@ namespace VenomNamespace
 
             return false;
         }
-        bool TraceConnect(ConnectedApplianceInfo cai) 
+        bool TraceConnect(ConnectedApplianceInfo cai)
         {
             try
             {
@@ -2123,51 +2138,53 @@ namespace VenomNamespace
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
-            
+
         }
-        public void MqttRecon(ConnectedApplianceInfo cai)
+        public void MqttRecon(ConnectedApplianceInfo cai, string type)
         {
-            CycleWifi();
-            Wait(2000);
-            WifiLocal.ConnectTo(cai);
-            Wait(2000);
-            WifiLocal.EnableTrace(cai, true);
-            Wait(2000);
-            //WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
-            //Wait(2000);
-        }
-        public void CycleWifi()
-        {
-            string localIP = WifiLocal.Localhost.ToString();
             try
             {
-                // Close all WifiBasic connections
-                WifiLocal.CloseAll(true);
-                //WifiLocal.Close(cai);
-                Wait(2000);
-                // Get new cert to restart WifiBasic connections
-                CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
-
-                // Restart Wifi Connection
-                if (certMgr.IsLocalValid)
+                if (type.Equals("dis"))
                 {
-                    WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+                    // Close all WifiBasic connections
+                    WifiLocal.CloseAll(true);
                     Wait(2000);
-                    return;
                 }
 
-                WifiLocal.ScanConnectedAppliances(true, localIP);
-                Wait(2000);
-            }
+                if (type.Equals("con"))
+                {
+                    string localIP = WifiLocal.Localhost.ToString();
+                    CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
 
+                    // Restart Wifi Connection
+                    if (certMgr.IsLocalValid)
+                    {
+                        WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+                        Wait(2000);
+                    }
+
+                    WifiLocal.ScanConnectedAppliances(true, localIP);
+                    Wait(2000);
+
+                    WifiLocal.ConnectTo(cai);
+                    Wait(2000);
+
+                    WifiLocal.EnableTrace(cai, true);
+                    Wait(2000);
+
+                    WifiLocal.CloseRevelation(System.Net.IPAddress.Parse(cai.IPAddress));
+                    Wait(2000);
+                }
+
+            }
             catch
             {
-                MessageBox.Show("Catastrophic CycleWifi error.", "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Catastrophic MqttRecon error.", "Error",
+                               MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
+
             }
 
-            
         }
         public void SizeCol()
         {
@@ -2184,7 +2201,7 @@ namespace VenomNamespace
                                                         "Verify IP Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dialogResult == DialogResult.Yes)
                 {
-                    
+
                     for (int i = results.Rows.Count - 1; i >= 0; i--)
                     {
                         DataRow dr = results.Rows[i];
@@ -2214,7 +2231,7 @@ namespace VenomNamespace
             {
                 ResetForm(true);
             }
-            
+
         }
         private void BTN_MakeList_Click(object sender, EventArgs e)
         {
@@ -2323,7 +2340,7 @@ namespace VenomNamespace
                     iplist.Clear();
                     LB_IPs.Items.Clear();
                 }
-                
+
             }
         }
         private void ResetForm(bool operation)
@@ -2352,11 +2369,12 @@ namespace VenomNamespace
                     autogen = false;
                 }
             });
-            
+
         }
         public void FinalResult()
         {
-            try {
+            try
+            {
 
                 thread_done++;
                 if (thread_done == LB_IPs.Items.Count)
@@ -2390,7 +2408,7 @@ namespace VenomNamespace
                     cancel_request = true;
                 }
                 else
-                    return;                
+                    return;
             }
 
             catch
