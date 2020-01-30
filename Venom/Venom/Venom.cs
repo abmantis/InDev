@@ -21,8 +21,9 @@ namespace VenomNamespace
         public int AUTOINDEX = 0;
         public int AUTOCNT = 2; //
         public int TESTCASEMAX = 26; //Max test cases that can be automated
+        public int NODECASEMAX = 23; //Max automated test case per node
         public static int ATTEMPTMAX = 3;
-        public static int MQTTMAX = 10;
+        public static int MQTTMAX = 4;
         public static int TMAX = 90 * 60000; //OTA max thread time is 1.5 hours
         public static int CYCWAIT = 1 * 30000; //Amount of time to let cycle run
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
@@ -44,11 +45,14 @@ namespace VenomNamespace
 
         public bool tbeat = false;
         public bool mbeat = false;
+
         public string ccuri = "";
         public string vers = "";
         public string ispp = "";
         public string prov = "";
         public string clm = "";
+        public int autottl = 0;
+
         public string curfilename;
         public PayList plist;
         public AutoGen auto;
@@ -251,6 +255,8 @@ namespace VenomNamespace
                     string hs = parts[2].Substring(i, 2);
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
+
+
                 lock (writeobj)
                 {
                     ProcessPayload(sb, data.Source.ToString(), "Trace Message", data.ContentAsString);
@@ -393,8 +399,9 @@ namespace VenomNamespace
                     parts[2].Replace("]", "");
                     string[] split = parts[2].Split(',');
                     vers = split[0].Replace("\"", "");
-                    vers.Replace("]", "");
+                    vers = vers.Replace("]", "");
                     ispp = split[1].Replace("\"", "");
+                    ispp = ispp.Replace("]", "");
                     return;
                 }
                 // Locate if OTA payload has been sent and update status
@@ -769,6 +776,9 @@ namespace VenomNamespace
                             results.Rows[listindex]["OTA Result"] = iplist[AUTOINDEX].Result;
                             DGV_Data.Refresh();
                         });
+
+                        //if (iplist[AUTOINDEX].Signal != null)
+                        //iplist[AUTOINDEX].Signal.Set();
                         return;
                     }
 
@@ -795,7 +805,8 @@ namespace VenomNamespace
                             iplist[listindex].Written = true;
                         }
 
-                        iplist[listindex].Signal.Set();
+                        if (iplist[listindex].Signal != null)
+                            iplist[listindex].Signal.Set();
 
                         long duration = g_time.ElapsedMilliseconds;
                         TimeSpan t = TimeSpan.FromMilliseconds(duration);
@@ -872,16 +883,17 @@ namespace VenomNamespace
                     {
                         if (autogen)
                         {
-                            for (int i = 0; i < TESTCASEMAX; i++)
+                            for (int i = 0; i < NODECASEMAX; i++)
                             {
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
                                     results.Rows[i]["OTA Result"] = "PENDING";
 
-                                InvColor(i, "res");//DGV_Data.Rows[i].Cells[6].Style.BackColor = default(Color);
+                                DGV_Data.Rows[i].Cells[6].Style.BackColor = default(Color);
                             }
                             iplist[AUTOINDEX].Result = "PENDING";
                             iplist[AUTOINDEX].Model = "";
                             iplist[AUTOINDEX].Serial = "";
+                            autottl = 0;
                         }
                         else
                         {
@@ -933,12 +945,12 @@ namespace VenomNamespace
                             {
                                 InvLabel("auto", "PENDING");
                                 InvLabel("ud", "PENDING");
-                                for (int i = 0; i < TESTCASEMAX; i++)
+                                for (int i = 0; i < NODECASEMAX; i++)
                                 {
                                     if (!results.Rows[i]["OTA Result"].ToString().Contains("PASS") || !results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
                                     {
                                         results.Rows[i]["OTA Result"] = "Cancelled by User.";
-                                        InvColor(i, "yll");//DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                                        DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
                                     }
                                 }
 
@@ -1048,7 +1060,7 @@ namespace VenomNamespace
         }
         public void InvColor(int index, string type)
         {
-            /*Invoke((MethodInvoker)delegate
+            Invoke((MethodInvoker)delegate
             {
                 if (type == "yll")
                     DGV_Data.Rows[index].Cells[6].Style.BackColor = Color.Yellow;
@@ -1058,8 +1070,9 @@ namespace VenomNamespace
                     DGV_Data.Rows[index].Cells[6].Style.BackColor = Color.Green;
                 if (type == "res")
                     DGV_Data.Rows[index].Cells[6].Style.BackColor = default(Color);
+
                 DGV_Data.Refresh();
-            });*/
+            });
         }
         public bool SendMQTT(byte[] ipbytes, string topic, byte[] paybytes, ConnectedApplianceInfo cai, IPData ipd)
         {
@@ -1234,7 +1247,7 @@ namespace VenomNamespace
         }
         public void TestInit(byte[] ipbytes, ConnectedApplianceInfo cai, IPData ipd)
         {
-            for (int i = 0; i < TESTCASEMAX; i++)
+            for (int i = 0; i < NODECASEMAX; i++)
             {
                 if (cancel_request)
                     return;
@@ -1287,12 +1300,16 @@ namespace VenomNamespace
         }
         public void TestCheck(ConnectedApplianceInfo cai, IPData ipd)
         {
-            for (int i = 0; i < TESTCASEMAX; i++)
+            bool changed;
+
+            for (int i = 0; i < NODECASEMAX; i++)
             {
                 ipd.Result = "PENDING";
 
                 if (cancel_request)
                     return;
+
+                changed = false;
 
                 switch (i)
                 {
@@ -1301,18 +1318,21 @@ namespace VenomNamespace
                         {
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
                             {
-                                InvColor(iplist.IndexOf(ipd), "grn");
-                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state.";
+                                InvColor(i, "grn");
+                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of " + LBL_Auto.Text + ".";
+                                changed = true;
                             }
                         }
 
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
-                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state.";
+                            InvColor(i, "red");
+                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of " + LBL_Auto.Text + ".";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 1:    //Idle OTA downgrade success check
@@ -1321,18 +1341,21 @@ namespace VenomNamespace
                         {
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
                             {
-                                InvColor(iplist.IndexOf(ipd), "grn");
-                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state.";
+                                InvColor(i, "grn");
+                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of " + LBL_Auto.Text + ".";
+                                changed = true;
                             }
                         }
 
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 6:    //Upgrade Model/Serial Number check
@@ -1342,39 +1365,43 @@ namespace VenomNamespace
                             {
                                 if (cai.ModelNumber != ipd.Model)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model +
                                                  " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
                                 }
 
                                 if (cai.SerialNumber != ipd.Serial)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
                                                  " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
                                 }
 
                                 if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
-                                    ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied.";
+                                    InvColor(i, "red");
+                                    ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied." 
+                                        + ipd.Model + " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number."
+                                        + ipd.Serial + " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
                                 }
                                 else
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "grn");
-                                    ipd.Result = "PASS - BOTH Model Number and Serial Number were the same after OTA was applied.";
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - BOTH Model Number of " + cai.ModelNumber + " and Serial Number of " + cai.SerialNumber + " were the same after OTA was applied.";
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 7:    //Upgrade Version Number check
@@ -1386,30 +1413,32 @@ namespace VenomNamespace
                                     vers = null;
                                 if (string.IsNullOrEmpty(vers))
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
                                 }
                                 else if (vers == ipd.Vers)
                                 {
-                                    ipd.Result = "CHECK - Version was EQUAL before and after OTA. This may be a FAIL result depending on platform expected value.";
-                                    InvColor(iplist.IndexOf(ipd), "yll");
+                                    ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
+                                    InvColor(i, "yll");
                                 }
                                 else
                                 {
                                     ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
-                                    InvColor(iplist.IndexOf(ipd), "grn");
+                                    InvColor(i, "grn");
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 8:    //Downgrade Model/Serial Number check
@@ -1417,41 +1446,45 @@ namespace VenomNamespace
                         {
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
                             {
-                                if (cai.ModelNumber != ipd.Model)
+                               if (cai.ModelNumber != ipd.Model)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model +
                                                  " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
                                 }
 
                                 if (cai.SerialNumber != ipd.Serial)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
                                                  " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
                                 }
 
                                 if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
-                                    ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied.";
+                                    InvColor(i, "red");
+                                    ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied." 
+                                        + ipd.Model + " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number."
+                                        + ipd.Serial + " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
                                 }
                                 else
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "grn");
-                                    ipd.Result = "PASS - BOTH Model Number and Serial Number were the same after OTA was applied.";
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - BOTH Model Number of " + cai.ModelNumber + " and Serial Number of " + cai.SerialNumber + " were the same after OTA was applied.";
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 9:    //Downgrade Version Number check
@@ -1461,32 +1494,34 @@ namespace VenomNamespace
                             {
                                 if (!mbeat)
                                     vers = null;
-                                if (string.IsNullOrEmpty(ispp))
+                                if (string.IsNullOrEmpty(vers))
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
-                                    ipd.Result = "FAIL - ISPPartNumber was not able to be stored and cannot be verified.";
+                                    InvColor(i, "red");
+                                    ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
                                 }
                                 else if (vers == ipd.Vers)
                                 {
-                                    ipd.Result = "CHECK - ISPPartNumber was EQUAL before and after OTA. This may be a FAIL result depending on platform expected value.";
-                                    InvColor(iplist.IndexOf(ipd), "yll");
+                                    ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
+                                    InvColor(i, "yll");
                                 }
                                 else
                                 {
-                                    ipd.Result = "PASS - ISPPartNumber was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
-                                    InvColor(iplist.IndexOf(ipd), "grn");
+                                    ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
+                                    InvColor(i, "grn");
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 10:    //Upgrade CCURI check
@@ -1498,30 +1533,32 @@ namespace VenomNamespace
                                     ccuri = null;
                                 if (string.IsNullOrEmpty(ccuri))
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - CCURI was not able to be stored and cannot be verified.";
                                 }
                                 else if (ccuri == ipd.CCURI)
                                 {
-                                    ipd.Result = "CHECK - CCURI was EQUAL before and after OTA. This may be a FAIL result depending on platform expected value.";
-                                    InvColor(iplist.IndexOf(ipd), "yll");
+                                    ipd.Result = "CHECK - CCURI was EQUAL to " + ipd.CCURI + " before and " + ccuri + " . This may be a FAIL result depending on platform expected value.";
+                                    InvColor(i, "yll");
                                 }
                                 else
                                 {
                                     ipd.Result = "PASS - CCURI was changed to " + ccuri + " from the starting value of " + ipd.CCURI + ".";
-                                    InvColor(iplist.IndexOf(ipd), "grn");
+                                    InvColor(i, "grn");
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 11:    //Downgrade CCURI check
@@ -1533,30 +1570,32 @@ namespace VenomNamespace
                                     ccuri = null;
                                 if (string.IsNullOrEmpty(ccuri))
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - CCURI was not able to be stored and cannot be verified.";
                                 }
                                 else if (ccuri == ipd.CCURI)
                                 {
-                                    ipd.Result = "CHECK - CCURI was EQUAL before and after OTA. This may be a FAIL result depending on platform expected value.";
-                                    InvColor(iplist.IndexOf(ipd), "yll");
+                                    ipd.Result = "CHECK - CCURI was EQUAL to " + ipd.CCURI + " before and " + ccuri + " . This may be a FAIL result depending on platform expected value.";
+                                    InvColor(i, "yll");
                                 }
                                 else
                                 {
                                     ipd.Result = "PASS - CCURI was changed to " + ccuri + " from the starting value of " + ipd.CCURI + ".";
-                                    InvColor(iplist.IndexOf(ipd), "grn");
+                                    InvColor(i, "grn");
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 12:    //Prov check
@@ -1567,25 +1606,27 @@ namespace VenomNamespace
 
                                 if (prov != ipd.Prov)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - Provision state was DIFFERENT than initial Provision= " + ipd.Prov + " and after OTA Provision= " + prov + ".";
                                 }
                                 else
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "grn");
-                                    ipd.Result = "PASS - Provision state was the same after OTA was applied.";
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - Provision state was the same value of " + ipd.Prov + " before and " + prov + " after OTA was applied.";
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 13:    //Claim check
@@ -1595,24 +1636,26 @@ namespace VenomNamespace
                             {
                                 if (clm != ipd.Clm)
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - Claim state was DIFFERENT than initial Claim= " + ipd.Clm + " and after OTA Claim= " + clm + ".";
                                 }
                                 else
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "grn");
-                                    ipd.Result = "PASS - Claim state was the same after OTA was applied.";
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - Claim state was the same value before of " + ipd.Clm + " and " + clm + " after OTA was applied.";
                                 }
+                                changed = true;
                             }
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     case 18:    //ISPPartNumber check
@@ -1624,48 +1667,54 @@ namespace VenomNamespace
                                     ispp = null;
                                 if (string.IsNullOrEmpty(ispp))
                                 {
-                                    InvColor(iplist.IndexOf(ipd), "red");
+                                    InvColor(i, "red");
                                     ipd.Result = "FAIL - ISPPartNumber was not able to be stored and cannot be verified.";
                                 }
                                 else if (ispp == ipd.ISPP)
                                 {
-                                    ipd.Result = "CHECK - ISPPartNumber was EQUAL before and after OTA. This may be a FAIL result depending on platform expected value.";
-                                    InvColor(iplist.IndexOf(ipd), "yll");
+                                    ipd.Result = "CHECK - ISPPartNumber was EQUAL to " + ipd.ISPP + " before and " + ispp + " . This may be a FAIL result depending on platform expected value.";
+                                    InvColor(i, "yll");
                                 }
                                 else
                                 {
                                     ipd.Result = "PASS - ISPPartNumber was changed to " + ispp + " from the starting value of " + ipd.ISPP + ".";
-                                    InvColor(iplist.IndexOf(ipd), "grn");
+                                    InvColor(i, "grn");
                                 }
+                                changed = true;
                             }
 
                         }
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
-
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
+
                     case 22:    //Node OTA success check
                         if (!LBL_Auto.Text.Contains("FAIL"))
                         {
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
                             {
-                                InvColor(iplist.IndexOf(ipd), "grn");
+                                InvColor(i, "grn");
                                 ipd.Result = "PASS - OTA for node " + ipd.Node + " was successfully installed.";
+                                changed = true;
                             }
                         }
 
                         else
                         {
-                            InvColor(iplist.IndexOf(ipd), "red");
+                            InvColor(i, "red");
                             ipd.Result = "FAIL - OTA for node " + ipd.Node + " was NOT successfully installed.";
+                            changed = true;
                         }
 
-                        SetText("auto", "AutoGen Result", i);
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
                         break;
 
                     default:
@@ -1833,6 +1882,7 @@ namespace VenomNamespace
                                     "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
                         SetText("status", "Bad IP Address", ipd.TabIndex);
+                        SetText("auto", "Bad IP Address", ipd.TabIndex);
                         Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
                         continue; //THIS MAY BE A BAD IDEA
                     }
@@ -1885,7 +1935,10 @@ namespace VenomNamespace
                         ipd.Signal.Wait();
 
                         if (ipd.Result.Contains("timeout"))
+                        {
                             SetText("status", "Force Close", ipd.TabIndex);
+                            SetText("auto", "Force Close", ipd.TabIndex);
+                        }
                     }
 
                     timer.Stop();
@@ -1898,7 +1951,7 @@ namespace VenomNamespace
                         return;
                     }
 
-                    int REMOVEME = 0;
+                    int recontot = 0;
                     string res = LBL_Auto.Text;
 
                     if (!res.Contains("FAIL"))
@@ -1906,59 +1959,80 @@ namespace VenomNamespace
 
                     InvLabel("ud", "PENDING");
 
+                    autottl++;
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
-
                     Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
 
-                    MqttRecon(cai, "con"); //Reconnect MQTT
+                    MqttRecon(cai, "con"); //Start process to reconnect MQTT
+                    Wait(RECONWAIT); //Give time to reconnect
 
-                    //Find updated product on list again
+                    //See if IP changed and we need a new CAI
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                     ConnectedApplianceInfo cai_n;
                     cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
 
-                    MqttRecon(cai_n, "con"); //Establish MQTT with new CAI
-
-                    if (cai_n != null)
+                    if (cai_n != null && cai.IPAddress != cai_n.IPAddress)
                     {
-                        ipd.IPAddress = cai_n.IPAddress;
+                        cai = cai_n;
+                        ipd.IPAddress = cai.IPAddress;    //Update if IP 
 
-                        for (int j = 0; j < MQTTMAX; j++)
+                        MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
+                        Wait(3000);
+
+                        MqttRecon(cai, "con"); //Establish MQTT with new CAI
+                        Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
+
+                        if (cai != null)
                         {
-                            if (cancel_request)
-                                return;
-                            if (cai_n.IsMqttConnected && cai_n.IsTraceOn)
-                                break;
+                            for (int j = 0; j < MQTTMAX; j++)
+                            {
+                                if (cancel_request)
+                                    return;
+                                if (cai.IsMqttConnected && cai.IsTraceOn)
+                                {
+                                    if (cai.IPAddress != ipd.IPAddress)
+                                        ipd.IPAddress = cai.IPAddress;
+                                    break;
+                                }
 
-                            MqttRecon(cai_n, "dis");  //Disconnect MQTT to prepare for reconnect
-                            MqttRecon(cai_n, "con");    //Reconnect MQTT
-                            Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
-                            cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
-                            REMOVEME = j;
+                                MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
+                                Wait(3000);
+
+                                MqttRecon(cai, "con");    //Reconnect MQTT
+                                Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
+
+                                cai = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC); //Search again to see if CAI has changed
+                                recontot = j;
+                            }
+
+                            Console.WriteLine("MQTT reconnect called " + recontot + " times.");
+
                         }
-
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
-                        ipd.Signal.Reset();
-                        Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
-
-                        if (!res.Contains("FAIL"))
-                            InvLabel("auto", "CHECK");
-
-                        CheckBeat("check", cai_n, ipd);
-                        TestCheck(cai_n, ipd);
-                        ipd.Result = "";
-                        InvLabel("auto", "PENDING");
+                        if (cai == null || recontot == MQTTMAX)
+                        {
+                            ipd.Result = "FAIL - Unable to reconnect to product. Unable to check test case result(s).";
+                            SetText("status", "Force Close", ipd.TabIndex);
+                            SetText("auto", "Force Close", ipd.TabIndex);
+                            Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                            ipd.Signal.Reset();
+                            Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
+                            ipd.Result = "";
+                            InvLabel("auto", "PENDING");
+                            continue;   //THIS MAY BE A BAD IDEA
+                        }
                     }
-                    else
-                    {
-                        ipd.Result = "FAIL - Unable to reconnect to product. Unable to check test case result.";
-                        SetText("auto", "Force Close", ipd.TabIndex);
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
-                        ipd.Signal.Reset();
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
-                        ipd.Result = "";
-                        InvLabel("auto", "PENDING");
-                    }
+
+                    Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+
+                    ipd.Signal.Reset();
+
+                    if (!res.Contains("FAIL"))
+                        InvLabel("auto", "CHECK");
+
+                    CheckBeat("check", cai, ipd);
+                    TestCheck(cai, ipd);
+                    ipd.Result = "";
+                    InvLabel("auto", "PENDING");
 
                 }
                 FinalResult();
@@ -2367,6 +2441,7 @@ namespace VenomNamespace
                     DGV_Data.Refresh();
                     rerun = false;
                     autogen = false;
+                    autottl = 0;
                 }
             });
 
@@ -2391,7 +2466,11 @@ namespace VenomNamespace
                                 t.Minutes,
                                 t.Seconds,
                                 t.Milliseconds);
-                    int totalran = iplist.Count();
+                    int totalran;
+                    if (autogen)
+                        totalran = autottl;
+                    else
+                        totalran = iplist.Count();
                     double average = 0.0;
                     if (totalran != 0)
                         average = (double)duration / totalran;

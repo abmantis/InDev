@@ -31,6 +31,7 @@ namespace VenomNamespace
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.DGV_Data = new System.Windows.Forms.DataGridView();
             this.TB_LogDir = new System.Windows.Forms.TextBox();
             this.BTN_LogDir = new System.Windows.Forms.Button();
@@ -45,6 +46,7 @@ namespace VenomNamespace
             this.LBL_VAR = new System.Windows.Forms.Label();
             this.LBL_OTA = new System.Windows.Forms.Label();
             this.LBL_UD = new System.Windows.Forms.Label();
+            this.TMR_Tick = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -60,14 +62,14 @@ namespace VenomNamespace
             this.DGV_Data.Location = new System.Drawing.Point(127, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(546, 247);
+            this.DGV_Data.Size = new System.Drawing.Size(624, 254);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
             // 
             this.TB_LogDir.Location = new System.Drawing.Point(143, 12);
             this.TB_LogDir.Name = "TB_LogDir";
-            this.TB_LogDir.Size = new System.Drawing.Size(530, 20);
+            this.TB_LogDir.Size = new System.Drawing.Size(608, 20);
             this.TB_LogDir.TabIndex = 11;
             // 
             // BTN_LogDir
@@ -152,7 +154,7 @@ namespace VenomNamespace
             // 
             this.LBL_Auto.AutoSize = true;
             this.LBL_Auto.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_Auto.Location = new System.Drawing.Point(437, 58);
+            this.LBL_Auto.Location = new System.Drawing.Point(413, 58);
             this.LBL_Auto.Name = "LBL_Auto";
             this.LBL_Auto.Size = new System.Drawing.Size(58, 15);
             this.LBL_Auto.TabIndex = 99;
@@ -162,7 +164,7 @@ namespace VenomNamespace
             // LBL_VAR
             // 
             this.LBL_VAR.AutoSize = true;
-            this.LBL_VAR.Location = new System.Drawing.Point(526, 58);
+            this.LBL_VAR.Location = new System.Drawing.Point(502, 58);
             this.LBL_VAR.Name = "LBL_VAR";
             this.LBL_VAR.Size = new System.Drawing.Size(34, 13);
             this.LBL_VAR.TabIndex = 100;
@@ -172,7 +174,7 @@ namespace VenomNamespace
             // LBL_OTA
             // 
             this.LBL_OTA.AutoSize = true;
-            this.LBL_OTA.Location = new System.Drawing.Point(366, 58);
+            this.LBL_OTA.Location = new System.Drawing.Point(342, 58);
             this.LBL_OTA.Name = "LBL_OTA";
             this.LBL_OTA.Size = new System.Drawing.Size(65, 13);
             this.LBL_OTA.TabIndex = 101;
@@ -183,7 +185,7 @@ namespace VenomNamespace
             // 
             this.LBL_UD.AutoSize = true;
             this.LBL_UD.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_UD.Location = new System.Drawing.Point(566, 58);
+            this.LBL_UD.Location = new System.Drawing.Point(542, 58);
             this.LBL_UD.Name = "LBL_UD";
             this.LBL_UD.Size = new System.Drawing.Size(58, 15);
             this.LBL_UD.TabIndex = 102;
@@ -194,7 +196,7 @@ namespace VenomNamespace
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(693, 361);
+            this.ClientSize = new System.Drawing.Size(771, 368);
             this.Controls.Add(this.LBL_UD);
             this.Controls.Add(this.LBL_OTA);
             this.Controls.Add(this.LBL_VAR);
@@ -233,6 +235,7 @@ namespace VenomNamespace
         private Label LBL_VAR;
         private Label LBL_OTA;
         private Label LBL_UD;
+        private Timer TMR_Tick;
     }
 }
 
