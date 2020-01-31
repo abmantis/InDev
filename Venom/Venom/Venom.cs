@@ -19,7 +19,7 @@ namespace VenomNamespace
     {
         public const byte API_NUMBER = 0;
         public int AUTOINDEX = 0;
-        public int AUTOCNT = 2; //
+        public int AUTOCNT = 4; //Amount of times OTA payload combinations (upgrade --> downgrade) aka X OTAs will be sent total
         public int TESTCASEMAX = 26; //Max test cases that can be automated
         public int NODECASEMAX = 23; //Max automated test case per node
         public static int ATTEMPTMAX = 3;
@@ -51,7 +51,9 @@ namespace VenomNamespace
         public string ispp = "";
         public string prov = "";
         public string clm = "";
+        public string rssi = "";
         public int autottl = 0;
+        public int timeleft = 0;
 
         public string curfilename;
         public PayList plist;
@@ -197,6 +199,7 @@ namespace VenomNamespace
         /// <param name="data">The data from the mqtt connected appliance.</param>
         public override void parseMqttMessages(ExtendedMqttMsgPublish data)
         {
+            string savedExtractedMessage = "";
             switch (data.Topic)
             {
                 case "iot-2/evt/isp/fmt/json":
@@ -213,18 +216,39 @@ namespace VenomNamespace
                     break;
 
                 case "iot-2/evt/cc_Kvp/fmt/binary":
-                    string savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
+                    savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
 
                     if (savedExtractedMessage.Equals("000A035D4983AC0109000502"))
                         lock (writeobj)
                         {
                             ProcessPayload("Programming", data.Source.ToString(), "MQTT Message", "NA");
                         }
+
+                    if (autogen && savedExtractedMessage.Contains("1020001"))
+                    //if (autogen && savedExtractedMessage.Contains("000A045E377F8501020001"))
+                    {
+                        string pdata = savedExtractedMessage.Substring(savedExtractedMessage.Length - 2);
+                        string un_data = pdata;
+                        int val;
+                        if (un_data.Length == 2 && int.Parse(un_data, NumberStyles.AllowHexSpecifier) > 127)
+                        {
+                            un_data = un_data.PadLeft(4, 'F');
+                        }
+                        val = unchecked((short)Convert.ToUInt16(un_data, 16));
+                        if (val < 0)//Int32.Parse(pdata, System.Globalization.NumberStyles.HexNumber) < 0)
+                        {
+                            lock (writeobj)
+                            {
+                                ProcessPayload("rssi", data.Source.ToString(), "MQTT Message", val.ToString());
+                            }
+                        }
+                    }
                     break;
 
-                // case "iot-2/evt/cc_SetKvpResult/fmt/binary":
-                //SetResult(data.Message[data.Message.Length - 1]);
-                // break;
+                 case "iot-2/evt/cc_SetKvpResult/fmt/binary":
+                    savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
+
+                    break;
 
                 default:
                     break;
@@ -377,6 +401,7 @@ namespace VenomNamespace
         }
 
         #endregion
+        
         public void ProcessPayload(string sb, string ip, string source, string raw)
         {
             try
@@ -395,6 +420,12 @@ namespace VenomNamespace
 
                 if (source.Contains("MQTT"))
                 {
+                    if (sb.Equals("rssi"))
+                    {
+                        rssi = raw;
+                        return;
+                    }
+
                     string[] parts = sb.Replace("[", "").Split(':');
                     parts[2].Replace("]", "");
                     string[] split = parts[2].Split(',');
@@ -768,7 +799,7 @@ namespace VenomNamespace
                             iplist[AUTOINDEX].Delivery + "," +
                             iplist[AUTOINDEX].Type + "," +
                             iplist[AUTOINDEX].Node + "," +
-                            DGV_Data.Rows[listindex].Cells[5].ToString() + "," +
+                            DGV_Data.Rows[listindex].Cells[5].Value.ToString() + "," +
                             iplist[AUTOINDEX].Result); ;
                         }
                         Invoke((MethodInvoker)delegate
@@ -894,6 +925,7 @@ namespace VenomNamespace
                             iplist[AUTOINDEX].Model = "";
                             iplist[AUTOINDEX].Serial = "";
                             autottl = 0;
+                            StopTimer();
                         }
                         else
                         {
@@ -943,11 +975,12 @@ namespace VenomNamespace
                         {
                             if (autogen)
                             {
+                                StopTimer();
                                 InvLabel("auto", "PENDING");
                                 InvLabel("ud", "PENDING");
                                 for (int i = 0; i < NODECASEMAX; i++)
                                 {
-                                    if (!results.Rows[i]["OTA Result"].ToString().Contains("PASS") || !results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                    if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
                                     {
                                         results.Rows[i]["OTA Result"] = "Cancelled by User.";
                                         DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
@@ -1157,24 +1190,52 @@ namespace VenomNamespace
             }
 
         }
-        public void RunCycle(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes)
+        public void RemoteOps(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type)
         {
-            //Send subscribe message before sending cycle
-            byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
-            SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, cai, ipd);
-            Wait(4000);
-
-            //paybytes = Encoding.ASCII.GetBytes(ipd.MQTTPay);for (int i = 0; i < bytes.Length; i++)
-
-            byte[] bytes = new byte[ipd.MQTTPay.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
+            if (clm == "0")
             {
-                bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
-
+                //Send subscribe message before sending cycle
+                byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+                SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, cai, ipd);
+                Wait(2000);
             }
 
-            SendMQTT(ipbytes, "iot-2/cmd/cc_SetKvp/fmt/binary", bytes, cai, ipd);
+            string topic = "";
+            byte[] bytes = null;
+
+            switch (type)
+            {
+                case "set":
+                    bytes = new byte[ipd.MQTTPay.Length / 2];
+                    for (int i = 0; i < bytes.Length; i++)
+                    {
+                        bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                    }
+                    topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
+                    break;
+
+                case "rssi":
+                    string pay = "0005FF01020001";  //XCat get RSSI
+                    bytes = new byte[pay.Length / 2];
+                    for (int i = 0; i < bytes.Length; i++)
+                    {
+                        bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                    }
+                    topic = "iot-2/cmd/cc_GetKvp/fmt/binary";
+                    break;
+
+                default:
+                    break;
+            }
+
+            SendMQTT(ipbytes, topic, bytes, cai, ipd);
             Wait(CYCWAIT);
+        }
+        public void TTFRun(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type)
+        {
+
         }
         public bool CheckBeat(string type, ConnectedApplianceInfo cai, IPData ipd)
         {
@@ -1251,6 +1312,7 @@ namespace VenomNamespace
             {
                 if (cancel_request)
                     return;
+                //Global values are pulled from trace and mqtt logs by CheckBeat()
                 switch (i)
                 {
                     case 0:    //OTA upgrade in Idle
@@ -1285,8 +1347,26 @@ namespace VenomNamespace
                     case 13:    //Claim check
                         ipd.Clm = clm;
                         break;
+                    case 14:    //Bad CRC check
+                        if (i == 2)
+                            TTFRun(cai, ipd, ipbytes, "crc");
+                        break;
+                    case 15:    //Payload sent multiple times check
+                        if (i == 2)
+                            TTFRun(cai, ipd, ipbytes, "multi");
+                        break;
+                    case 16:    //RSSI check
+                        RemoteOps(cai, ipd, ipbytes, "rssi");
+                        break;
+                    case 17:    //Invalid URL check
+                        if (i == 2)
+                            TTFRun(cai, ipd, ipbytes, "url");
+                        break;
                     case 18:    //ApplianceUpdateVersion check
                         ipd.ISPP = ispp;
+                        break;
+                    case 19:    //DL Timeout after 5 check
+                        //No special initialization required (covered by case 14/17
                         break;
                     case 22:    //Node OTA success check
                         //No special initialization required
@@ -1319,7 +1399,7 @@ namespace VenomNamespace
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
                             {
                                 InvColor(i, "grn");
-                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of " + LBL_Auto.Text + ".";
+                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
                                 changed = true;
                             }
                         }
@@ -1327,7 +1407,7 @@ namespace VenomNamespace
                         else
                         {
                             InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of " + LBL_Auto.Text + ".";
+                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of FAIL."; //OTA result label did not have PASS so it is FAIL
                             changed = true;
                         }
 
@@ -1342,7 +1422,7 @@ namespace VenomNamespace
                             if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
                             {
                                 InvColor(i, "grn");
-                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of " + LBL_Auto.Text + ".";
+                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
                                 changed = true;
                             }
                         }
@@ -1350,7 +1430,7 @@ namespace VenomNamespace
                         else
                         {
                             InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state.";
+                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of FAIL."; //OTA result label did not have PASS so it is FAIL
                             changed = true;
                         }
 
@@ -1651,6 +1731,42 @@ namespace VenomNamespace
                         {
                             InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
+                        }
+
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
+                        break;
+
+                    case 16:    //RSSI Strong Check
+                        if (!LBL_Auto.Text.Contains("FAIL"))
+                        {
+                            int val = Int32.Parse(rssi);
+                            if (string.IsNullOrEmpty(rssi))
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - RSSI value was not able to be obtained.";
+                                changed = true;
+                            }
+                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) != -1) //Indicate -67 or better
+                            {
+                                InvColor(i, "grn");
+                                ipd.Result = "PASS - OTA was successfully installed with a STRONG RSSI value of " + rssi +  " and with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
+                                changed = true;
+                            }
+                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) == -1) //Indicate worse than -67
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA was successfully installed but the RSSI value of " + rssi + " was too great (signal too weak for the STRONG test)."; //OTA result label did not have FAIL so it is PASS
+                                changed = true;
+                            }
+
+                        }
+
+                        else
+                        {
+                            InvColor(i, "red");
+                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted."; //OTA result label did not have PASS so it is FAIL
                             changed = true;
                         }
 
@@ -1961,10 +2077,13 @@ namespace VenomNamespace
 
                     autottl++;
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
+                    StartTimer(4 * RECONWAIT);
+
                     Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
 
                     MqttRecon(cai, "con"); //Start process to reconnect MQTT
-                    Wait(RECONWAIT); //Give time to reconnect
+                    Wait(RECONWAIT-6000); //Give time to reconnect
+                    StopTimer();
 
                     //See if IP changed and we need a new CAI
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
@@ -1980,7 +2099,9 @@ namespace VenomNamespace
                         Wait(3000);
 
                         MqttRecon(cai, "con"); //Establish MQTT with new CAI
+                        StartTimer(RECONWAIT);
                         Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
+                        StopTimer();
 
                         if (cai != null)
                         {
@@ -1999,7 +2120,9 @@ namespace VenomNamespace
                                 Wait(3000);
 
                                 MqttRecon(cai, "con");    //Reconnect MQTT
+                                StartTimer(RECONWAIT);
                                 Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
+                                StopTimer();
 
                                 cai = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC); //Search again to see if CAI has changed
                                 recontot = j;
@@ -2433,6 +2556,7 @@ namespace VenomNamespace
                 LabelSet(false);
                 LBL_Auto.Text = "PENDING";
                 LBL_UD.Text = "PENDING";
+                StopTimer();
                 if (operation)
                 {
                     iplist.Clear();
@@ -2516,6 +2640,55 @@ namespace VenomNamespace
                 auto = new AutoGen(this, this.WideLocal, this.WifiLocal);
                 auto.Show();
             }
+        }
+        public void StopTimer()
+        {
+            if (cancel_request)
+                return;
+            timeleft = 0;
+            Invoke((MethodInvoker)delegate
+            {
+                LBL_Rmn.Visible = false;
+                LBL_Time.Visible = false;
+                LBL_Time.Text = "00:00:00";
+                TMR_Tick.Stop();
+            });
+        }
+        public void StartTimer(int val)
+        {
+            if (cancel_request)
+                return;
+            timeleft = val;
+            Invoke((MethodInvoker)delegate
+            {
+
+                LBL_Rmn.Visible = true;
+                LBL_Time.Visible = true;
+                TimeSpan t = TimeSpan.FromMilliseconds(val);
+                LBL_Time.Text = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                        t.Hours,
+                        t.Minutes,
+                        t.Seconds);
+                TMR_Tick.Enabled = true;
+                TMR_Tick.Start();
+            });
+        }
+        private void TMR_Tick_Tick(object sender, EventArgs e)
+        {
+            
+            timeleft -= 1000;
+
+            if (timeleft < 0)
+                timeleft = 0;
+
+            Invoke((MethodInvoker)delegate
+            {
+                TimeSpan t = TimeSpan.FromMilliseconds(timeleft);
+                LBL_Time.Text = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                    t.Hours,
+                    t.Minutes,
+                    t.Seconds);
+            });
         }
     }
 }

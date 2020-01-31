@@ -47,6 +47,8 @@ namespace VenomNamespace
             this.LBL_OTA = new System.Windows.Forms.Label();
             this.LBL_UD = new System.Windows.Forms.Label();
             this.TMR_Tick = new System.Windows.Forms.Timer(this.components);
+            this.LBL_Rmn = new System.Windows.Forms.Label();
+            this.LBL_Time = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -164,7 +166,7 @@ namespace VenomNamespace
             // LBL_VAR
             // 
             this.LBL_VAR.AutoSize = true;
-            this.LBL_VAR.Location = new System.Drawing.Point(502, 58);
+            this.LBL_VAR.Location = new System.Drawing.Point(500, 58);
             this.LBL_VAR.Name = "LBL_VAR";
             this.LBL_VAR.Size = new System.Drawing.Size(34, 13);
             this.LBL_VAR.TabIndex = 100;
@@ -185,18 +187,46 @@ namespace VenomNamespace
             // 
             this.LBL_UD.AutoSize = true;
             this.LBL_UD.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_UD.Location = new System.Drawing.Point(542, 58);
+            this.LBL_UD.Location = new System.Drawing.Point(540, 58);
             this.LBL_UD.Name = "LBL_UD";
             this.LBL_UD.Size = new System.Drawing.Size(58, 15);
             this.LBL_UD.TabIndex = 102;
             this.LBL_UD.Text = "PENDING";
             this.LBL_UD.Visible = false;
             // 
+            // TMR_Tick
+            // 
+            this.TMR_Tick.Interval = 1000;
+            this.TMR_Tick.Tick += new System.EventHandler(this.TMR_Tick_Tick);
+            // 
+            // LBL_Rmn
+            // 
+            this.LBL_Rmn.AutoSize = true;
+            this.LBL_Rmn.Location = new System.Drawing.Point(630, 58);
+            this.LBL_Rmn.Name = "LBL_Rmn";
+            this.LBL_Rmn.Size = new System.Drawing.Size(60, 13);
+            this.LBL_Rmn.TabIndex = 103;
+            this.LBL_Rmn.Text = "Remaining:";
+            this.LBL_Rmn.Visible = false;
+            // 
+            // LBL_Time
+            // 
+            this.LBL_Time.AutoSize = true;
+            this.LBL_Time.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.LBL_Time.Location = new System.Drawing.Point(694, 58);
+            this.LBL_Time.Name = "LBL_Time";
+            this.LBL_Time.Size = new System.Drawing.Size(51, 15);
+            this.LBL_Time.TabIndex = 104;
+            this.LBL_Time.Text = "00:00:00";
+            this.LBL_Time.Visible = false;
+            // 
             // Venom
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(771, 368);
+            this.Controls.Add(this.LBL_Time);
+            this.Controls.Add(this.LBL_Rmn);
             this.Controls.Add(this.LBL_UD);
             this.Controls.Add(this.LBL_OTA);
             this.Controls.Add(this.LBL_VAR);
@@ -236,6 +266,8 @@ namespace VenomNamespace
         private Label LBL_OTA;
         private Label LBL_UD;
         private Timer TMR_Tick;
+        private Label LBL_Rmn;
+        private Label LBL_Time;
     }
 }
 
