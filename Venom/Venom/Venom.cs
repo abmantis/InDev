@@ -45,15 +45,18 @@ namespace VenomNamespace
 
         public bool tbeat = false;
         public bool mbeat = false;
-
+        public Random rand = new Random();
         public string ccuri = "";
         public string vers = "";
         public string ispp = "";
         public string prov = "";
         public string clm = "";
         public string rssi = "";
+        public string ttfres = "";
         public int autottl = 0;
         public int timeleft = 0;
+        public bool ttf = false;
+        public int multcnt = 0;
 
         public string curfilename;
         public PayList plist;
@@ -781,8 +784,16 @@ namespace VenomNamespace
                         InvLabel("auto", iplist[AUTOINDEX].Result);
                     if (autogen && type.Equals("status"))
                     {
-                        string[] res = iplist[AUTOINDEX].Result.Split(' ');
-                        InvLabel("auto", res[0]);
+                        if (!ttf)
+                        {
+                            string[] res = iplist[AUTOINDEX].Result.Split(' ');
+                            InvLabel("auto", res[0]);
+                        }
+                        else
+                        {
+                            ttfres = iplist[AUTOINDEX].Result;
+                            return;
+                        }
                     }
 
                     if (type.Equals("auto"))
@@ -924,7 +935,7 @@ namespace VenomNamespace
                             iplist[AUTOINDEX].Result = "PENDING";
                             iplist[AUTOINDEX].Model = "";
                             iplist[AUTOINDEX].Serial = "";
-                            autottl = 0;
+                            ResetGlobal();
                             StopTimer();
                         }
                         else
@@ -1231,11 +1242,42 @@ namespace VenomNamespace
             }
 
             SendMQTT(ipbytes, topic, bytes, cai, ipd);
+
+            StartTimer(CYCWAIT);
             Wait(CYCWAIT);
+            StopTimer();
+
         }
         public void TTFRun(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type)
         {
+            if (type.Equals("crc"))
+            {
+                //{"update":{"crc32":"008D7AE8",   .Replace("\"progress\":[", "@");
+                string[] parts = ipd.Payload.Split(',');
+                parts[0] = "{\"update\":{\"crc32\":\"FFFFFFFF\",";
+                string pay = parts[0] + parts[1];
+                //string[] rcrc = parts[0].Split(':');
+                //string pay = rcrc[0].Replace("\"", "");
+                //string pdata = parts[2].Replace("\"", "").Substring(savedExtractedMessage.Length - 8);
+                byte[] paybytes = Encoding.ASCII.GetBytes(pay);
+                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+            }
 
+            if (type.Equals("multi"))
+            {
+                int stop = rand.Next(1, 4);
+                int intv = rand.Next(200, 5000);
+                byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+                for (int i = 0; i < stop; i++)
+                {
+                    SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                    Wait(intv);
+                }
+            }
+
+            StartTimer(CYCWAIT);
+            Wait(CYCWAIT);
+            StopTimer();
         }
         public bool CheckBeat(string type, ConnectedApplianceInfo cai, IPData ipd)
         {
@@ -1306,7 +1348,7 @@ namespace VenomNamespace
 
             return false;
         }
-        public void TestInit(byte[] ipbytes, ConnectedApplianceInfo cai, IPData ipd)
+        public void TestInit(byte[] ipbytes, ConnectedApplianceInfo cai, IPData ipd, int iter)
         {
             for (int i = 0; i < NODECASEMAX; i++)
             {
@@ -1348,25 +1390,37 @@ namespace VenomNamespace
                         ipd.Clm = clm;
                         break;
                     case 14:    //Bad CRC check
-                        if (i == 2)
+                        if (iter == 2)
+                        {
+                            ttf = true;
                             TTFRun(cai, ipd, ipbytes, "crc");
+                            ttf = false;
+                        }                            
                         break;
                     case 15:    //Payload sent multiple times check
-                        if (i == 2)
+                        if (iter == 2)
+                        {
+                            ttf = true;
                             TTFRun(cai, ipd, ipbytes, "multi");
+                            ttf = false;
+                        }
                         break;
                     case 16:    //RSSI check
                         RemoteOps(cai, ipd, ipbytes, "rssi");
                         break;
                     case 17:    //Invalid URL check
-                        if (i == 2)
+                        if (iter == 2)
+                        {
+                            ttf = true;
                             TTFRun(cai, ipd, ipbytes, "url");
+                            ttf = false;
+                        }
                         break;
                     case 18:    //ApplianceUpdateVersion check
                         ipd.ISPP = ispp;
                         break;
                     case 19:    //DL Timeout after 5 check
-                        //No special initialization required (covered by case 14/17
+                        //No special initialization required (covered by case 14/17)
                         break;
                     case 22:    //Node OTA success check
                         //No special initialization required
@@ -1737,7 +1791,6 @@ namespace VenomNamespace
                         if (changed)
                             SetText("auto", "AutoGen Result", i);
                         break;
-
                     case 16:    //RSSI Strong Check
                         if (!LBL_Auto.Text.Contains("FAIL"))
                         {
@@ -1804,6 +1857,29 @@ namespace VenomNamespace
                         {
                             InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
+                        }
+
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
+                        break;
+
+                    case 21: //Invalid CRC
+                        if (ttfres)
+
+                        {
+                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
+                            {
+                                InvColor(i, "grn");
+                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
+                                changed = true;
+                            }
+                        }
+
+                        else
+                        {
+                            InvColor(i, "red");
+                            ipd.Result = "FAIL - OTA did NOT correctly fail with Status result of FAIL. Unable to validate Test to Fail test case result."; //OTA result label did not have PASS so it is FAIL
                             changed = true;
                         }
 
@@ -2036,7 +2112,7 @@ namespace VenomNamespace
                     if (ipd.Delivery.Equals("MQTT"))
                     {
                         CheckBeat("init", cai, ipd);
-                        TestInit(ipbytes, cai, ipd);
+                        TestInit(ipbytes, cai, ipd, i);
                         if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                             thread_waits = true;
                         else
@@ -2540,6 +2616,22 @@ namespace VenomNamespace
 
             }
         }
+        private void ResetGlobal()
+        {
+            multcnt = 0;
+            autottl = 0;
+            tbeat = false;
+            mbeat = false;
+            ccuri = "";
+            vers = "";
+            ispp = "";
+            prov = "";
+            clm = "";
+            rssi = "";
+            ttfres = "";
+            timeleft = 0;
+            ttf = false;
+        }
         private void ResetForm(bool operation)
         {
             Invoke((MethodInvoker)delegate {
@@ -2565,7 +2657,7 @@ namespace VenomNamespace
                     DGV_Data.Refresh();
                     rerun = false;
                     autogen = false;
-                    autottl = 0;
+                    ResetGlobal();
                 }
             });
 

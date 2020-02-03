@@ -409,7 +409,6 @@ namespace VenomNamespace
                 parent.iplist.Add(newip);
             }
 
-
             //Update window for added IP
             DataRow dr = parent.results.NewRow();
 
@@ -478,79 +477,79 @@ namespace VenomNamespace
                         case 1:
                             BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay);
                             break;
-                        case 4:
+                        case 2:
                             BuildList(cai, "RQM 131835 OTA : Downloading : User Starts Cycle from App", mqttpay);
                             break;
-                        case 5:
+                        case 3:
                             BuildList(cai, "RQM 131837 OTA : Downloading : User Changes Settings from App", mqttpay);
                             break;
-                        case 6:
+                        case 4:
                             BuildList(cai, "RQM 131839 OTA : Programming & Progress Status : User Starts Cycle from App", mqttpay);
                             break;
-                        case 8:
+                        case 5:
                             BuildList(cai, "RQM 131841 OTA : Programming & Progress Status : User Changes Settings from App", mqttpay);
                             break;
-                        case 9:
+                        case 6:
                             BuildList(cai, "RQM 131844 OTA : Generic : Forced Update : Upgrade : Model/Serial Consistency Check", mqttpay);
                             break;
-                        case 10:
+                        case 7:
                             BuildList(cai, "RQM 131845 OTA : Generic : Forced Update : Upgrade : Version Number Check", mqttpay);
                             break;
-                        case 11:
+                        case 8:
                             BuildList(cai, "RQM 131846 OTA : Generic : Forced Update : Downgrade : Model/Serial Consistency Check", mqttpay);
                             break;
-                        case 12:
+                        case 9:
                             BuildList(cai, "RQM 131847 OTA : Generic : Forced Update : Downgrade : Version Number Check", mqttpay);
                             break;
-                        case 13:
+                        case 10:
                             BuildList(cai, "RQM 131849 OTA : Generic : Forced Update : Upgrade : CCURI Check", mqttpay);
                             break;
-                        case 14:
+                        case 11:
                             BuildList(cai, "RQM 131850 OTA : Generic : Forced Update : Downgrade : CCURI Check", mqttpay);
                             break;
-                        case 15:
+                        case 12:
                             BuildList(cai, "RQM 131851 OTA : Post Update : Check Provision State", mqttpay);
                             break;
-                        case 16:
+                        case 13:
                             BuildList(cai, "RQM 131852 OTA : Post Update : Check Claimed Status", mqttpay);
                             break;
-                        case 17:
-                            BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay);
-                            break;
-                        case 18:
-                            BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay);
-                            break;
-                        case 19:
-                            BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay);
-                            break;
-                        case 20:
-                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay);
-                            break;
-                        case 21:
-                            BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);
-                            break;
-                        case 22:
-                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay);
-                            break;
-                        case 23:
-                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay);
-                            break;
-                        case 24:
+                        case 14:
                             BuildList(cai, "RQM 133399 OTA : Post Update : Connection Reset", mqttpay);
                             break;
-                        case 25:
+                        case 15:
+                            BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay);
+                            break;
+                        case 16:
+                            BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay);
+                            break;
+                        case 17:
+                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay);
+                            break;
+                        case 18:
+                            BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);
+                            break;
+                        case 19:
+                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay);
+                            break;
+                        case 20:
+                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay);
+                            break;
+                        case 21:
+                            BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay); 
+                            break;
+                        case 22:
                             if (node == "HMI")
                                 BuildList(cai, "RQM 131821 OTA : Generic : Forced Update : HMI Update", mqttpay);
                             break;
-                        case 26:
+                        case 23:
                             if (node == "WIFI")
                                 BuildList(cai, "RQM 132549 OTA : Generic : Forced Update : Wifi Radio", mqttpay);
                             break;
-                        case 27:
+                        case 24:
                             if (node == "EXP")
                                 BuildList(cai, "RQM 132550 OTA : Generic : Forced Update : All Updatable Modules Updated", mqttpay);
                             break;
-                        case 28:
+                        case 25:
                             if (node == "ACU")
                                 BuildList(cai, "RQM 131822 OTA : Generic : Forced Update : ACU Update", mqttpay);
                             break;
