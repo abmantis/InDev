@@ -24,7 +24,7 @@ namespace VenomNamespace
         public int NODECASEMAX = 23; //Max automated test case per node
         public static int ATTEMPTMAX = 3;
         public static int MQTTMAX = 4;
-        public static int TTFCNT = 2;
+        public static int TTFCNT = 4;
         public static int TMAX = 90 * 60000; //OTA max thread time is 1.5 hours
         public static int CYCWAIT = 1 * 30000; //Amount of time to let cycle run
         public static int TTFWAIT = 1 * 10000; //Amount of time to wait for TTF result
@@ -55,11 +55,11 @@ namespace VenomNamespace
         public string prov = "";
         public string clm = "";
         public string rssi = "";
-        public string ttfres = "";
         public int autottl = 0;
         public int timeleft = 0;
         public int multcnt = 0;
         public int gstatus = 0;
+        public int retcnt = 0;
 
         public string curfilename;
         public PayList plist;
@@ -213,6 +213,8 @@ namespace VenomNamespace
                     if (autogen && !mbeat)
                     {
                         string sb = System.Text.Encoding.ASCII.GetString(data.Message);
+                        if (sb.Contains("progress"))
+                            return;
                         mbeat = true;
                         lock (writeobj)
                         {
@@ -286,7 +288,6 @@ namespace VenomNamespace
                     sb += Convert.ToChar(Convert.ToUInt32(hs, 16));
                 }
 
-
                 lock (writeobj)
                 {
                     ProcessPayload(sb, data.Source.ToString(), "Trace Message", data.ContentAsString);
@@ -303,7 +304,7 @@ namespace VenomNamespace
             }
 
             if (autogen && ttf && data.ContentAsString.StartsWith("paimage__getFromUrl(252): WGET failed, retrying"))
-                multcnt++;
+                retcnt++;
 
             if (autogen && ttf && data.ContentAsString.StartsWith("Unable to start OTA"))
                 multcnt++;
@@ -429,7 +430,7 @@ namespace VenomNamespace
                     return;
                 }
 
-                if (source.Contains("MQTT"))
+                if (source.Contains("MQTT") && !ttf)
                 {
                     if (sb.Equals("rssi"))
                     {
@@ -440,14 +441,14 @@ namespace VenomNamespace
                     string[] parts = sb.Replace("[", "").Split(':');
                     parts[2].Replace("]", "");
                     string[] split = parts[2].Split(',');
-                    vers = split[1].Replace("\"", "");
-                    vers = vers.Replace("]", "");
                     ispp = split[0].Replace("\"", "");
                     ispp = ispp.Replace("]", "");
+                    vers = split[1].Replace("\"", "");
+                    vers = vers.Replace("]", "");
                     return;
                 }
                 // Locate if OTA payload has been sent and update status
-                if (sb.Contains("\"update\""))
+                if (sb.Contains("\"update\"") && !ttf)
                 {
                     // Lookup status reason byte pass or fail reason
 
@@ -493,7 +494,7 @@ namespace VenomNamespace
                     }
                 }
 
-                if (sb.Contains("\"progress\"") && source.Equals("MQTT Message"))
+                if (!ttf && sb.Contains("\"progress\"") && source.Equals("MQTT Message"))
                 {
                     sb = sb.Replace("\"progress\":[", "@");
                     string[] stats = sb.Split('@');
@@ -536,9 +537,10 @@ namespace VenomNamespace
 
                     // Convert status reason byte to a numeric value
                     int statusval = Int32.Parse(sb);
+
                     //Save to global for auto test execution
                     if (autogen)
-                        statusval = gstatus;
+                        gstatus = statusval;
 
                     // Lookup status reason byte pass or fail reason
                     foreach (var member in iplist)
@@ -562,7 +564,6 @@ namespace VenomNamespace
                             }
                         }
                     }
-
                 }
 
                 /*if (sb.Contains("cc_SetKvpResult"))
@@ -601,7 +602,7 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("Catastrophic ProcessPayload error.", "Error",
+                MessageBox.Show("raw is " + raw + " ip equals " + ip + " source is " + source + " sb equals " + sb , "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -800,12 +801,6 @@ namespace VenomNamespace
                     {
                         string[] res = iplist[AUTOINDEX].Result.Split(' ');
                         InvLabel("auto", res[0]);
-
-                        if (ttf)
-                        {
-                            ttfres = iplist[AUTOINDEX].Result;
-                            return;
-                        }
                     }
 
                     if (type.Equals("auto"))
@@ -841,8 +836,6 @@ namespace VenomNamespace
                             DGV_Data.Refresh();
                         });
 
-                        //if (iplist[AUTOINDEX].Signal != null)
-                        //iplist[AUTOINDEX].Signal.Set();
                         return;
                     }
 
@@ -1211,9 +1204,9 @@ namespace VenomNamespace
             {
                 Console.WriteLine("End Thread was called for signal " + ipd.Signal.WaitHandle.Handle +
                               " and thread was released (set).");
-                if (!ipd.Result.Contains("PASS") || !ipd.Result.Contains("FAIL"))
-                    ipd.Result = "FAIL - Thread timeout maximum reached. Unknown issue caused thread to be stuck. Moving to next in list.";
-                ipd.Signal.Set();
+                ipd.Result = "FAIL - Thread timeout maximum reached. Unknown issue caused thread to be stuck. Unable to validate OTA pass or fail.";
+                if (ipd.Signal != null)
+                    ipd.Signal.Set();
             }
             catch
             {
@@ -1280,65 +1273,68 @@ namespace VenomNamespace
                 byte[] paybytes = Encoding.ASCII.GetBytes(pay);
 
                 SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
-
-                Wait(1000);
-
+                ipd.Signal.Wait();
+                ipd.Signal.Reset();
                 if (LBL_Auto.Text.Contains("FAIL") && gstatus == 5)
                 {
                     InvColor(21, "grn");
-                    ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + gstatus + " PA_ERROR_CRC_MISMATCH.";
+                    ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + StatusLookup(gstatus) + ".";
                 }
 
                 else
                 {
                     InvColor(21, "red");
-                    ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + gstatus + ".";
+                    ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + StatusLookup(gstatus) + ".";
                 }
-
+                InvLabel("auto", "PENDING");
                 SetText("auto", "AutoGen Result", 21);  //Table index for this test case
+                ipd.Result = "";
             }
 
             if (var == 1)   //Invalid URL
             {
                 string pay = ipd.Payload.Replace(".com/", ".gov/").Replace(".net/", ".gov/").Replace(".org/", ".gov/");
                 byte[] paybytes = Encoding.ASCII.GetBytes(pay);
+                multcnt = 0;
 
                 SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
 
-                Wait(1000);
+                ipd.Signal.Wait();
+                ipd.Signal.Reset();
 
                 if (LBL_Auto.Text.Contains("FAIL") && gstatus == 4)
                 {
                     InvColor(20, "grn");
-                    ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + gstatus + " PA_ERROR_FAILED_RETRIEVING_FILE_FROM_SERVER.";
+                    ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + StatusLookup(gstatus) + ".";
                 }
 
                 else
                 {
                     InvColor(20, "red");
-                    ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + gstatus + ".";
+                    ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + StatusLookup(gstatus) + ".";
                 }
-
+                InvLabel("auto", "PENDING");
                 SetText("auto", "AutoGen Result", 20);  //Table index for this test case
+                ipd.Result = "";
             }
 
             if (var == 2)   //Multiple download retry (gathered while var == 1 test case running)
             {
-
-                if (multcnt == 5)  //Count total download attempts
+                int lcnt = retcnt / 2;  //ubd_description file retry was also counted with ubd file (what we intentionally make retry) so count is doubled
+                if (lcnt == 5)  //Count total download attempts
                 {
                     InvColor(19, "grn");
-                    ipd.Result = "PASS - A total of " + multcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
+                    ipd.Result = "PASS - A total of " + lcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
                 }
 
                 else
                 {
                     InvColor(19, "red");
-                    ipd.Result = "FAIL - A total of " + multcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
+                    ipd.Result = "FAIL - A total of " + lcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
                 }
 
                 SetText("auto", "AutoGen Result", 19);  //Table index for this test case
-                multcnt = 0;
+                Wait(2000);
                 return;
             }
 
@@ -1355,7 +1351,9 @@ namespace VenomNamespace
                     SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
                 }
 
-                Wait(1000);
+                StartTimer(TTFWAIT);
+                Wait(TTFWAIT);
+                StopTimer();
 
                 if (multcnt == (stop - 1))  //Stop holds all OTA sent subtract 1 for the first valid, count extra only
                 {
@@ -1368,9 +1366,7 @@ namespace VenomNamespace
                     InvColor(15, "red");
                     ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The product detected and did not download " + multcnt + " extra OTAs.";
                 }
-
                 SetText("auto", "AutoGen Result", 15);  //Table index for this test case
-                multcnt = 0;
                 return;
             }
 
@@ -1381,24 +1377,13 @@ namespace VenomNamespace
         public void TTFRun(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes)
         {
             ttf = true;
-            for (int i = 0; i < TTFCNT+1; i++)
+
+            for (int i = 0; i < TTFCNT; i++)
             {
-                switch (i)
-                {
-                    case 0:
-                        TTFExec(cai, ipd, ipbytes, i);
-                        break;
-                    case 1:
-                        TTFExec(cai, ipd, ipbytes, i);
-                        break;
-                    case 2:
-                        TTFExec(cai, ipd, ipbytes, i);
-                        break;
-                    default:
-                        break;
-                }
-                    
+                TTFExec(cai, ipd, ipbytes, i);
+
             }
+            
             ttf = false;
         }
         public bool CheckBeat(string type, ConnectedApplianceInfo cai, IPData ipd)
@@ -2183,7 +2168,7 @@ namespace VenomNamespace
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
                     {
-                        if (i != TTFCNT)  //Run non-TTFs
+                        if (i != 0)  //Run non-TTFs
                         {
                             CheckBeat("init", cai, ipd);
                             TestInit(ipbytes, cai, ipd, i);
@@ -2194,7 +2179,13 @@ namespace VenomNamespace
                                 thread_waits = false;
                         }
                         else
+                        {
+                            InvLabel("ud", "TTF");
                             TTFRun(cai, ipd, ipbytes);
+                            InvLabel("ud", "DOWNGRADE");
+                            ipd.Signal.Wait();   //Set for the one OTA download that is running
+                            thread_waits = true;
+                        }
                         
                         
                     }
@@ -2701,6 +2692,7 @@ namespace VenomNamespace
             multcnt = 0;
             autottl = 0;
             gstatus = 0;
+            retcnt = 0;
             tbeat = false;
             mbeat = false;
             ccuri = "";
@@ -2709,10 +2701,9 @@ namespace VenomNamespace
             prov = "";
             clm = "";
             rssi = "";
-            ttfres = "";
             timeleft = 0;
             ttf = false;
-        }
+    }
         private void ResetForm(bool operation)
         {
             Invoke((MethodInvoker)delegate {

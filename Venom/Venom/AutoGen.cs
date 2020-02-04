@@ -523,16 +523,16 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay);
                             break;
                         case 17:
-                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay);
+                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay);
                             break;
                         case 18:
                             BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);
                             break;
                         case 19:
-                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay);
+                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay);
                             break;
                         case 20:
-                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay);
+                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay);
                             break;
                         case 21:
                             BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay); 
