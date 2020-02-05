@@ -17,7 +17,6 @@ namespace VenomNamespace
 {
     public partial class Venom : WideInterface
     {
-        public const byte API_NUMBER = 0;
         public int AUTOINDEX = 0;
         public int AUTOCNT = 4; //Amount of times OTA payload combinations (upgrade --> downgrade) aka X OTAs will be sent total
         public int TESTCASEMAX = 26; //Max test cases that can be automated
@@ -25,15 +24,14 @@ namespace VenomNamespace
         public static int ATTEMPTMAX = 3;
         public static int MQTTMAX = 4;
         public static int TTFCNT = 4;
+        public static int CYCGO = 0;    //Cycles fire on autogen iteration i=0
+        public static int TTFGO = 2;    //TTFs fire on autogen iteration i=2
         public static int TMAX = 90 * 60000; //OTA max thread time is 1.5 hours
         public static int CYCWAIT = 1 * 30000; //Amount of time to let cycle run
         public static int TTFWAIT = 1 * 10000; //Amount of time to wait for TTF result
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
-
-        public int thread_done = 0; //Count of threads that have no more tasks
-        public bool rerun = false;
-        public bool autogen = false;
-
+        public const byte API_NUMBER = 0;
+        
         //Global timer
         public Stopwatch g_time = new Stopwatch();
 
@@ -44,27 +42,36 @@ namespace VenomNamespace
         // Entities used to store the list of targeted IPs and their progress
         public List<IPData> iplist;
         public List<Thread> waits;
+        public PayList plist;
+        public AutoGen auto;
+
+        public Random rand = new Random();
 
         public bool tbeat = false;
         public bool mbeat = false;
         public bool ttf = false;
-        public Random rand = new Random();
+        public bool cyc = false;
+        public bool rerun = false;
+        public bool autogen = false;
+        public bool cycstart = false;
+        public bool cancel_request = false;
+
+        public string curfilename;
         public string ccuri = "";
         public string vers = "";
         public string ispp = "";
         public string prov = "";
         public string clm = "";
         public string rssi = "";
+
         public int autottl = 0;
         public int timeleft = 0;
         public int multcnt = 0;
         public int gstatus = 0;
         public int retcnt = 0;
+        public int prog = 0;
+        public int thread_done = 0; //Count of threads that have no more tasks
 
-        public string curfilename;
-        public PayList plist;
-        public AutoGen auto;
-        public bool cancel_request = false;
 
         static object lockObj = new object();
         static object writeobj = new object();
@@ -209,16 +216,22 @@ namespace VenomNamespace
             switch (data.Topic)
             {
                 case "iot-2/evt/isp/fmt/json":
+                    string sb = System.Text.Encoding.ASCII.GetString(data.Message);
                     // Process OTA-related messages
-                    if (autogen && !mbeat)
+                    if (autogen)
                     {
-                        string sb = System.Text.Encoding.ASCII.GetString(data.Message);
                         if (sb.Contains("progress"))
-                            return;
-                        mbeat = true;
-                        lock (writeobj)
                         {
-                            ProcessPayload(sb, data.Source.ToString(), "MQTT Message", "NA");
+                            prog++;
+                            return;
+                        }
+                        if (!mbeat)
+                        {
+                            mbeat = true;
+                            lock (writeobj)
+                            {
+                                ProcessPayload(sb, data.Source.ToString(), "MQTT Message", "NA");
+                            }
                         }
                     }
                     break;
@@ -233,7 +246,6 @@ namespace VenomNamespace
                         }
 
                     if (autogen && savedExtractedMessage.Contains("1020001"))
-                    //if (autogen && savedExtractedMessage.Contains("000A045E377F8501020001"))
                     {
                         string pdata = savedExtractedMessage.Substring(savedExtractedMessage.Length - 2);
                         string un_data = pdata;
@@ -243,7 +255,7 @@ namespace VenomNamespace
                             un_data = un_data.PadLeft(4, 'F');
                         }
                         val = unchecked((short)Convert.ToUInt16(un_data, 16));
-                        if (val < 0)//Int32.Parse(pdata, System.Globalization.NumberStyles.HexNumber) < 0)
+                        if (val < 0)
                         {
                             lock (writeobj)
                             {
@@ -254,8 +266,9 @@ namespace VenomNamespace
                     break;
 
                  case "iot-2/evt/cc_SetKvpResult/fmt/binary":
-                    savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
-
+                    //savedExtractedMessage = string.Concat(Array.ConvertAll(data.Message, b => b.ToString("X2")));
+                    if (cyc && autogen)
+                        SetResult(data.Message[data.Message.Length - 1]);
                     break;
 
                 default:
@@ -602,7 +615,7 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("raw is " + raw + " ip equals " + ip + " source is " + source + " sb equals " + sb , "Error",
+                MessageBox.Show("Catastophic ProcessPayload error." , "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -795,7 +808,14 @@ namespace VenomNamespace
                         results.Rows[listindex]["OTA Result"] = iplist[listindex].Result;
 
                     if (autogen && type.Equals("update"))
+                    {
                         InvLabel("auto", iplist[AUTOINDEX].Result);
+                        if (cyc && iplist[AUTOINDEX].Result.Contains("Programming"))
+                        {
+                            if (iplist[AUTOINDEX].Signal != null)
+                                iplist[AUTOINDEX].Signal.Set();
+                        }
+                    }
 
                     if (autogen && type.Equals("status"))
                     {
@@ -1004,14 +1024,7 @@ namespace VenomNamespace
                                 StopTimer();
                                 InvLabel("auto", "PENDING");
                                 InvLabel("ud", "PENDING");
-                                for (int i = 0; i < NODECASEMAX; i++)
-                                {
-                                    if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
-                                    {
-                                        results.Rows[i]["OTA Result"] = "Cancelled by User.";
-                                        DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
-                                    }
-                                }
+                                FailLeft();
 
                                 if (iplist[AUTOINDEX].Signal != null)
                                     iplist[AUTOINDEX].Signal.Set();
@@ -1228,11 +1241,12 @@ namespace VenomNamespace
 
             string topic = "";
             byte[] bytes = null;
-
+            string pay = "";
             switch (type)
             {
-                case "set":
-                    bytes = new byte[ipd.MQTTPay.Length / 2];
+                case "bright":
+                    pay = "0008FF3333020200090A";  //Sys set brightness to 10
+                    bytes = new byte[pay.Length / 2];
                     for (int i = 0; i < bytes.Length; i++)
                     {
                         bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
@@ -1242,7 +1256,7 @@ namespace VenomNamespace
                     break;
 
                 case "rssi":
-                    string pay = "0005FF01020001";  //XCat get RSSI
+                    pay = "0005FF01020001";  //XCat get RSSI
                     bytes = new byte[pay.Length / 2];
                     for (int i = 0; i < bytes.Length; i++)
                     {
@@ -1250,6 +1264,27 @@ namespace VenomNamespace
 
                     }
                     topic = "iot-2/cmd/cc_GetKvp/fmt/binary";
+                    break;
+
+                case "cyc":
+                    bytes = new byte[ipd.MQTTPay.Length / 2];   //Saved from user selection on AutoGen.cs
+                    for (int i = 0; i < bytes.Length; i++)
+                    {
+                        bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                    }
+                    topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
+                    break;
+
+                case "cncl":
+                    pay = "0008FF33330307000101";   //Remote cancel
+                    bytes = new byte[pay.Length / 2];
+                    for (int i = 0; i < bytes.Length; i++)
+                    {
+                        bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                    }
+                    topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
                     break;
 
                 default:
@@ -1295,7 +1330,7 @@ namespace VenomNamespace
             {
                 string pay = ipd.Payload.Replace(".com/", ".gov/").Replace(".net/", ".gov/").Replace(".org/", ".gov/");
                 byte[] paybytes = Encoding.ASCII.GetBytes(pay);
-                multcnt = 0;
+                retcnt = 0;
 
                 SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
 
@@ -1321,6 +1356,7 @@ namespace VenomNamespace
             if (var == 2)   //Multiple download retry (gathered while var == 1 test case running)
             {
                 int lcnt = retcnt / 2;  //ubd_description file retry was also counted with ubd file (what we intentionally make retry) so count is doubled
+
                 if (lcnt == 5)  //Count total download attempts
                 {
                     InvColor(19, "grn");
@@ -1377,14 +1413,259 @@ namespace VenomNamespace
         public void TTFRun(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes)
         {
             ttf = true;
+            InvLabel("ud", "TTF");
 
             for (int i = 0; i < TTFCNT; i++)
             {
+                if (cancel_request)
+                    return;
                 TTFExec(cai, ipd, ipbytes, i);
-
             }
-            
+
+            InvLabel("ud", "DOWNGRADE");    //Last TTF sends multiple downgrade payloads, update labels (logs blocked for download event during TTFs)
+            InvLabel("auto", "Downloading");
             ttf = false;
+        }
+        public bool CycRun (ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type, string time)
+        {
+            if (cancel_request)
+                return false;
+
+            if (time.Equals("down"))
+            {
+                if (type.Equals("cyc"))
+                {
+                    int next = rand.Next(0, 1); //Random to start cycle or send payload first
+                    byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+                    if (next == 0)
+                    {
+                        RemoteOps(cai, ipd, ipbytes, "cyc");
+
+                        StartTimer(CYCWAIT);
+                        Wait(CYCWAIT);
+                        StopTimer();
+
+                        if (!cycstart)
+                        {
+                            InvColor(2, "red");
+                            ipd.Result = "FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+                            return false;
+                        }
+                        cycstart = false;
+
+                        if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                        {
+                            InvColor(2, "red");
+                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+                            RemoteOps(cai, ipd, ipbytes, "cncl");
+                            return false;
+                        }
+
+                        StartTimer(CYCWAIT);
+                        Wait(CYCWAIT);
+                        StopTimer();
+
+                        RemoteOps(cai, ipd, ipbytes, "cncl");
+
+                        if (LBL_Auto.Text.Equals("Downloading"))
+                        {
+                            InvColor(2, "grn");
+                            ipd.Result = "PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+
+                            return true;
+                        }
+                        else
+                        {
+                            InvColor(2, "red");
+                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                        {
+                            InvColor(2, "red");
+                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+                            return false;
+                        }
+
+                        StartTimer(CYCWAIT);
+                        Wait(CYCWAIT);
+                        StopTimer();
+
+                        RemoteOps(cai, ipd, ipbytes, "cyc");
+
+                        StartTimer(CYCWAIT);
+                        Wait(CYCWAIT);
+                        StopTimer();
+
+                        if (!cycstart)
+                        {
+                            InvColor(2, "red");
+                            ipd.Result = "FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+                            return false;
+                        }
+
+                        cycstart = false;
+
+                        if (LBL_Auto.Text.Equals("Downloading"))
+                        {
+                            InvColor(2, "grn");
+                            ipd.Result = "PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+
+                            return true;
+                        }
+
+                        else
+                        {
+                            InvColor(2, "red");
+                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.";
+                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
+                            Wait(2000);
+                            return false;
+                        }
+                    }
+                }
+                if (type.Equals("set"))
+                {
+                    RemoteOps(cai, ipd, ipbytes, "bright");
+
+                    StartTimer(CYCWAIT);
+                    Wait(CYCWAIT);
+                    StopTimer();
+
+                    if (!cycstart)
+                    {
+                        InvColor(3, "red");
+                        ipd.Result = "FAIL - The setting was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.";
+                        SetText("auto", "AutoGen Result", 3);  //Table index for this test case
+                        Wait(2000);
+                        return false;
+                    }
+
+                    cycstart = false;
+
+                    if (LBL_Auto.Text.Equals("Downloading"))
+                    {
+                        InvColor(3, "grn");
+                        ipd.Result = "PASS - The setting was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.";
+                        SetText("auto", "AutoGen Result", 3);  //Table index for this test case
+                        Wait(2000);
+
+                        return true;
+                    }
+
+                    else
+                    {
+                        InvColor(3, "red");
+                        ipd.Result = "FAIL - The setting was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.";
+                        SetText("auto", "AutoGen Result", 3);  //Table index for this test case
+                        Wait(2000);
+                        return false;
+                    }
+                }
+            }
+
+            if (time.Equals("iap"))
+            {
+                if (type.Equals("cyc"))
+                {
+                    int next = rand.Next(0, 1); //Random to start cycle or send payload first
+                    byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+
+                    RemoteOps(cai, ipd, ipbytes, "cyc");
+
+                    StartTimer(CYCWAIT);
+                    Wait(CYCWAIT);
+                    StopTimer();
+
+                    if (cycstart)
+                    {
+                        InvColor(4, "red");
+                        ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 while product in IAP. You MUST explore further as this should not be possible.";
+                        SetText("auto", "AutoGen Result", 4);  //Table index for this test case
+                        Wait(2000);
+                        return false;
+                    }
+
+                    cycstart = false;
+
+                    if (LBL_Auto.Text.Equals("Programming"))
+                    {
+                        InvColor(4, "grn");
+                        ipd.Result = "PASS - The cycle was rejected with KVP ACK result of REJECTED-02. The OTA installation continued as expected.";
+                        SetText("auto", "AutoGen Result", 4);  //Table index for this test case
+                        Wait(2000);
+
+                        return true;
+                    }
+
+                    else
+                    {
+                        InvColor(4, "red");
+                        ipd.Result = "FAIL - Product did not enter IAP. Unable to verify test case outcome.";
+                        SetText("auto", "AutoGen Result", 4);  //Table index for this test case
+                        Wait(2000);
+                        return false;
+                    }
+                }
+                if (type.Equals("set"))
+                {
+                    RemoteOps(cai, ipd, ipbytes, "bright");
+
+                    StartTimer(CYCWAIT);
+                    Wait(CYCWAIT);
+                    StopTimer();
+
+                    if (cycstart)
+                    {
+                        InvColor(5, "red");
+                        ipd.Result = "FAIL - The setting was accepted with KVP ACK result of ACCEPTED-00 while product in IAP. You MUST explore further as this should not be possible.";
+                        SetText("auto", "AutoGen Result", 5);  //Table index for this test case
+                        Wait(2000);
+                        return false;
+                    }
+
+                    cycstart = false;
+
+
+                    if (LBL_Auto.Text.Equals("Programming"))
+                    {
+                        InvColor(5, "grn");
+                        ipd.Result = "PASS - The setting was rejected with KVP ACK result of REJECTED-02. The OTA installation continued as expected.";
+                        SetText("auto", "AutoGen Result", 5);  //Table index for this test case
+                        Wait(2000);
+
+                        return true;
+                    }
+
+                    else
+                    {
+                        InvColor(5, "red");
+                        ipd.Result = "FAIL - Product did not enter IAP. Unable to verify test case outcome.";
+                        SetText("auto", "AutoGen Result", 5);  //Table index for this test case
+                        Wait(2000);
+                        return false;
+                    }
+                }
+            }
+
+            return false;
         }
         public bool CheckBeat(string type, ConnectedApplianceInfo cai, IPData ipd)
         {
@@ -1496,11 +1777,29 @@ namespace VenomNamespace
                     case 13:    //Claim check
                         ipd.Clm = clm;
                         break;
+                    case 14:    //Progress message check
+                        //No special initialization required
+                        break;
+                    case 15:    //Payload sent multiple times
+                        //No special initialization required
+                        break;
                     case 16:    //RSSI check
                         RemoteOps(cai, ipd, ipbytes, "rssi");
                         break;
+                    case 17:    //OTAs possible after OTA
+                        //No special initialization required
+                        break;
                     case 18:    //ApplianceUpdateVersion check
                         ipd.ISPP = ispp;
+                        break;
+                    case 19:    //5 retry check
+                        //No special initialization required
+                        break;
+                    case 20:    //Invalid URL check
+                        //No special initialization required
+                        break;
+                    case 21:    //Invalid CRC check
+                        //No special initialization required
                         break;
                     case 22:    //Node OTA success check
                         //No special initialization required
@@ -1512,7 +1811,7 @@ namespace VenomNamespace
             }
 
         }
-        public void TestCheck(ConnectedApplianceInfo cai, IPData ipd)
+        public void TestCheck(ConnectedApplianceInfo cai, IPData ipd, int iter)
         {
             bool changed;
 
@@ -1871,6 +2170,36 @@ namespace VenomNamespace
                         if (changed)
                             SetText("auto", "AutoGen Result", i);
                         break;
+
+                    case 14:    //Progress message check
+                        if (!LBL_Auto.Text.Contains("FAIL"))
+                        {
+                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                            {
+                                if (prog > 0)
+                                {
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - " + prog + " progress messages were detected during OTA download and application.";
+                                }
+                                else
+                                {
+                                    InvColor(i, "red");
+                                    ipd.Result = "FAIL - " + prog + " progress messages were detected during OTA download and application.";
+                                }
+                                changed = true;
+                            }
+                        }
+                        else
+                        {
+                            InvColor(i, "red");
+                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                            changed = true;
+                        }
+
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
+                        break;
+
                     case 16:    //RSSI Strong Check
                         if (!LBL_Auto.Text.Contains("FAIL"))
                         {
@@ -1900,6 +2229,35 @@ namespace VenomNamespace
                         {
                             InvColor(i, "red");
                             ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted."; //OTA result label did not have PASS so it is FAIL
+                            changed = true;
+                        }
+
+                        if (changed)
+                            SetText("auto", "AutoGen Result", i);
+                        break;
+
+                    case 17:    //OTAs are possible after OTA check
+                        if (!LBL_Auto.Text.Contains("FAIL"))
+                        {
+                            if (iter > 2 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                            {
+                                if (autottl > 0)
+                                {
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - " + autottl + " OTAs have been sent, downloaded, and applied in successive order.";
+                                }
+                                else
+                                {
+                                    InvColor(i, "red");
+                                    ipd.Result = "FAIL - " + autottl + " OTAs have been sent, downloaded, and applied in successive order.";
+                                }
+                                changed = true;
+                            }
+                        }
+                        else
+                        {
+                            InvColor(i, "red");
+                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
                             changed = true;
                         }
 
@@ -1971,6 +2329,38 @@ namespace VenomNamespace
                 }
             }
 
+        }
+        public void FailLeft()
+        {
+            for (int i = 0; i < NODECASEMAX; i++)
+            {
+                if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
+                {
+                    if (cancel_request)
+                    {
+                        results.Rows[i]["OTA Result"] = "Cancelled by User.";
+                        DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                    }
+                    else
+                    {
+
+                        results.Rows[i]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
+                        DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Red;
+                    }
+                    
+                }
+            }
+        }
+        private void SetResult(byte res)
+        {
+            if (res == 0)
+            {
+                cycstart = true;
+            }
+            else
+            {
+                cycstart = false;
+            }
         }
         public void RunTask(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex, Barrier barrier)
         {
@@ -2141,7 +2531,7 @@ namespace VenomNamespace
                     timer.Interval = TMAX;
                     timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
                     timer.Start();
-
+                    
                     //Parse payload into byte array
                     byte[] paybytes;
                     if (ipd.Next == "UPGRADE")
@@ -2168,7 +2558,7 @@ namespace VenomNamespace
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
                     {
-                        if (i != 0)  //Run non-TTFs
+                        if (i != CYCGO || i != TTFGO )  //Control testing OTA with cycle interation or TTF at particular iteration time
                         {
                             CheckBeat("init", cai, ipd);
                             TestInit(ipbytes, cai, ipd, i);
@@ -2176,17 +2566,63 @@ namespace VenomNamespace
                                 thread_waits = true;
                             
                             else
+                            {
+                                InvLabel("auto", "FAIL");
+                                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
                                 thread_waits = false;
+                            }
+                                
                         }
+
+                        else if (i == CYCGO)
+                        {
+                            cyc = true;
+                            bool cwait = false;
+                            if (CycRun(cai, ipd, ipbytes, "cyc", "down"))
+                                cwait = true;
+                            else
+                            {
+                                cwait = false;
+                                InvLabel("auto", "FAIL");
+                                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
+                            }
+
+                            if (cwait)
+                            {
+                                CycRun(cai, ipd, ipbytes, "set", "down");
+                                Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
+
+                                if (ipd.Signal != null)
+                                    ipd.Signal.Wait();
+
+                                if (ipd.Result.Contains("timeout"))
+                                {
+                                    cwait = false;
+                                    SetText("status", "Force Close", ipd.TabIndex);
+                                    SetText("auto", "Force Close", ipd.TabIndex);
+                                }
+
+                                else
+                                {
+                                    CycRun(cai, ipd, ipbytes, "cyc", "iap");
+                                    CycRun(cai, ipd, ipbytes, "set", "iap");
+                                }
+                            }
+                            if (ipd.Signal != null)
+                                ipd.Signal.Reset();
+                            if (cwait)
+                                thread_waits = true;
+                            else
+                                thread_waits = false;
+
+                            cyc = false;                            
+                        }
+
                         else
                         {
-                            InvLabel("ud", "TTF");
                             TTFRun(cai, ipd, ipbytes);
-                            InvLabel("ud", "DOWNGRADE");
-                            ipd.Signal.Wait();   //Set for the one OTA download that is running
                             thread_waits = true;
-                        }
-                        
+                        }                        
                         
                     }
 
@@ -2218,11 +2654,13 @@ namespace VenomNamespace
                     string res = LBL_Auto.Text;
 
                     if (!res.Contains("FAIL"))
+                    {
                         InvLabel("auto", "RECONN");
+                        autottl++;
+                    }
 
                     InvLabel("ud", "PENDING");
 
-                    autottl++;
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
                     StartTimer(4 * RECONWAIT);
 
@@ -2237,10 +2675,12 @@ namespace VenomNamespace
                     ConnectedApplianceInfo cai_n;
                     cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
 
-                    if (cai_n != null && cai.IPAddress != cai_n.IPAddress)
+                    bool precon = (cai.IPAddress != cai_n.IPAddress) || !thread_waits ? true : false;
+
+                    if (cai_n != null && precon)
                     {
                         cai = cai_n;
-                        ipd.IPAddress = cai.IPAddress;    //Update if IP 
+                        ipd.IPAddress = cai.IPAddress;    //Update if IP changed
 
                         MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
                         Wait(3000);
@@ -2249,6 +2689,7 @@ namespace VenomNamespace
                         StartTimer(RECONWAIT);
                         Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
                         StopTimer();
+
 
                         if (cai != null)
                         {
@@ -2281,26 +2722,36 @@ namespace VenomNamespace
                         if (cai == null || recontot == MQTTMAX)
                         {
                             ipd.Result = "FAIL - Unable to reconnect to product. Unable to check test case result(s).";
+
                             SetText("status", "Force Close", ipd.TabIndex);
                             SetText("auto", "Force Close", ipd.TabIndex);
+
                             Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
-                            ipd.Signal.Reset();
+
+                            if (ipd.Signal != null)
+                                ipd.Signal.Reset();
+
                             Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
+
                             ipd.Result = "";
                             InvLabel("auto", "PENDING");
+
                             continue;   //THIS MAY BE A BAD IDEA
                         }
                     }
 
                     Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
-
-                    ipd.Signal.Reset();
+                    
+                    if (ipd.Signal != null)
+                        ipd.Signal.Reset();
 
                     if (!res.Contains("FAIL"))
+                    {
                         InvLabel("auto", "CHECK");
+                        CheckBeat("check", cai, ipd);
+                        TestCheck(cai, ipd, i);
+                    }
 
-                    CheckBeat("check", cai, ipd);
-                    TestCheck(cai, ipd);
                     ipd.Result = "";
                     InvLabel("auto", "PENDING");
 
@@ -2693,16 +3144,19 @@ namespace VenomNamespace
             autottl = 0;
             gstatus = 0;
             retcnt = 0;
+            prog = 0;
+            timeleft = 0;
             tbeat = false;
             mbeat = false;
+            ttf = false;
+            cycstart = false;
+            cyc = false;
             ccuri = "";
             vers = "";
             ispp = "";
             prov = "";
             clm = "";
             rssi = "";
-            timeleft = 0;
-            ttf = false;
     }
         private void ResetForm(bool operation)
         {
@@ -2756,7 +3210,10 @@ namespace VenomNamespace
                                 t.Milliseconds);
                     int totalran;
                     if (autogen)
+                    {
                         totalran = autottl;
+                        FailLeft();
+                    }
                     else
                         totalran = iplist.Count();
                     double average = 0.0;

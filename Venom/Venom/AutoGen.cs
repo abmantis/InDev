@@ -395,11 +395,17 @@ namespace VenomNamespace
             newip.TabIndex = parent.AUTOINDEX;
             newip.Name = name;
             newip.Down = dwn;
-
+            string pay;
             if (name.Contains("Downgrade"))
+            {
+                pay = dwn;
                 newip.Type = "DOWNGRADE";
+            }
             else
+            {
+                pay = up;
                 newip.Type = "UPGRADE";
+            }
 
             if (parent.LB_IPs.Items.Count == 0)
             {
@@ -413,7 +419,7 @@ namespace VenomNamespace
             DataRow dr = parent.results.NewRow();
 
             dr["IP Address"] = newip.IPAddress;
-            dr["OTA Payload"] = newip.Payload;
+            dr["OTA Payload"] = pay;
             dr["Delivery Method"] = "MQTT";
             dr["OTA Type"] = newip.Type;
             dr["Node"] = newip.Node;
@@ -514,7 +520,7 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 131852 OTA : Post Update : Check Claimed Status", mqttpay);
                             break;
                         case 14:
-                            BuildList(cai, "RQM 133399 OTA : Post Update : Connection Reset", mqttpay);
+                            BuildList(cai, "RQM 186300 OTA [General] - Consumer is informed of the update status on app", mqttpay);
                             break;
                         case 15:
                             BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay);
@@ -523,7 +529,7 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay);
                             break;
                         case 17:
-                            BuildList(cai, "RQM 132837 OTA : Preconditions : CRC Validation", mqttpay);
+                            BuildList(cai, "RQM 186529 OTA [General] : Post Condition : After OTA is successful, OTAs are still possible (Appliances are able to receive and apply OTAs)", mqttpay);
                             break;
                         case 18:
                             BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);
