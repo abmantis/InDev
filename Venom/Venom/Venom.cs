@@ -443,7 +443,7 @@ namespace VenomNamespace
                     return;
                 }
 
-                if (source.Contains("mbeat") && !ttf)
+                if (!ttf && !cyc && source.Contains("mbeat"))
                 {
                     if (sb.Equals("rssi"))
                     {
@@ -1231,283 +1231,355 @@ namespace VenomNamespace
         }
         public void RemoteOps(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type)
         {
-            if (clm == "0")
+            try
             {
-                //Send subscribe message before sending cycle
-                byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
-                SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, cai, ipd);
-                Wait(2000);
-            }
+                if (clm == "0")
+                {
+                    //Send subscribe message before sending cycle
+                    byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+                    SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, cai, ipd);
+                    Wait(2000);
+                }
 
-            string topic = "";
-            byte[] bytes = null;
-            string pay = "";
-            switch (type)
+                string topic = "";
+                byte[] bytes = null;
+                string pay = "";
+                switch (type)
+                {
+                    case "bright":
+                        pay = "0008FF3333020200090A";  //Sys set brightness to 10
+                        bytes = new byte[pay.Length / 2];
+                        for (int i = 0; i < bytes.Length; i++)
+                        {
+                            bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                        }
+                        topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
+                        break;
+
+                    case "rssi":
+                        pay = "0005FF01020001";  //XCat get RSSI
+                        bytes = new byte[pay.Length / 2];
+                        for (int i = 0; i < bytes.Length; i++)
+                        {
+                            bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                        }
+                        topic = "iot-2/cmd/cc_GetKvp/fmt/binary";
+                        break;
+
+                    case "cyc":
+                        bytes = new byte[ipd.MQTTPay.Length / 2];   //Saved from user selection on AutoGen.cs
+                        for (int i = 0; i < bytes.Length; i++)
+                        {
+                            bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                        }
+                        topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
+                        break;
+
+                    case "cncl":
+                        pay = "0008FF33330307000101";   //Remote cancel
+                        bytes = new byte[pay.Length / 2];
+                        for (int i = 0; i < bytes.Length; i++)
+                        {
+                            bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                        }
+                        topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
+                        break;
+
+                    default:
+                        break;
+                }
+
+                SendMQTT(ipbytes, topic, bytes, cai, ipd);
+
+                StartTimer(CYCWAIT);
+                Wait(CYCWAIT);
+                StopTimer();
+
+            }
+            catch
             {
-                case "bright":
-                    pay = "0008FF3333020200090A";  //Sys set brightness to 10
-                    bytes = new byte[pay.Length / 2];
-                    for (int i = 0; i < bytes.Length; i++)
-                    {
-                        bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+                MessageBox.Show("Catastrophic RemoteOps error.", "Error",
+                                               MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
 
-                    }
-                    topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
-                    break;
-
-                case "rssi":
-                    pay = "0005FF01020001";  //XCat get RSSI
-                    bytes = new byte[pay.Length / 2];
-                    for (int i = 0; i < bytes.Length; i++)
-                    {
-                        bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
-
-                    }
-                    topic = "iot-2/cmd/cc_GetKvp/fmt/binary";
-                    break;
-
-                case "cyc":
-                    bytes = new byte[ipd.MQTTPay.Length / 2];   //Saved from user selection on AutoGen.cs
-                    for (int i = 0; i < bytes.Length; i++)
-                    {
-                        bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
-
-                    }
-                    topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
-                    break;
-
-                case "cncl":
-                    pay = "0008FF33330307000101";   //Remote cancel
-                    bytes = new byte[pay.Length / 2];
-                    for (int i = 0; i < bytes.Length; i++)
-                    {
-                        bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
-
-                    }
-                    topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
-                    break;
-
-                default:
-                    break;
             }
-
-            SendMQTT(ipbytes, topic, bytes, cai, ipd);
-
-            StartTimer(CYCWAIT);
-            Wait(CYCWAIT);
-            StopTimer();
 
         }
         public void TTFExec(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, int var)
         {
-            if (var == 0)   //Invalid CRC
+            try
             {
-                string[] parts = ipd.Payload.Split(',');
-                parts[0] = "{\"update\":{\"crc32\":\"FFFFFFFF\",";
-                string pay = parts[0] + parts[1];
-                byte[] paybytes = Encoding.ASCII.GetBytes(pay);
 
-                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
-                ipd.Signal.Wait();
-                ipd.Signal.Reset();
-                if (LBL_Auto.Text.Contains("FAIL") && gstatus == 5)
+                if (var == 0)   //Invalid CRC
                 {
-                    InvColor(21, "grn");
-                    ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + StatusLookup(gstatus) + ".";
-                }
+                    string[] parts = ipd.Payload.Split(',');
+                    parts[0] = "{\"update\":{\"crc32\":\"FFFFFFFF\",";
+                    string pay = parts[0] + parts[1];
+                    byte[] paybytes = Encoding.ASCII.GetBytes(pay);
 
-                else
-                {
-                    InvColor(21, "red");
-                    ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + StatusLookup(gstatus) + ".";
-                }
-                InvLabel("auto", "PENDING");
-                SetText("auto", "AutoGen Result", 21);  //Table index for this test case
-                ipd.Result = "";
-            }
-
-            if (var == 1)   //Invalid URL
-            {
-                string pay = ipd.Payload.Replace(".com/", ".gov/").Replace(".net/", ".gov/").Replace(".org/", ".gov/");
-                byte[] paybytes = Encoding.ASCII.GetBytes(pay);
-                retcnt = 0;
-
-                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
-
-                ipd.Signal.Wait();
-                ipd.Signal.Reset();
-
-                if (LBL_Auto.Text.Contains("FAIL") && gstatus == 4)
-                {
-                    InvColor(20, "grn");
-                    ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + StatusLookup(gstatus) + ".";
-                }
-
-                else
-                {
-                    InvColor(20, "red");
-                    ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + StatusLookup(gstatus) + ".";
-                }
-                InvLabel("auto", "PENDING");
-                SetText("auto", "AutoGen Result", 20);  //Table index for this test case
-                ipd.Result = "";
-            }
-
-            if (var == 2)   //Multiple download retry (gathered while var == 1 test case running)
-            {
-                int lcnt = retcnt / 2;  //ubd_description file retry was also counted with ubd file (what we intentionally make retry) so count is doubled
-
-                if (lcnt == 5)  //Count total download attempts
-                {
-                    InvColor(19, "grn");
-                    ipd.Result = "PASS - A total of " + lcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
-                }
-
-                else
-                {
-                    InvColor(19, "red");
-                    ipd.Result = "FAIL - A total of " + lcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
-                }
-
-                SetText("auto", "AutoGen Result", 19);  //Table index for this test case
-                Wait(2000);
-                return;
-            }
-
-            if (var == 3)   //Multiple payload sent
-            {
-                int stop = rand.Next(2, 4);
-                int intv;
-                byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
-
-                for (int j = 0; j < stop; j++)
-                {
-                    intv = rand.Next(200, 2000);
-                    Wait(intv);
                     SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                    ipd.Signal.Wait();
+                    ipd.Signal.Reset();
+                    if (LBL_Auto.Text.Contains("FAIL") && gstatus == 5)
+                    {
+                        InvColor(21, "grn");
+                        ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + StatusLookup(gstatus) + ".";
+                    }
+
+                    else
+                    {
+                        InvColor(21, "red");
+                        ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + StatusLookup(gstatus) + ".";
+                    }
+                    InvLabel("auto", "PENDING");
+                    SetText("auto", "AutoGen Result", 21);  //Table index for this test case
+                    ipd.Result = "";
+                }
+
+                if (var == 1)   //Invalid URL
+                {
+                    string pay = ipd.Payload.Replace(".com/", ".gov/").Replace(".net/", ".gov/").Replace(".org/", ".gov/");
+                    byte[] paybytes = Encoding.ASCII.GetBytes(pay);
+                    retcnt = 0;
+
+                    SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+
+                    ipd.Signal.Wait();
+                    ipd.Signal.Reset();
+
+                    if (LBL_Auto.Text.Contains("FAIL") && gstatus == 4)
+                    {
+                        InvColor(20, "grn");
+                        ipd.Result = "PASS - The OTA did not execute (failed) as expected with a Status result equal to " + StatusLookup(gstatus) + ".";
+                    }
+
+                    else
+                    {
+                        InvColor(20, "red");
+                        ipd.Result = "FAIL - The final OTA result did not FAIL as expected with a final Status result equal to " + StatusLookup(gstatus) + ".";
+                    }
+                    InvLabel("auto", "PENDING");
+                    SetText("auto", "AutoGen Result", 20);  //Table index for this test case
+                    ipd.Result = "";
+                }
+
+                if (var == 2)   //Multiple download retry (gathered while var == 1 test case running)
+                {
+                    int lcnt = retcnt / 2;  //ubd_description file retry was also counted with ubd file (what we intentionally make retry) so count is doubled
+
+                    if (lcnt == 5)  //Count total download attempts
+                    {
+                        InvColor(19, "grn");
+                        ipd.Result = "PASS - A total of " + lcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
+                    }
+
+                    else
+                    {
+                        InvColor(19, "red");
+                        ipd.Result = "FAIL - A total of " + lcnt + " retry attempts were done while trying to download from the invalid url above in RQM 131865.";
+                    }
+
+                    SetText("auto", "AutoGen Result", 19);  //Table index for this test case
+                    Wait(2000);
+                    return;
+                }
+
+                if (var == 3)   //Multiple payload sent
+                {
+                    int stop = rand.Next(2, 5);
+                    int intv;
+                    byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+
+                    for (int j = 0; j < stop; j++)
+                    {
+                        intv = rand.Next(200, 2000);
+                        Wait(intv);
+                        SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                    }
+
+                    StartTimer(TTFWAIT);
+                    Wait(TTFWAIT);
+                    StopTimer();
+
+                    if (multcnt == (stop - 1))  //Stop holds all OTA sent subtract 1 for the first valid, count extra only
+                    {
+                        InvColor(15, "grn");
+                        ipd.Result = "PASS - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The product detected and did not download " + multcnt + " extra OTAs.";
+                    }
+
+                    else
+                    {
+                        InvColor(15, "red");
+                        ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The product detected and did not download " + multcnt + " extra OTAs.";
+                    }
+                    SetText("auto", "AutoGen Result", 15);  //Table index for this test case
+                    return;
                 }
 
                 StartTimer(TTFWAIT);
                 Wait(TTFWAIT);
                 StopTimer();
-
-                if (multcnt == (stop - 1))  //Stop holds all OTA sent subtract 1 for the first valid, count extra only
-                {
-                    InvColor(15, "grn");
-                    ipd.Result = "PASS - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The product detected and did not download " + multcnt + " extra OTAs.";
-                }
-
-                else
-                {
-                    InvColor(15, "red");
-                    ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The product detected and did not download " + multcnt + " extra OTAs.";
-                }
-                SetText("auto", "AutoGen Result", 15);  //Table index for this test case
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic TTFExec error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
-            StartTimer(TTFWAIT);
-            Wait(TTFWAIT);
-            StopTimer();
         }
         public void TTFRun(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes)
         {
-            ttf = true;
-            InvLabel("ud", "TTF");
-
-            for (int i = 0; i < TTFCNT; i++)
+            try
             {
-                if (cancel_request)
-                    return;
-                TTFExec(cai, ipd, ipbytes, i);
-            }
+                ttf = true;
+                InvLabel("ud", "TTF");
 
-            InvLabel("ud", "DOWNGRADE");    //Last TTF sends multiple downgrade payloads, update labels (logs blocked for download event during TTFs)
-            InvLabel("auto", "Downloading");
-            ttf = false;
+                for (int i = 0; i < TTFCNT; i++)
+                {
+                    if (cancel_request)
+                        return;
+                    TTFExec(cai, ipd, ipbytes, i);
+                }
+
+                InvLabel("ud", "DOWNGRADE");    //Last TTF sends multiple downgrade payloads, update labels (logs blocked for download event during TTFs)
+                InvLabel("auto", "Downloading");
+                ttf = false;
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic TTFRun error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
         }
         public bool CycExec(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type, string time)
         {
-            if (cancel_request)
-                return false;
-
-            if (time.Equals("down"))
+            try
             {
-                if (type.Equals("cyc"))
+
+                if (cancel_request)
+                    return false;
+
+                if (time.Equals("down"))
                 {
-                    int next = rand.Next(0, 1); //Random to start cycle or send payload first
-                    byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
-                    if (next == 0)
+                    if (type.Equals("cyc"))
                     {
-                        RemoteOps(cai, ipd, ipbytes, "cyc");
-
-                        if (!cycstart)
+                        int next = rand.Next(0, 2); //Random to start cycle or send payload first
+                        byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+                        if (next == 0)
                         {
-                            InvColor(2, "red");
-                            ipd.Result = "FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
-                            return false;
-                        }
-                        cycstart = false;
+                            RemoteOps(cai, ipd, ipbytes, "cyc");
 
-                        if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
-                        {
-                            InvColor(2, "red");
-                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
+                            if (!cycstart)
+                            {
+                                ipd.LList.AddFirst("FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.");
+                                return false;
+                            }
+                            cycstart = false;
+
+                            if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                            {
+                                ipd.LList.AddFirst("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.");
+                                RemoteOps(cai, ipd, ipbytes, "cncl");
+                                return false;
+                            }
+
+                            StartTimer(CYCWAIT);
+                            Wait(CYCWAIT);
+                            StopTimer();
+
                             RemoteOps(cai, ipd, ipbytes, "cncl");
-                            return false;
-                        }
 
-                        StartTimer(CYCWAIT);
-                        Wait(CYCWAIT);
-                        StopTimer();
-
-                        RemoteOps(cai, ipd, ipbytes, "cncl");
-
-                        if (LBL_Auto.Text.Equals("Downloading"))
-                        {
-                            InvColor(2, "grn");
-                            ipd.Result = "PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
-
-                            return true;
+                            if (LBL_Auto.Text.Equals("Downloading"))
+                            {
+                                ipd.LList.AddFirst("PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.");
+                                return true;
+                            }
+                            else
+                            {
+                                ipd.LList.AddFirst("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.");
+                                return false;
+                            }
                         }
                         else
                         {
-                            InvColor(2, "red");
-                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
-                            return false;
+                            if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                            {
+                                ipd.LList.AddFirst("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.");
+                                return false;
+                            }
+
+                            StartTimer(CYCWAIT);
+                            Wait(CYCWAIT);
+                            StopTimer();
+
+                            RemoteOps(cai, ipd, ipbytes, "cyc");
+
+                            if (!cycstart)
+                            {
+                                ipd.LList.AddFirst("FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.");
+                                return false;
+                            }
+
+                            cycstart = false;
+
+                            RemoteOps(cai, ipd, ipbytes, "cncl");
+
+                            if (LBL_Auto.Text.Equals("Downloading"))
+                            {
+                                ipd.LList.AddFirst("PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.");
+                                return true;
+                            }
+
+                            else
+                            {
+                                ipd.LList.AddFirst("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.");
+                                return false;
+                            }
                         }
                     }
-                    else
+                    if (type.Equals("set"))
                     {
-                        if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
-                        {
-                            InvColor(2, "red");
-                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
-                            return false;
-                        }
-
-                        StartTimer(CYCWAIT);
-                        Wait(CYCWAIT);
-                        StopTimer();
-
-                        RemoteOps(cai, ipd, ipbytes, "cyc");
+                        RemoteOps(cai, ipd, ipbytes, "bright");
 
                         if (!cycstart)
                         {
-                            InvColor(2, "red");
-                            ipd.Result = "FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
+                            ipd.LList.AddLast("FAIL - The setting was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.");
+                            return false;
+                        }
+
+                        cycstart = false;
+
+                        if (LBL_Auto.Text.Equals("Downloading"))
+                        {
+                            ipd.LList.AddLast("PASS - The setting was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.");
+                            return true;
+                        }
+
+                        else
+                        {
+                            ipd.LList.AddLast("FAIL - The setting was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.");
+                            return false;
+                        }
+                    }
+                }
+
+                if (time.Equals("iap"))
+                {
+                    if (type.Equals("cyc"))
+                    {
+                        int next = rand.Next(0, 2); //Random to start cycle or send payload first
+                        byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+
+                        RemoteOps(cai, ipd, ipbytes, "cyc");
+
+                        if (cycstart)
+                        {
+                            ipd.LList.AddLast("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 while product in IAP. You MUST explore further as this should not be possible.");
                             return false;
                         }
 
@@ -1515,211 +1587,178 @@ namespace VenomNamespace
 
                         RemoteOps(cai, ipd, ipbytes, "cncl");
 
-                        if (LBL_Auto.Text.Equals("Downloading"))
+                        if (LBL_Auto.Text.Equals("Programming"))
                         {
-                            InvColor(2, "grn");
-                            ipd.Result = "PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
-
+                            ipd.LList.AddLast("PASS - The cycle was rejected with KVP ACK result of REJECTED-02. The OTA installation continued as expected.");
                             return true;
                         }
 
                         else
                         {
-                            InvColor(2, "red");
-                            ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.";
-                            SetText("auto", "AutoGen Result", 2);  //Table index for this test case
-                            Wait(2000);
+                            ipd.LList.AddLast("FAIL - Product did not enter IAP. Unable to verify test case outcome.");
+                            return false;
+                        }
+                    }
+                    if (type.Equals("set"))
+                    {
+                        RemoteOps(cai, ipd, ipbytes, "bright");
+
+                        if (cycstart)
+                        {
+                            ipd.LList.AddLast("FAIL - The setting was accepted with KVP ACK result of ACCEPTED-00 while product in IAP. You MUST explore further as this should not be possible.");
+                            return false;
+                        }
+
+                        cycstart = false;
+
+
+                        if (LBL_Auto.Text.Equals("Programming"))
+                        {
+                            ipd.LList.AddLast("PASS - The setting was rejected with KVP ACK result of REJECTED-02. The OTA installation continued as expected.");
+                            return true;
+                        }
+
+                        else
+                        {
+                            ipd.LList.AddLast("FAIL - Product did not enter IAP. Unable to verify test case outcome.");
                             return false;
                         }
                     }
                 }
-                if (type.Equals("set"))
-                {
-                    RemoteOps(cai, ipd, ipbytes, "bright");
 
-                    if (!cycstart)
-                    {
-                        InvColor(3, "red");
-                        ipd.Result = "FAIL - The setting was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.";
-                        SetText("auto", "AutoGen Result", 3);  //Table index for this test case
-                        Wait(2000);
-                        return false;
-                    }
-
-                    cycstart = false;
-
-                    if (LBL_Auto.Text.Equals("Downloading"))
-                    {
-                        InvColor(3, "grn");
-                        ipd.Result = "PASS - The setting was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.";
-                        SetText("auto", "AutoGen Result", 3);  //Table index for this test case
-                        Wait(2000);
-
-                        return true;
-                    }
-
-                    else
-                    {
-                        InvColor(3, "red");
-                        ipd.Result = "FAIL - The setting was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.";
-                        SetText("auto", "AutoGen Result", 3);  //Table index for this test case
-                        Wait(2000);
-                        return false;
-                    }
-                }
+                return false;
             }
-
-            if (time.Equals("iap"))
+            catch
             {
-                if (type.Equals("cyc"))
-                {
-                    int next = rand.Next(0, 1); //Random to start cycle or send payload first
-                    byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
-
-                    RemoteOps(cai, ipd, ipbytes, "cyc");
-
-                    if (cycstart)
-                    {
-                        InvColor(4, "red");
-                        ipd.Result = "FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 while product in IAP. You MUST explore further as this should not be possible.";
-                        SetText("auto", "AutoGen Result", 4);  //Table index for this test case
-                        Wait(2000);
-                        return false;
-                    }
-
-                    cycstart = false;
-
-                    RemoteOps(cai, ipd, ipbytes, "cncl");
-
-                    if (LBL_Auto.Text.Equals("Programming"))
-                    {
-                        InvColor(4, "grn");
-                        ipd.Result = "PASS - The cycle was rejected with KVP ACK result of REJECTED-02. The OTA installation continued as expected.";
-                        SetText("auto", "AutoGen Result", 4);  //Table index for this test case
-                        Wait(2000);
-
-                        return true;
-                    }
-
-                    else
-                    {
-                        InvColor(4, "red");
-                        ipd.Result = "FAIL - Product did not enter IAP. Unable to verify test case outcome.";
-                        SetText("auto", "AutoGen Result", 4);  //Table index for this test case
-                        Wait(2000);
-                        return false;
-                    }
-                }
-                if (type.Equals("set"))
-                {
-                    RemoteOps(cai, ipd, ipbytes, "bright");
-
-                    if (cycstart)
-                    {
-                        InvColor(5, "red");
-                        ipd.Result = "FAIL - The setting was accepted with KVP ACK result of ACCEPTED-00 while product in IAP. You MUST explore further as this should not be possible.";
-                        SetText("auto", "AutoGen Result", 5);  //Table index for this test case
-                        Wait(2000);
-                        return false;
-                    }
-
-                    cycstart = false;
-
-
-                    if (LBL_Auto.Text.Equals("Programming"))
-                    {
-                        InvColor(5, "grn");
-                        ipd.Result = "PASS - The setting was rejected with KVP ACK result of REJECTED-02. The OTA installation continued as expected.";
-                        SetText("auto", "AutoGen Result", 5);  //Table index for this test case
-                        Wait(2000);
-
-                        return true;
-                    }
-
-                    else
-                    {
-                        InvColor(5, "red");
-                        ipd.Result = "FAIL - Product did not enter IAP. Unable to verify test case outcome.";
-                        SetText("auto", "AutoGen Result", 5);  //Table index for this test case
-                        Wait(2000);
-                        return false;
-                    }
-                }
+                MessageBox.Show("Catastrophic CycExec error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
-
-            return false;
+        }
+        public void SetCyc(IPData ipd, int num, string val, LinkedListNode<string> node)
+        {
+            try
+            {
+                InvColor(num, val);
+                ipd.Result = node.Value;
+                SetText("auto", "AutoGen Result", num);  //Table index for this test case
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic SetCyc error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
         }
         public bool CycRun(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes)
         {
-            cyc = true;
-            bool cwait = false;
-            if (CycExec(cai, ipd, ipbytes, "cyc", "down"))
-                cwait = true;
-            else
+            try
             {
-                cwait = false;
-                InvLabel("auto", "FAIL");
-                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
-            }
-            ipd.Result = "";    //Purge result from previous test
-            if (cwait)
-            {
-                CycExec(cai, ipd, ipbytes, "set", "down");
-                Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
-                ipd.Result = "";
-                if (ipd.Signal != null)
-                    ipd.Signal.Wait();
-
-                if (ipd.Result.Contains("timeout"))
-                {
-                    cwait = false;
-                    SetText("status", "Force Close", ipd.TabIndex);
-                    SetText("auto", "Force Close", ipd.TabIndex);
-                }
-
+                cyc = true;
+                bool cwait = false;
+                ipd.LList = new LinkedList<string>();
+                if (CycExec(cai, ipd, ipbytes, "cyc", "down"))
+                    cwait = true;
                 else
                 {
-                    CycExec(cai, ipd, ipbytes, "cyc", "iap");
-                    ipd.Result = "";
-                    CycExec(cai, ipd, ipbytes, "set", "iap");
-                    ipd.Result = "";
+                    cwait = false;
+                    InvLabel("auto", "FAIL");
+                    ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
                 }
+                ipd.Result = "";    //Purge result from previous test
+                if (cwait)
+                {
+                    CycExec(cai, ipd, ipbytes, "set", "down");
+                    Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
+                    ipd.Result = "";
+                    if (ipd.Signal != null)
+                        ipd.Signal.Wait();
+
+                    if (ipd.Result.Contains("timeout"))
+                    {
+                        cwait = false;
+                        SetText("status", "Force Close", ipd.TabIndex);
+                        SetText("auto", "Force Close", ipd.TabIndex);
+                    }
+
+                    else
+                    {
+                        CycExec(cai, ipd, ipbytes, "cyc", "iap");
+                        ipd.Result = "";
+                        CycExec(cai, ipd, ipbytes, "set", "iap");
+                        ipd.Result = "";
+                    }
+                }
+
+                if (ipd.Signal != null)
+                    ipd.Signal.Reset();
+
+                cyc = false;
+
+                if (cwait)
+                    return true;
+                else
+                    return false;
             }
-            if (ipd.Signal != null)
-                ipd.Signal.Reset();
-
-            cyc = false;
-
-            if (cwait)
-                return true;
-            else
+            catch
+            {
+                MessageBox.Show("Catastrophic CycRun error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
+            }
 
         }
         public bool CheckBeat(string type, ConnectedApplianceInfo cai, IPData ipd)
         {
-            //Prepare IP address for sending via MQTT
-            string[] ipad = ipd.IPAddress.Split('.');
-            byte[] ipbytes = new byte[4];
-            for (int j = 0; j < 4; j++)
+            try
             {
-                ipbytes[j] = byte.Parse(ipad[j]);
-            }
 
-            if (type == "init")
-            {
-                if (!mbeat)
+                //Prepare IP address for sending via MQTT
+                string[] ipad = ipd.IPAddress.Split('.');
+                byte[] ipbytes = new byte[4];
+                for (int j = 0; j < 4; j++)
                 {
-                    byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
-                    SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
-                    Wait(2000);
+                    ipbytes[j] = byte.Parse(ipad[j]);
                 }
-                if (tbeat && mbeat)
-                    return true;
+
+                if (type == "init")
+                {
+                    if (!mbeat)
+                    {
+                        byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
+                        SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                        Wait(2000);
+                    }
+                    if (tbeat && mbeat)
+                        return true;
+                    else
+                    {
+                        for (int j = 0; j < MQTTMAX; j++)
+                        {
+                            if (cancel_request)
+                                return false;
+                            if (!mbeat)
+                            {
+                                byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
+                                SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
+                            }
+                            Wait(5000);
+                            if (tbeat && mbeat)
+                                return true;
+                            else
+                                continue;
+                        }
+
+                        return false;
+                    }
+
+                }
+
                 else
                 {
+                    tbeat = false;
+                    mbeat = false;
+
                     for (int j = 0; j < MQTTMAX; j++)
                     {
                         if (cancel_request)
@@ -1729,657 +1768,721 @@ namespace VenomNamespace
                             byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
                             SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
                         }
+
                         Wait(5000);
                         if (tbeat && mbeat)
                             return true;
                         else
                             continue;
                     }
-
-                    return false;
                 }
 
-            }
 
-            else
+                return false;
+            }
+            catch
             {
-                tbeat = false;
-                mbeat = false;
-
-                for (int j = 0; j < MQTTMAX; j++)
-                {
-                    if (cancel_request)
-                        return false;
-                    if (!mbeat)
-                    {
-                        byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
-                        SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
-                    }
-
-                    Wait(5000);
-                    if (tbeat && mbeat)
-                        return true;
-                    else
-                        continue;
-                }
+                MessageBox.Show("Catastrophic SetCyc error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
-
-
-            return false;
         }
         public void TestInit(byte[] ipbytes, ConnectedApplianceInfo cai, IPData ipd, int iter)
         {
-            for (int i = 0; i < NODECASEMAX; i++)
+            try
             {
-                if (cancel_request)
-                    return;
-                //Global values are pulled from trace and mqtt logs by CheckBeat()
-                switch (i)
-                {
-                    case 0:    //OTA upgrade in Idle
-                        //No special initialization required
-                        break;
-                    case 1:    //OTA downgrade in Idle
-                        //No special initialization required
-                        break;
-                    case 6:    //Upgrade Model/Serial Number check
-                        ipd.Model = cai.ModelNumber;
-                        ipd.Serial = cai.SerialNumber;
-                        break;
-                    case 7:    //Upgrade Version Number check
-                        ipd.Vers = vers;
-                        break;
-                    case 8:    //Downgrade Model/Serial Number check
-                        ipd.Model = cai.ModelNumber;
-                        ipd.Serial = cai.SerialNumber;
-                        break;
-                    case 9:    //Downgrade Version Number check
-                        ipd.Vers = vers;
-                        break;
-                    case 10:    //Upgrade CCURI check
-                        ipd.CCURI = ccuri;
-                        break;
-                    case 11:    //Downgrade CCURI check
-                        ipd.CCURI = ccuri;
-                        break;
-                    case 12:    //Provision check
-                        ipd.Prov = prov;
-                        break;
-                    case 13:    //Claim check
-                        ipd.Clm = clm;
-                        break;
-                    case 14:    //Progress message check
-                        //No special initialization required
-                        break;
-                    case 15:    //Payload sent multiple times
-                        //No special initialization required
-                        break;
-                    case 16:    //RSSI check
-                        RemoteOps(cai, ipd, ipbytes, "rssi");
-                        break;
-                    case 17:    //OTAs possible after OTA
-                        //No special initialization required
-                        break;
-                    case 18:    //ApplianceUpdateVersion check
-                        ipd.ISPP = ispp;
-                        break;
-                    case 19:    //5 retry check
-                        //No special initialization required
-                        break;
-                    case 20:    //Invalid URL check
-                        //No special initialization required
-                        break;
-                    case 21:    //Invalid CRC check
-                        //No special initialization required
-                        break;
-                    case 22:    //Node OTA success check
-                        //No special initialization required
-                        break;
 
-                    default:
-                        break;
+                for (int i = 0; i < NODECASEMAX; i++)
+                {
+                    if (cancel_request)
+                        return;
+                    //Global values are pulled from trace and mqtt logs by CheckBeat()
+                    switch (i)
+                    {
+                        case 0:    //OTA upgrade in Idle
+                                   //No special initialization required
+                            break;
+                        case 1:    //OTA downgrade in Idle
+                                   //No special initialization required
+                            break;
+                        case 6:    //Upgrade Model/Serial Number check
+                            ipd.Model = cai.ModelNumber;
+                            ipd.Serial = cai.SerialNumber;
+                            break;
+                        case 7:    //Upgrade Version Number check
+                            ipd.Vers = vers;
+                            break;
+                        case 8:    //Downgrade Model/Serial Number check
+                            ipd.Model = cai.ModelNumber;
+                            ipd.Serial = cai.SerialNumber;
+                            break;
+                        case 9:    //Downgrade Version Number check
+                            ipd.Vers = vers;
+                            break;
+                        case 10:    //Upgrade CCURI check
+                            ipd.CCURI = ccuri;
+                            break;
+                        case 11:    //Downgrade CCURI check
+                            ipd.CCURI = ccuri;
+                            break;
+                        case 12:    //Provision check
+                            ipd.Prov = prov;
+                            break;
+                        case 13:    //Claim check
+                            ipd.Clm = clm;
+                            break;
+                        case 14:    //Progress message check
+                                    //No special initialization required
+                            break;
+                        case 15:    //Payload sent multiple times
+                                    //No special initialization required
+                            break;
+                        case 16:    //RSSI check
+                            RemoteOps(cai, ipd, ipbytes, "rssi");
+                            break;
+                        case 17:    //OTAs possible after OTA
+                                    //No special initialization required
+                            break;
+                        case 18:    //ApplianceUpdateVersion check
+                            ipd.ISPP = ispp;
+                            break;
+                        case 19:    //5 retry check
+                                    //No special initialization required
+                            break;
+                        case 20:    //Invalid URL check
+                                    //No special initialization required
+                            break;
+                        case 21:    //Invalid CRC check
+                                    //No special initialization required
+                            break;
+                        case 22:    //Node OTA success check
+                                    //No special initialization required
+                            break;
+
+                        default:
+                            break;
+                    }
                 }
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic Testinit error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
 
         }
         public void TestCheck(ConnectedApplianceInfo cai, IPData ipd, int iter)
         {
-            bool changed;
-
-            for (int i = 0; i < NODECASEMAX; i++)
+            try
             {
-                ipd.Result = "PENDING";
 
-                if (cancel_request)
-                    return;
+                bool changed;
 
-                changed = false;
-
-                switch (i)
+                for (int i = 0; i < NODECASEMAX; i++)
                 {
-                    case 0:    //Idle OTA upgrade success check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
+                    ipd.Result = "PENDING";
+
+                    if (cancel_request)
+                        return;
+
+                    changed = false;
+
+                    switch (i)
+                    {
+                        case 0:    //Idle OTA upgrade success check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
                             {
-                                InvColor(i, "grn");
-                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
-                                changed = true;
-                            }
-                        }
-
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of FAIL."; //OTA result label did not have PASS so it is FAIL
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 1:    //Idle OTA downgrade success check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
-                            {
-                                InvColor(i, "grn");
-                                ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
-                                changed = true;
-                            }
-                        }
-
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of FAIL."; //OTA result label did not have PASS so it is FAIL
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 6:    //Upgrade Model/Serial Number check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
-                            {
-                                if (cai.ModelNumber != ipd.Model)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model +
-                                                 " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
-                                }
-
-                                if (cai.SerialNumber != ipd.Serial)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
-                                                 " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
-                                }
-
-                                if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied." 
-                                        + ipd.Model + " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number."
-                                        + ipd.Serial + " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
-                                }
-                                else
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
                                 {
                                     InvColor(i, "grn");
-                                    ipd.Result = "PASS - BOTH Model Number of " + cai.ModelNumber + " and Serial Number of " + cai.SerialNumber + " were the same after OTA was applied.";
+                                    ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
+                                    changed = true;
                                 }
-                                changed = true;
                             }
 
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 7:    //Upgrade Version Number check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
-                            {
-                                if (!mbeat)
-                                    vers = null;
-                                if (string.IsNullOrEmpty(vers))
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
-                                }
-                                else if (vers == ipd.Vers)
-                                {
-                                    ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
-                                    InvColor(i, "yll");
-                                }
-                                else
-                                {
-                                    ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
-                                    InvColor(i, "grn");
-                                }
-                                changed = true;
-                            }
-
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 8:    //Downgrade Model/Serial Number check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
-                            {
-                               if (cai.ModelNumber != ipd.Model)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model +
-                                                 " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
-                                }
-
-                                if (cai.SerialNumber != ipd.Serial)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
-                                                 " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
-                                }
-
-                                if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied." 
-                                        + ipd.Model + " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number."
-                                        + ipd.Serial + " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
-                                }
-                                else
-                                {
-                                    InvColor(i, "grn");
-                                    ipd.Result = "PASS - BOTH Model Number of " + cai.ModelNumber + " and Serial Number of " + cai.SerialNumber + " were the same after OTA was applied.";
-                                }
-                                changed = true;
-                            }
-
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 9:    //Downgrade Version Number check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
-                            {
-                                if (!mbeat)
-                                    vers = null;
-                                if (string.IsNullOrEmpty(vers))
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
-                                }
-                                else if (vers == ipd.Vers)
-                                {
-                                    ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
-                                    InvColor(i, "yll");
-                                }
-                                else
-                                {
-                                    ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
-                                    InvColor(i, "grn");
-                                }
-                                changed = true;
-                            }
-
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 10:    //Upgrade CCURI check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
-                            {
-                                if (!tbeat)
-                                    ccuri = null;
-                                if (string.IsNullOrEmpty(ccuri))
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - CCURI was not able to be stored and cannot be verified.";
-                                }
-                                else if (ccuri == ipd.CCURI)
-                                {
-                                    ipd.Result = "CHECK - CCURI was EQUAL to " + ipd.CCURI + " before and " + ccuri + " . This may be a FAIL result depending on platform expected value.";
-                                    InvColor(i, "yll");
-                                }
-                                else
-                                {
-                                    ipd.Result = "PASS - CCURI was changed to " + ccuri + " from the starting value of " + ipd.CCURI + ".";
-                                    InvColor(i, "grn");
-                                }
-                                changed = true;
-                            }
-
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 11:    //Downgrade CCURI check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
-                            {
-                                if (!tbeat)
-                                    ccuri = null;
-                                if (string.IsNullOrEmpty(ccuri))
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - CCURI was not able to be stored and cannot be verified.";
-                                }
-                                else if (ccuri == ipd.CCURI)
-                                {
-                                    ipd.Result = "CHECK - CCURI was EQUAL to " + ipd.CCURI + " before and " + ccuri + " . This may be a FAIL result depending on platform expected value.";
-                                    InvColor(i, "yll");
-                                }
-                                else
-                                {
-                                    ipd.Result = "PASS - CCURI was changed to " + ccuri + " from the starting value of " + ipd.CCURI + ".";
-                                    InvColor(i, "grn");
-                                }
-                                changed = true;
-                            }
-
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 12:    //Prov check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
-                            {
-
-                                if (prov != ipd.Prov)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Provision state was DIFFERENT than initial Provision= " + ipd.Prov + " and after OTA Provision= " + prov + ".";
-                                }
-                                else
-                                {
-                                    InvColor(i, "grn");
-                                    ipd.Result = "PASS - Provision state was the same value of " + ipd.Prov + " before and " + prov + " after OTA was applied.";
-                                }
-                                changed = true;
-                            }
-
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 13:    //Claim check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
-                            {
-                                if (clm != ipd.Clm)
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - Claim state was DIFFERENT than initial Claim= " + ipd.Clm + " and after OTA Claim= " + clm + ".";
-                                }
-                                else
-                                {
-                                    InvColor(i, "grn");
-                                    ipd.Result = "PASS - Claim state was the same value before of " + ipd.Clm + " and " + clm + " after OTA was applied.";
-                                }
-                                changed = true;
-                            }
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 14:    //Progress message check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
-                            {
-                                if (prog > 0)
-                                {
-                                    InvColor(i, "grn");
-                                    ipd.Result = "PASS - " + prog + " progress messages were detected during OTA download and application.";
-                                }
-                                else
-                                {
-                                    InvColor(i, "red");
-                                    ipd.Result = "FAIL - " + prog + " progress messages were detected during OTA download and application.";
-                                }
-                                changed = true;
-                            }
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 16:    //RSSI Strong Check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            int val = Int32.Parse(rssi);
-                            if (string.IsNullOrEmpty(rssi))
+                            else
                             {
                                 InvColor(i, "red");
-                                ipd.Result = "FAIL - RSSI value was not able to be obtained.";
+                                ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of FAIL."; //OTA result label did not have PASS so it is FAIL
                                 changed = true;
                             }
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) != -1) //Indicate -67 or better
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 1:    //Idle OTA downgrade success check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+
                             {
-                                InvColor(i, "grn");
-                                ipd.Result = "PASS - OTA was successfully installed with a STRONG RSSI value of " + rssi +  " and with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
-                                changed = true;
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
+                                {
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - OTA was successfully installed from an Idle(Standby) start state with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
+                                    changed = true;
+                                }
                             }
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) == -1) //Indicate worse than -67
+
+                            else
                             {
                                 InvColor(i, "red");
-                                ipd.Result = "FAIL - OTA was successfully installed but the RSSI value of " + rssi + " was too great (signal too weak for the STRONG test)."; //OTA result label did not have FAIL so it is PASS
+                                ipd.Result = "FAIL - OTA was NOT successfully installed from an Idle(Standby) start state with Status result of FAIL."; //OTA result label did not have PASS so it is FAIL
                                 changed = true;
                             }
 
-                        }
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
 
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted."; //OTA result label did not have PASS so it is FAIL
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 17:    //OTAs are possible after OTA check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (iter > 2 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                        case 6:    //Upgrade Model/Serial Number check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
                             {
-                                if (autottl > 0)
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
                                 {
-                                    InvColor(i, "grn");
-                                    ipd.Result = "PASS - " + autottl + " OTAs have been sent, downloaded, and applied in successive order.";
+                                    if (cai.ModelNumber != ipd.Model)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model +
+                                                     " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
+                                    }
+
+                                    if (cai.SerialNumber != ipd.Serial)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
+                                                     " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
+                                    }
+
+                                    if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied."
+                                            + ipd.Model + " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number."
+                                            + ipd.Serial + " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
+                                    }
+                                    else
+                                    {
+                                        InvColor(i, "grn");
+                                        ipd.Result = "PASS - BOTH Model Number of " + cai.ModelNumber + " and Serial Number of " + cai.SerialNumber + " were the same after OTA was applied.";
+                                    }
+                                    changed = true;
                                 }
-                                else
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 7:    //Upgrade Version Number check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
+                                {
+                                    if (!mbeat)
+                                        vers = null;
+                                    if (string.IsNullOrEmpty(vers))
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
+                                    }
+                                    else if (vers == ipd.Vers)
+                                    {
+                                        ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
+                                        InvColor(i, "yll");
+                                    }
+                                    else
+                                    {
+                                        ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
+                                        InvColor(i, "grn");
+                                    }
+                                    changed = true;
+                                }
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 8:    //Downgrade Model/Serial Number check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
+                                {
+                                    if (cai.ModelNumber != ipd.Model)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Model Number was different after OTA was applied. " + ipd.Model +
+                                                     " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number.";
+                                    }
+
+                                    if (cai.SerialNumber != ipd.Serial)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Serial Number was different after OTA was applied. " + ipd.Serial +
+                                                     " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
+                                    }
+
+                                    if (cai.SerialNumber != ipd.Serial && cai.ModelNumber != ipd.Model)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - BOTH Model Number and Serial Number were different after OTA was applied."
+                                            + ipd.Model + " was the initial Model Number and " + cai.ModelNumber + " was the final Model Number."
+                                            + ipd.Serial + " was the initial Serial Number and " + cai.SerialNumber + " was the final Serial Number.";
+                                    }
+                                    else
+                                    {
+                                        InvColor(i, "grn");
+                                        ipd.Result = "PASS - BOTH Model Number of " + cai.ModelNumber + " and Serial Number of " + cai.SerialNumber + " were the same after OTA was applied.";
+                                    }
+                                    changed = true;
+                                }
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 9:    //Downgrade Version Number check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
+                                {
+                                    if (!mbeat)
+                                        vers = null;
+                                    if (string.IsNullOrEmpty(vers))
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
+                                    }
+                                    else if (vers == ipd.Vers)
+                                    {
+                                        ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
+                                        InvColor(i, "yll");
+                                    }
+                                    else
+                                    {
+                                        ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
+                                        InvColor(i, "grn");
+                                    }
+                                    changed = true;
+                                }
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 10:    //Upgrade CCURI check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
+                                {
+                                    if (!tbeat)
+                                        ccuri = null;
+                                    if (string.IsNullOrEmpty(ccuri))
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - CCURI was not able to be stored and cannot be verified.";
+                                    }
+                                    else if (ccuri == ipd.CCURI)
+                                    {
+                                        ipd.Result = "CHECK - CCURI was EQUAL to " + ipd.CCURI + " before and " + ccuri + " . This may be a FAIL result depending on platform expected value.";
+                                        InvColor(i, "yll");
+                                    }
+                                    else
+                                    {
+                                        ipd.Result = "PASS - CCURI was changed to " + ccuri + " from the starting value of " + ipd.CCURI + ".";
+                                        InvColor(i, "grn");
+                                    }
+                                    changed = true;
+                                }
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 11:    //Downgrade CCURI check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
+                                {
+                                    if (!tbeat)
+                                        ccuri = null;
+                                    if (string.IsNullOrEmpty(ccuri))
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - CCURI was not able to be stored and cannot be verified.";
+                                    }
+                                    else if (ccuri == ipd.CCURI)
+                                    {
+                                        ipd.Result = "CHECK - CCURI was EQUAL to " + ipd.CCURI + " before and " + ccuri + " . This may be a FAIL result depending on platform expected value.";
+                                        InvColor(i, "yll");
+                                    }
+                                    else
+                                    {
+                                        ipd.Result = "PASS - CCURI was changed to " + ccuri + " from the starting value of " + ipd.CCURI + ".";
+                                        InvColor(i, "grn");
+                                    }
+                                    changed = true;
+                                }
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 12:    //Prov check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+
+                                    if (prov != ipd.Prov)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Provision state was DIFFERENT than initial Provision= " + ipd.Prov + " and after OTA Provision= " + prov + ".";
+                                    }
+                                    else
+                                    {
+                                        InvColor(i, "grn");
+                                        ipd.Result = "PASS - Provision state was the same value of " + ipd.Prov + " before and " + prov + " after OTA was applied.";
+                                    }
+                                    changed = true;
+                                }
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 13:    //Claim check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+                                    if (clm != ipd.Clm)
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Claim state was DIFFERENT than initial Claim= " + ipd.Clm + " and after OTA Claim= " + clm + ".";
+                                    }
+                                    else
+                                    {
+                                        InvColor(i, "grn");
+                                        ipd.Result = "PASS - Claim state was the same value before of " + ipd.Clm + " and " + clm + " after OTA was applied.";
+                                    }
+                                    changed = true;
+                                }
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 14:    //Progress message check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+                                    if (prog > 0)
+                                    {
+                                        InvColor(i, "grn");
+                                        ipd.Result = "PASS - " + prog + " progress messages were detected during OTA download and application.";
+                                    }
+                                    else
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - " + prog + " progress messages were detected during OTA download and application.";
+                                    }
+                                    changed = true;
+                                }
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 16:    //RSSI Strong Check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                int val = Int32.Parse(rssi);
+                                if (string.IsNullOrEmpty(rssi))
                                 {
                                     InvColor(i, "red");
-                                    ipd.Result = "FAIL - " + autottl + " OTAs have been sent, downloaded, and applied in successive order.";
+                                    ipd.Result = "FAIL - RSSI value was not able to be obtained.";
+                                    changed = true;
                                 }
-                                changed = true;
-                            }
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
-
-                    case 18:    //ISPPartNumber check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
-                            {
-                                if (!mbeat)
-                                    ispp = null;
-                                if (string.IsNullOrEmpty(ispp))
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) != -1) //Indicate -67 or better
+                                {
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - OTA was successfully installed with a STRONG RSSI value of " + rssi + " and with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
+                                    changed = true;
+                                }
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) == -1) //Indicate worse than -67
                                 {
                                     InvColor(i, "red");
-                                    ipd.Result = "FAIL - ISPPartNumber was not able to be stored and cannot be verified.";
+                                    ipd.Result = "FAIL - OTA was successfully installed but the RSSI value of " + rssi + " was too great (signal too weak for the STRONG test)."; //OTA result label did not have FAIL so it is PASS
+                                    changed = true;
                                 }
-                                else if (ispp == ipd.ISPP)
-                                {
-                                    ipd.Result = "CHECK - ISPPartNumber was EQUAL to " + ipd.ISPP + " before and " + ispp + " . This may be a FAIL result depending on platform expected value.";
-                                    InvColor(i, "yll");
-                                }
-                                else
-                                {
-                                    ipd.Result = "PASS - ISPPartNumber was changed to " + ispp + " from the starting value of " + ipd.ISPP + ".";
-                                    InvColor(i, "grn");
-                                }
-                                changed = true;
+
                             }
 
-                        }
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
-                            changed = true;
-                        }
-
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;                    
-
-                    case 22:    //Node OTA success check
-                        if (!LBL_Auto.Text.Contains("FAIL"))
-                        {
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                            else
                             {
-                                InvColor(i, "grn");
-                                ipd.Result = "PASS - OTA for node " + ipd.Node + " was successfully installed.";
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted."; //OTA result label did not have PASS so it is FAIL
                                 changed = true;
                             }
-                        }
 
-                        else
-                        {
-                            InvColor(i, "red");
-                            ipd.Result = "FAIL - OTA for node " + ipd.Node + " was NOT successfully installed.";
-                            changed = true;
-                        }
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
 
-                        if (changed)
-                            SetText("auto", "AutoGen Result", i);
-                        break;
+                        case 17:    //OTAs are possible after OTA check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (iter > 2 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+                                    if (autottl > 0)
+                                    {
+                                        InvColor(i, "grn");
+                                        ipd.Result = "PASS - " + autottl + " OTAs have been sent, downloaded, and applied in successive order.";
+                                    }
+                                    else
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - " + autottl + " OTAs have been sent, downloaded, and applied in successive order.";
+                                    }
+                                    changed = true;
+                                }
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
 
-                    default:
-                        break;
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 18:    //ISPPartNumber check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+                                    if (!mbeat)
+                                        ispp = null;
+                                    if (string.IsNullOrEmpty(ispp))
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - ISPPartNumber was not able to be stored and cannot be verified.";
+                                    }
+                                    else if (ispp == ipd.ISPP)
+                                    {
+                                        ipd.Result = "CHECK - ISPPartNumber was EQUAL to " + ipd.ISPP + " before and " + ispp + " . This may be a FAIL result depending on platform expected value.";
+                                        InvColor(i, "yll");
+                                    }
+                                    else
+                                    {
+                                        ipd.Result = "PASS - ISPPartNumber was changed to " + ispp + " from the starting value of " + ipd.ISPP + ".";
+                                        InvColor(i, "grn");
+                                    }
+                                    changed = true;
+                                }
+
+                            }
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA failed to install. Unable to validate if test case was impacted.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        case 22:    //Node OTA success check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - OTA for node " + ipd.Node + " was successfully installed.";
+                                    changed = true;
+                                }
+                            }
+
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA for node " + ipd.Node + " was NOT successfully installed.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
+                        default:
+                            break;
+                    }
                 }
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic TestCheck error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
 
         }
         public void FailLeft()
         {
-            for (int i = 0; i < NODECASEMAX; i++)
+            try
             {
-                if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
+
+                for (int i = 0; i < NODECASEMAX; i++)
+                {
+                    if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
+                    {
+                        if (cancel_request)
+                        {
+                            results.Rows[i]["OTA Result"] = "Cancelled by User.";
+                            DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                        }
+                        else
+                        {
+
+                            results.Rows[i]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
+                            DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Red;
+                        }
+
+                    }
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Catastrophic Failleft error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+        public void ProcessCyc(IPData ipd)
+        {
+            try
+            {
+                if (ipd.LList == null && LBL_Auto.Text.Contains("PASS"))
+                    return;
+
+                LinkedListNode<string> node = ipd.LList.First;
+
+                for (int i = 0; i < 4; i++)
                 {
                     if (cancel_request)
+                        return;
+
+                    if (node == null)
+                        break;
+
+                    if (node.Value.Contains("PASS"))
                     {
-                        results.Rows[i]["OTA Result"] = "Cancelled by User.";
-                        DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                        if (i == 0)
+                            SetCyc(ipd, 2, "grn", node);
+                        if (i == 1)
+                            SetCyc(ipd, 3, "grn", node);
+                        if (i == 2)
+                            SetCyc(ipd, 4, "grn", node);
+                        if (i == 3)
+                            SetCyc(ipd, 5, "grn", node);
                     }
                     else
                     {
-
-                        results.Rows[i]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
-                        DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Red;
+                        if (i == 0)
+                            SetCyc(ipd, 2, "red", node);
+                        if (i == 1)
+                            SetCyc(ipd, 3, "red", node);
+                        if (i == 2)
+                            SetCyc(ipd, 4, "red", node);
+                        if (i == 3)
+                            SetCyc(ipd, 5, "red", node);
                     }
-                    
+
+                    node = node.Next;
                 }
+
+                ipd.LList.Clear();
+            }
+            catch
+            {
+
+                MessageBox.Show("Catastrophic ProcessCyc error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
         }
         private void SetResult(byte res)
@@ -2653,6 +2756,9 @@ namespace VenomNamespace
 
                     if (!res.Contains("FAIL"))
                     {
+                        if (i == CYCGO)
+                            ProcessCyc(ipd);
+
                         InvLabel("auto", "RECONN");
                         autottl++;
                     }

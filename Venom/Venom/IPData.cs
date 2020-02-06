@@ -150,6 +150,12 @@ namespace VenomNamespace
             get { return _clm; }
             set { _clm = value; }
         }
+        private LinkedList<string> _llist;
+        public LinkedList<string> LList
+        {
+            get { return _llist; }
+            set { _llist = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -172,6 +178,7 @@ namespace VenomNamespace
             _ispp = "";
             _prov = "";
             _clm = "";
+            _llist = null;
         }
 
     }
