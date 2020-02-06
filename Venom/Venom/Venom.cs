@@ -18,15 +18,15 @@ namespace VenomNamespace
     public partial class Venom : WideInterface
     {
         public int AUTOINDEX = 0;
-        public int AUTOCNT = 4; //Amount of times OTA payload combinations (upgrade --> downgrade) aka X OTAs will be sent total
+        public int AUTOCNT = 6; //Amount of times OTA payload combinations (upgrade --> downgrade) aka X OTAs will be sent total
         public int TESTCASEMAX = 26; //Max test cases that can be automated
         public int NODECASEMAX = 23; //Max automated test case per node
         public static int ATTEMPTMAX = 3;
         public static int MQTTMAX = 4;
         public static int TTFCNT = 4;
         public static int CYCGO = 0;    //Cycles fire on autogen iteration i=0
-        public static int TTFGO = 2;    //TTFs fire on autogen iteration i=2
-        public static int TMAX = 90 * 60000; //OTA max thread time is 1.5 hours
+        public static int TTFGO = 4;    //TTFs fire on autogen iteration i=2
+        public static int TMAX = 90 * 60000; //OTA max thread time in ms before the thread needs to end (got stuck)
         public static int CYCWAIT = 1 * 30000; //Amount of time to let cycle run
         public static int TTFWAIT = 1 * 10000; //Amount of time to wait for TTF result
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
@@ -230,7 +230,7 @@ namespace VenomNamespace
                             mbeat = true;
                             lock (writeobj)
                             {
-                                ProcessPayload(sb, data.Source.ToString(), "MQTT Message", "NA");
+                                ProcessPayload(sb, data.Source.ToString(), "mbeat", "NA");
                             }
                         }
                     }
@@ -259,7 +259,7 @@ namespace VenomNamespace
                         {
                             lock (writeobj)
                             {
-                                ProcessPayload("rssi", data.Source.ToString(), "MQTT Message", val.ToString());
+                                ProcessPayload("rssi", data.Source.ToString(), "mbeat", val.ToString());
                             }
                         }
                     }
@@ -443,7 +443,7 @@ namespace VenomNamespace
                     return;
                 }
 
-                if (source.Contains("MQTT") && !ttf)
+                if (source.Contains("mbeat") && !ttf)
                 {
                     if (sb.Equals("rssi"))
                     {
@@ -615,7 +615,7 @@ namespace VenomNamespace
 
             catch
             {
-                MessageBox.Show("Catastophic ProcessPayload error." , "Error",
+                MessageBox.Show("source was " + source + " raw was " + raw + " sb was " + sb, "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -1249,7 +1249,7 @@ namespace VenomNamespace
                     bytes = new byte[pay.Length / 2];
                     for (int i = 0; i < bytes.Length; i++)
                     {
-                        bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+                        bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
 
                     }
                     topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
@@ -1281,7 +1281,7 @@ namespace VenomNamespace
                     bytes = new byte[pay.Length / 2];
                     for (int i = 0; i < bytes.Length; i++)
                     {
-                        bytes[i] = byte.Parse(ipd.MQTTPay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+                        bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
 
                     }
                     topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
@@ -1426,7 +1426,7 @@ namespace VenomNamespace
             InvLabel("auto", "Downloading");
             ttf = false;
         }
-        public bool CycRun (ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type, string time)
+        public bool CycExec(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, string type, string time)
         {
             if (cancel_request)
                 return false;
@@ -1440,10 +1440,6 @@ namespace VenomNamespace
                     if (next == 0)
                     {
                         RemoteOps(cai, ipd, ipbytes, "cyc");
-
-                        StartTimer(CYCWAIT);
-                        Wait(CYCWAIT);
-                        StopTimer();
 
                         if (!cycstart)
                         {
@@ -1506,10 +1502,6 @@ namespace VenomNamespace
 
                         RemoteOps(cai, ipd, ipbytes, "cyc");
 
-                        StartTimer(CYCWAIT);
-                        Wait(CYCWAIT);
-                        StopTimer();
-
                         if (!cycstart)
                         {
                             InvColor(2, "red");
@@ -1520,6 +1512,8 @@ namespace VenomNamespace
                         }
 
                         cycstart = false;
+
+                        RemoteOps(cai, ipd, ipbytes, "cncl");
 
                         if (LBL_Auto.Text.Equals("Downloading"))
                         {
@@ -1544,10 +1538,6 @@ namespace VenomNamespace
                 if (type.Equals("set"))
                 {
                     RemoteOps(cai, ipd, ipbytes, "bright");
-
-                    StartTimer(CYCWAIT);
-                    Wait(CYCWAIT);
-                    StopTimer();
 
                     if (!cycstart)
                     {
@@ -1590,10 +1580,6 @@ namespace VenomNamespace
 
                     RemoteOps(cai, ipd, ipbytes, "cyc");
 
-                    StartTimer(CYCWAIT);
-                    Wait(CYCWAIT);
-                    StopTimer();
-
                     if (cycstart)
                     {
                         InvColor(4, "red");
@@ -1604,6 +1590,8 @@ namespace VenomNamespace
                     }
 
                     cycstart = false;
+
+                    RemoteOps(cai, ipd, ipbytes, "cncl");
 
                     if (LBL_Auto.Text.Equals("Programming"))
                     {
@@ -1627,10 +1615,6 @@ namespace VenomNamespace
                 if (type.Equals("set"))
                 {
                     RemoteOps(cai, ipd, ipbytes, "bright");
-
-                    StartTimer(CYCWAIT);
-                    Wait(CYCWAIT);
-                    StopTimer();
 
                     if (cycstart)
                     {
@@ -1666,6 +1650,53 @@ namespace VenomNamespace
             }
 
             return false;
+        }
+        public bool CycRun(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes)
+        {
+            cyc = true;
+            bool cwait = false;
+            if (CycExec(cai, ipd, ipbytes, "cyc", "down"))
+                cwait = true;
+            else
+            {
+                cwait = false;
+                InvLabel("auto", "FAIL");
+                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
+            }
+            ipd.Result = "";    //Purge result from previous test
+            if (cwait)
+            {
+                CycExec(cai, ipd, ipbytes, "set", "down");
+                Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
+                ipd.Result = "";
+                if (ipd.Signal != null)
+                    ipd.Signal.Wait();
+
+                if (ipd.Result.Contains("timeout"))
+                {
+                    cwait = false;
+                    SetText("status", "Force Close", ipd.TabIndex);
+                    SetText("auto", "Force Close", ipd.TabIndex);
+                }
+
+                else
+                {
+                    CycExec(cai, ipd, ipbytes, "cyc", "iap");
+                    ipd.Result = "";
+                    CycExec(cai, ipd, ipbytes, "set", "iap");
+                    ipd.Result = "";
+                }
+            }
+            if (ipd.Signal != null)
+                ipd.Signal.Reset();
+
+            cyc = false;
+
+            if (cwait)
+                return true;
+            else
+                return false;
+
         }
         public bool CheckBeat(string type, ConnectedApplianceInfo cai, IPData ipd)
         {
@@ -2499,33 +2530,37 @@ namespace VenomNamespace
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                     return;
                 }
+
+                int dex = Int32.Parse(ipindex);
+                IPData ipd = iplist[dex];
+                ipd.IPIndex = dex;
+                ipd.Signal = sig;
+                ipd.TabIndex = iplist.IndexOf(ipd);
+
+
+                //Map most up-to-date CAI
+                System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
+                ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.MacAddress == ipd.MAC);
+                if (cai != null)
+                    ipd.IPAddress = cai.IPAddress;
+
+                else
+                {
+                    MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
+                                "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
+                    SetText("status", "Bad IP Address", ipd.TabIndex);
+                    SetText("auto", "Bad IP Address", ipd.TabIndex);
+                    Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
+                    FailLeft();
+                    return; //THIS MAY BE A BAD IDEA
+                }
+
                 for (int i = 0; i < AUTOCNT; i++)
                 {
-                    int dex = Int32.Parse(ipindex);
-                    IPData ipd = iplist[dex];
-                    ipd.IPIndex = dex;
-                    ipd.Signal = sig;
-                    ipd.TabIndex = iplist.IndexOf(ipd);
+                    
                     bool thread_waits = true;   // Indicates this is a thread that will require a reboot time for the product
-
-                    //Map most up-to-date CAI
-                    System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio = WifiLocal.ConnectedAppliances;
-                    ConnectedApplianceInfo cai = cio.FirstOrDefault(x => x.MacAddress == ipd.MAC);
-                    if (cai != null)
-                    {
-                        ipd.IPAddress = cai.IPAddress;
-                    }
-                    else
-                    {
-                        MessageBox.Show("OTA target IP Address of " + cai.IPAddress + "was changed and unable to be remapped. Ending OTA attempts and " +
-                                    "closing corresponding thread.", "Error: Unable to change IP Address", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                        ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
-                        SetText("status", "Bad IP Address", ipd.TabIndex);
-                        SetText("auto", "Bad IP Address", ipd.TabIndex);
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
-                        continue; //THIS MAY BE A BAD IDEA
-                    }
-
+                    bool check = false;
                     //Force each thread to live only two hours (process somehow got stuck)
                     System.Timers.Timer timer = new System.Timers.Timer();
                     timer.Interval = TMAX;
@@ -2558,70 +2593,33 @@ namespace VenomNamespace
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
                     {
-                        if (i != CYCGO || i != TTFGO )  //Control testing OTA with cycle interation or TTF at particular iteration time
+                        if (i == CYCGO)  //Control testing OTA with cycle interation or TTF at particular iteration time
                         {
-                            CheckBeat("init", cai, ipd);
-                            TestInit(ipbytes, cai, ipd, i);
-                            if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))                            
-                                thread_waits = true;
-                            
-                            else
-                            {
-                                InvLabel("auto", "FAIL");
-                                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
-                                thread_waits = false;
-                            }
-                                
+                            thread_waits = CycRun(cai, ipd, ipbytes);
+                            check = false;
                         }
 
-                        else if (i == CYCGO)
+                        else if (i == TTFGO)
                         {
-                            cyc = true;
-                            bool cwait = false;
-                            if (CycRun(cai, ipd, ipbytes, "cyc", "down"))
-                                cwait = true;
-                            else
-                            {
-                                cwait = false;
-                                InvLabel("auto", "FAIL");
-                                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
-                            }
-
-                            if (cwait)
-                            {
-                                CycRun(cai, ipd, ipbytes, "set", "down");
-                                Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
-
-                                if (ipd.Signal != null)
-                                    ipd.Signal.Wait();
-
-                                if (ipd.Result.Contains("timeout"))
-                                {
-                                    cwait = false;
-                                    SetText("status", "Force Close", ipd.TabIndex);
-                                    SetText("auto", "Force Close", ipd.TabIndex);
-                                }
-
-                                else
-                                {
-                                    CycRun(cai, ipd, ipbytes, "cyc", "iap");
-                                    CycRun(cai, ipd, ipbytes, "set", "iap");
-                                }
-                            }
-                            if (ipd.Signal != null)
-                                ipd.Signal.Reset();
-                            if (cwait)
-                                thread_waits = true;
-                            else
-                                thread_waits = false;
-
-                            cyc = false;                            
+                            TTFRun(cai, ipd, ipbytes);
+                            thread_waits = true;
+                            check = false;
                         }
 
                         else
                         {
-                            TTFRun(cai, ipd, ipbytes);
-                            thread_waits = true;
+                            CheckBeat("init", cai, ipd);
+                            TestInit(ipbytes, cai, ipd, i);
+                            if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                                thread_waits = true;
+                            else
+                            {
+                                InvLabel("auto", "FAIL");
+                                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
+                                thread_waits = false;
+                                check = false;
+                            }
+                            check = true;
                         }                        
                         
                     }
@@ -2745,7 +2743,7 @@ namespace VenomNamespace
                     if (ipd.Signal != null)
                         ipd.Signal.Reset();
 
-                    if (!res.Contains("FAIL"))
+                    if (check && !res.Contains("FAIL"))
                     {
                         InvLabel("auto", "CHECK");
                         CheckBeat("check", cai, ipd);
