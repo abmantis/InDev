@@ -28,8 +28,9 @@ namespace VenomNamespace
         {
             InitializeComponent();
             parent = ParentForm;
-            CB_Variant.Items.AddRange(new object[] {"NAR Cooking",
+            CB_Product.Items.AddRange(new object[] {"NAR Cooking",
                                                     "EMEA Cooking", "NAR Laundry", "Other (any remote cycle)"});
+            CB_Variant.Items.AddRange(new object[] {"HMI","ACU", "WiFi", "Multi"});
             // Generate tables
             sbind.DataSource = parent.results;
             parent.DGV_Data.AutoGenerateColumns = true;
@@ -43,228 +44,18 @@ namespace VenomNamespace
             }
         }
 
-        private void ResetForm(string type)
+        private void ResetForm()
         {
-            if (type == "all")
-            {
-                TB_ACU_DWN.Text = "";
-                TB_ACU_UP.Text = "";
-                TB_EXP_DWN.Text = "";
-                TB_EXP_UP.Text = "";
-                TB_HMI_DWN.Text = "";
-                TB_HMI_UP.Text = "";
-                TB_IP.Text = "";
-                TB_Other.Text = "";
-                TB_WIFI_DWN.Text = "";
-                TB_WIFI_UP.Text = "";
-                CB_Variant.ResetText();
-
-                CB_HMI.Checked = false;
-                CB_ACU.Checked = false;
-                CB_WIFI.Checked = false;
-                CB_EXP.Checked = false;
-
-                CB_HMI.Enabled = true;
-                CB_ACU.Enabled = true;
-                CB_WIFI.Enabled = true;
-                CB_EXP.Enabled = true;
-
-                label6.Visible = false;
-                label7.Visible = false;
-                label8.Visible = false;
-                label9.Visible = false;
-                label10.Visible = false;
-                label11.Visible = false;
-                label12.Visible = false;
-                label13.Visible = false;
-
-                TB_HMI_DWN.Enabled = false;
-                TB_HMI_UP.Enabled = false;
-                TB_ACU_UP.Enabled = false;
-                TB_ACU_DWN.Enabled = false;
-                TB_ACU_UP.Enabled = false;
-                TB_EXP_DWN.Enabled = false;
-                TB_EXP_UP.Enabled = false;
-                TB_WIFI_DWN.Enabled = false;
-                TB_WIFI_UP.Enabled = false;
-
-                TB_HMI_DWN.Visible = false;
-                TB_HMI_UP.Visible = false;
-                TB_ACU_DWN.Visible = false;
-                TB_ACU_UP.Visible = false;
-                TB_EXP_DWN.Visible = false;
-                TB_EXP_UP.Visible = false;
-                TB_WIFI_DWN.Visible = false;
-                TB_WIFI_UP.Visible = false;
-            }
-            if (type == "hmi")
-            {
-                TB_ACU_DWN.Text = "";
-                TB_ACU_UP.Text = "";
-                TB_EXP_DWN.Text = "";
-                TB_EXP_UP.Text = "";
-                TB_WIFI_DWN.Text = "";
-                TB_WIFI_UP.Text = "";
-
-                TB_HMI_DWN.Enabled = true;
-                TB_HMI_UP.Enabled = true;
-                TB_ACU_UP.Enabled = false;
-                TB_ACU_DWN.Enabled = false;
-                TB_ACU_UP.Enabled = false;
-                TB_EXP_DWN.Enabled = false;
-                TB_EXP_UP.Enabled = false;
-                TB_WIFI_DWN.Enabled = false;
-                TB_WIFI_UP.Enabled = false;
-
-                TB_HMI_DWN.Visible = true;
-                TB_HMI_UP.Visible = true;
-                TB_ACU_DWN.Visible = false;
-                TB_ACU_UP.Visible = false;
-                TB_EXP_DWN.Visible = false;
-                TB_EXP_UP.Visible = false;
-                TB_WIFI_DWN.Visible = false;
-                TB_WIFI_UP.Visible = false;
-
-                label6.Visible = true;
-                label7.Visible = true;
-                label8.Visible = false;
-                label9.Visible = false;
-                label10.Visible = false;
-                label11.Visible = false;
-                label12.Visible = false;
-                label13.Visible = false;
-
-                CB_ACU.Checked = false;
-                CB_WIFI.Checked = false;
-                CB_EXP.Checked = false;
-            }
-            if (type == "acu")
-            {
-                TB_HMI_DWN.Text = "";
-                TB_HMI_UP.Text = "";
-                TB_EXP_DWN.Text = "";
-                TB_EXP_UP.Text = "";
-                TB_WIFI_DWN.Text = "";
-                TB_WIFI_UP.Text = "";
-
-                TB_HMI_DWN.Enabled = false;
-                TB_HMI_UP.Enabled = false;
-                TB_ACU_UP.Enabled = true;
-                TB_ACU_DWN.Enabled = true;
-                TB_EXP_DWN.Enabled = false;
-                TB_EXP_UP.Enabled = false;
-                TB_WIFI_DWN.Enabled = false;
-                TB_WIFI_UP.Enabled = false;
-
-                TB_HMI_DWN.Visible = false;
-                TB_HMI_UP.Visible = false;
-                TB_ACU_DWN.Visible = true;
-                TB_ACU_UP.Visible = true;
-                TB_EXP_DWN.Visible = false;
-                TB_EXP_UP.Visible = false;
-                TB_WIFI_DWN.Visible = false;
-                TB_WIFI_UP.Visible = false;
-
-                label6.Visible = false;
-                label7.Visible = false;
-                label8.Visible = true;
-                label9.Visible = true;
-                label10.Visible = false;
-                label11.Visible = false;
-                label12.Visible = false;
-                label13.Visible = false;
-
-                CB_HMI.Checked = false;
-                CB_WIFI.Checked = false;
-                CB_EXP.Checked = false;
-            }
-            if (type == "wifi")
-            {
-                TB_ACU_DWN.Text = "";
-                TB_ACU_UP.Text = "";
-                TB_EXP_DWN.Text = "";
-                TB_EXP_UP.Text = "";
-                TB_HMI_DWN.Text = "";
-                TB_HMI_UP.Text = "";
-
-                TB_HMI_DWN.Enabled = false;
-                TB_HMI_UP.Enabled = false;
-                TB_ACU_UP.Enabled = false;
-                TB_ACU_DWN.Enabled = false;
-                TB_ACU_UP.Enabled = false;
-                TB_EXP_DWN.Enabled = false;
-                TB_EXP_UP.Enabled = false;
-                TB_WIFI_DWN.Enabled = true;
-                TB_WIFI_UP.Enabled = true;
-
-                TB_HMI_DWN.Visible = false;
-                TB_HMI_UP.Visible = false;
-                TB_ACU_DWN.Visible = false;
-                TB_ACU_UP.Visible = false;
-                TB_EXP_DWN.Visible = false;
-                TB_EXP_UP.Visible = false;
-                TB_WIFI_DWN.Visible = true;
-                TB_WIFI_UP.Visible = true;
-
-                label6.Visible = false;
-                label7.Visible = false;
-                label8.Visible = false;
-                label9.Visible = false;
-                label10.Visible = true;
-                label11.Visible = true;
-                label12.Visible = false;
-                label13.Visible = false;
-
-                CB_ACU.Checked = false;
-                CB_HMI.Checked = false;
-                CB_EXP.Checked = false;
-            }
-            if (type == "exp")
-            {
-                TB_ACU_DWN.Text = "";
-                TB_ACU_UP.Text = "";
-                TB_HMI_DWN.Text = "";
-                TB_HMI_UP.Text = "";
-                TB_WIFI_DWN.Text = "";
-                TB_WIFI_UP.Text = "";
-
-                TB_HMI_DWN.Enabled = false;
-                TB_HMI_UP.Enabled = false;
-                TB_ACU_UP.Enabled = false;
-                TB_ACU_DWN.Enabled = false;
-                TB_ACU_UP.Enabled = false;
-                TB_EXP_DWN.Enabled = true;
-                TB_EXP_UP.Enabled = true;
-                TB_WIFI_DWN.Enabled = false;
-                TB_WIFI_UP.Enabled = false;
-
-                TB_HMI_DWN.Visible = false;
-                TB_HMI_UP.Visible = false;
-                TB_ACU_DWN.Visible = false;
-                TB_ACU_UP.Visible = false;
-                TB_EXP_DWN.Visible = true;
-                TB_EXP_UP.Visible = true;
-                TB_WIFI_DWN.Visible = false;
-                TB_WIFI_UP.Visible = false;
-
-                label6.Visible = false;
-                label7.Visible = false;
-                label8.Visible = false;
-                label9.Visible = false;
-                label10.Visible = false;
-                label11.Visible = false;
-                label12.Visible = true;
-                label13.Visible = true;
-
-                CB_ACU.Checked = false;
-                CB_WIFI.Checked = false;
-                CB_HMI.Checked = false;
-            }
-
+            TB_DWN.Text = "";
+            TB_UP.Text = "";
+            TB_IP.Text = "";
+            TB_Other.Text = "";
+            CB_Product.ResetText();
+            CB_Variant.ResetText();
         }
         public void CB_Variant_SelectedValueChanged(object sender, EventArgs e)
         {
-            if (CB_Variant.Text.Equals("Other (any remote cycle)"))
+            if (CB_Product.Text.Equals("Other (any remote cycle)"))
             {
                 TB_Other.Enabled = true;
                 TB_Other.Text = "Paste MQTT Payload Here";
@@ -289,98 +80,42 @@ namespace VenomNamespace
         }
         private bool CheckFill()
         {
-            bool check = false;
-
+            bool check = true;
+            string var = CB_Variant.Text;
+            string prod = CB_Product.Text;
             //Check to make sure we have both upgrade and downgrade bundles and set type if we do
-            if (!TB_HMI_UP.Text.Equals(""))
+            if (!TB_UP.Text.Equals(""))
             {
-                if (!TB_HMI_DWN.Text.Equals(""))
-                {
-                    check = true;
-                    up = TB_HMI_UP.Text;
-                }
+                if (!TB_DWN.Text.Equals(""))
+                    up = TB_UP.Text;
+                
                 else
                     check = false;
             }
+            else
+                check = false;
 
-            if (!TB_HMI_DWN.Text.Equals(""))
+            if (!TB_DWN.Text.Equals(""))
             {
-                if (!TB_HMI_UP.Text.Equals(""))
-                {
-                    check = true;
-                    dwn = TB_HMI_DWN.Text;
-                    node = "HMI";
-                }
+                if (!TB_UP.Text.Equals(""))
+                    dwn = TB_DWN.Text;
+                
                 else
                     check = false;
             }
+            else
+                check = false;
 
-            if (!TB_ACU_UP.Text.Equals(""))
-            {
-                if (!TB_ACU_DWN.Text.Equals(""))
-                {
-                    check = true;
-                    up = TB_ACU_UP.Text;
-                }
-                else
-                    check = false;
-            }
+            if (string.IsNullOrEmpty(var))
+                check = false;
+            else
+                node = CB_Variant.Text;
 
-            if (!TB_ACU_DWN.Text.Equals(""))
+            if (string.IsNullOrEmpty(prod))
+                check = false;
+            if (prod.Contains("Other"))
             {
-                if (!TB_ACU_UP.Text.Equals(""))
-                {
-                    check = true;
-                    dwn = TB_ACU_DWN.Text;
-                    node = "ACU";
-                }
-                else
-                    check = false;
-            }
-
-            if (!TB_WIFI_UP.Text.Equals(""))
-            {
-                if (!TB_WIFI_DWN.Text.Equals(""))
-                {
-                    check = true;
-                    up = TB_WIFI_UP.Text;
-                }
-                else
-                    check = false;
-            }
-
-            if (!TB_WIFI_DWN.Text.Equals(""))
-            {
-                if (!TB_WIFI_UP.Text.Equals(""))
-                {
-                    check = true;
-                    dwn = TB_WIFI_DWN.Text;
-                    node = "WIFI";
-                }
-                else
-                    check = false;
-            }
-
-            if (!TB_EXP_UP.Text.Equals(""))
-            {
-                if (!TB_EXP_DWN.Text.Equals(""))
-                {
-                    check = true;
-                    up = TB_EXP_UP.Text;
-                }
-                else
-                    check = false;
-            }
-
-            if (!TB_EXP_DWN.Text.Equals(""))
-            {
-                if (!TB_EXP_UP.Text.Equals(""))
-                {
-                    check = true;
-                    dwn = TB_EXP_DWN.Text;
-                    node = "EXP";
-                }
-                else
+                if (TB_Other.Text.Equals("") || TB_Other.Text.Contains("Paste"))
                     check = false;
             }
 
@@ -459,14 +194,14 @@ namespace VenomNamespace
             string mqttpay = "";
             //Set MQTT payload to start standard bake 350 for whatever product or allow user to input one            
 
-            if (CB_Variant.Text.Equals("NAR Cooking"))
+            if (CB_Product.Text.Equals("NAR Cooking"))
                 mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
-            else if (CB_Variant.Text.Equals("EMEA Cooking"))
+            else if (CB_Product.Text.Equals("EMEA Cooking"))
                 mqttpay = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)          ;
-            else if (CB_Variant.Text.Equals("NAR Laundry"))
+            else if (CB_Product.Text.Equals("NAR Laundry"))
                 mqttpay = "0026FF333305050006010505001503050500180305050014000505000A010505000D000307000102"; // Standard wash cycle for Janus washer (wash cavity)
             else
-                mqttpay = CB_Variant.Text;
+                mqttpay = CB_Product.Text;
 
             //mqttpay = mqttpay.Substring(16, mqttpay.Length - 32);
 
@@ -576,27 +311,7 @@ namespace VenomNamespace
         }
         private void AutoGen_Load(object sender, EventArgs e)
         {
-            //ResetForm("all"); //ENABLE WHEN UPLOADING TO STORE
-        }
-        private void CB_HMI_CheckedChanged(object sender, EventArgs e)
-        {
-            if (CB_HMI.Checked)
-                ResetForm("hmi");
-        }
-        private void CB_ACU_CheckedChanged(object sender, EventArgs e)
-        {
-            if (CB_ACU.Checked)
-                ResetForm("acu");
-        }
-        private void CB_WIFI_CheckedChanged(object sender, EventArgs e)
-        {
-            if (CB_WIFI.Checked)
-                ResetForm("wifi");
-        }
-        private void CB_EXP_CheckedChanged(object sender, EventArgs e)
-        {
-            if (CB_EXP.Checked)
-                ResetForm("exp");
+            //ResetForm(); //ENABLE WHEN UPLOADING TO STORE
         }
 
     }

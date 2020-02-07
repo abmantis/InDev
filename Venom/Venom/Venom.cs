@@ -25,7 +25,6 @@ namespace VenomNamespace
         public static int MQTTMAX = 4;
         public static int TTFCNT = 4;
         public static int CYCGO = 0;    //Cycles fire on autogen iteration i=0
-        public static int TTFGO = 4;    //TTFs fire on autogen iteration i=2
         public static int TMAX = 90 * 60000; //OTA max thread time in ms before the thread needs to end (got stuck)
         public static int CYCWAIT = 1 * 30000; //Amount of time to let cycle run
         public static int TTFWAIT = 1 * 10000; //Amount of time to wait for TTF result
@@ -51,6 +50,7 @@ namespace VenomNamespace
         public bool mbeat = false;
         public bool ttf = false;
         public bool cyc = false;
+        public bool cbool = false;
         public bool rerun = false;
         public bool autogen = false;
         public bool cycstart = false;
@@ -554,7 +554,12 @@ namespace VenomNamespace
                     //Save to global for auto test execution
                     if (autogen)
                         gstatus = statusval;
-
+                    if (cbool && autogen)
+                    {
+                        iplist[AUTOINDEX].Result = StatusLookup(statusval);
+                        SetText("status", source, AUTOINDEX);
+                        return;
+                    }
                     // Lookup status reason byte pass or fail reason
                     foreach (var member in iplist)
                     {
@@ -1671,9 +1676,10 @@ namespace VenomNamespace
                     CycExec(cai, ipd, ipbytes, "set", "down");
                     Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
                     ipd.Result = "";
+                    cbool = true;
                     if (ipd.Signal != null)
                         ipd.Signal.Wait();
-
+                    cbool = false;
                     if (ipd.Result.Contains("timeout"))
                     {
                         cwait = false;
@@ -2432,6 +2438,10 @@ namespace VenomNamespace
                 return;
             }
         }
+        public static bool IsOdd(int value)
+        {
+            return value % 2 != 0;
+        }
         public void ProcessCyc(IPData ipd)
         {
             try
@@ -2696,35 +2706,73 @@ namespace VenomNamespace
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
                     {
-                        if (i == CYCGO)  //Control testing OTA with cycle interation or TTF at particular iteration time
+                        switch (i)
                         {
-                            thread_waits = CycRun(cai, ipd, ipbytes);
-                            check = false;
-                        }
-
-                        else if (i == TTFGO)
-                        {
-                            TTFRun(cai, ipd, ipbytes);
-                            thread_waits = true;
-                            check = false;
-                        }
-
-                        else
-                        {
-                            CheckBeat("init", cai, ipd);
-                            TestInit(ipbytes, cai, ipd, i);
-                            if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
-                                thread_waits = true;
-                            else
-                            {
-                                InvLabel("auto", "FAIL");
-                                ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
-                                thread_waits = false;
+                            case (0):   //Test cases that involve sending cycles
+                                thread_waits = CycRun(cai, ipd, ipbytes);
                                 check = false;
-                            }
-                            check = true;
-                        }                        
-                        
+                                break;
+                            case (1):
+                                if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                                    thread_waits = true;
+                                else
+                                {
+                                    InvLabel("auto", "FAIL");
+                                    ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
+                                    thread_waits = false;
+                                    check = false;
+                                }
+                                check = false;
+                                break;
+                            case (2):
+                                CheckBeat("init", cai, ipd);
+                                TestInit(ipbytes, cai, ipd, i);
+                                if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                                    thread_waits = true;
+                                else
+                                {
+                                    InvLabel("auto", "FAIL");
+                                    ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
+                                    thread_waits = false;
+                                    check = false;
+                                }
+                                check = true;
+                                break;
+                            case (3):
+                                CheckBeat("init", cai, ipd);
+                                TestInit(ipbytes, cai, ipd, i);
+                                if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                                    thread_waits = true;
+                                else
+                                {
+                                    InvLabel("auto", "FAIL");
+                                    ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
+                                    thread_waits = false;
+                                    check = false;
+                                }
+                                check = true;
+                                break;
+                            case (4):
+                                TTFRun(cai, ipd, ipbytes);
+                                thread_waits = true;
+                                check = false;
+                                break;
+                            case (5):
+                                if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                                    thread_waits = true;
+                                else
+                                {
+                                    InvLabel("auto", "FAIL");
+                                    ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
+                                    thread_waits = false;
+                                    check = false;
+                                }
+                                check = false;
+                                break;
+                            default:
+                                break;
+                        }
+                                           
                     }
 
                     // Set wait signal to be unlocked by thread after job is complete (result seen from log)
@@ -2779,9 +2827,7 @@ namespace VenomNamespace
                     ConnectedApplianceInfo cai_n;
                     cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
 
-                    bool precon = (cai.IPAddress != cai_n.IPAddress) || !thread_waits ? true : false;
-
-                    if (cai_n != null && precon)
+                    if (cai_n != null)
                     {
                         cai = cai_n;
                         ipd.IPAddress = cai.IPAddress;    //Update if IP changed
@@ -2794,54 +2840,51 @@ namespace VenomNamespace
                         Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
                         StopTimer();
 
-
-                        if (cai != null)
+                        for (int j = 0; j < MQTTMAX; j++)
                         {
-                            for (int j = 0; j < MQTTMAX; j++)
+                            if (cancel_request)
+                                return;
+                            if (cai.IsMqttConnected && cai.IsTraceOn)
                             {
-                                if (cancel_request)
-                                    return;
-                                if (cai.IsMqttConnected && cai.IsTraceOn)
-                                {
-                                    if (cai.IPAddress != ipd.IPAddress)
-                                        ipd.IPAddress = cai.IPAddress;
-                                    break;
-                                }
-
-                                MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
-                                Wait(3000);
-
-                                MqttRecon(cai, "con");    //Reconnect MQTT
-                                StartTimer(RECONWAIT);
-                                Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
-                                StopTimer();
-
-                                cai = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC); //Search again to see if CAI has changed
-                                recontot = j;
+                                if (cai.IPAddress != ipd.IPAddress)
+                                    ipd.IPAddress = cai.IPAddress;
+                                break;
                             }
 
-                            Console.WriteLine("MQTT reconnect called " + recontot + " times.");
+                            MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
+                            Wait(3000);
 
+                            MqttRecon(cai, "con");    //Reconnect MQTT
+                            StartTimer(RECONWAIT);
+                            Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
+                            StopTimer();
+
+                            cai = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC); //Search again to see if CAI has changed
+                            recontot = j;
                         }
-                        if (cai == null || recontot == MQTTMAX)
-                        {
-                            ipd.Result = "FAIL - Unable to reconnect to product. Unable to check test case result(s).";
 
-                            SetText("status", "Force Close", ipd.TabIndex);
-                            SetText("auto", "Force Close", ipd.TabIndex);
+                        Console.WriteLine("MQTT reconnect called " + recontot + " times.");
+                        
+                    }
 
-                            Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                    if (cai == null || recontot == MQTTMAX)
+                    {
+                        ipd.Result = "FAIL - Unable to reconnect to product. Unable to check test case result(s).";
 
-                            if (ipd.Signal != null)
-                                ipd.Signal.Reset();
+                        SetText("status", "Force Close", ipd.TabIndex);
+                        SetText("auto", "Force Close", ipd.TabIndex);
 
-                            Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
+                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
 
-                            ipd.Result = "";
-                            InvLabel("auto", "PENDING");
+                        if (ipd.Signal != null)
+                            ipd.Signal.Reset();
 
-                            continue;   //THIS MAY BE A BAD IDEA
-                        }
+                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
+
+                        ipd.Result = "";
+                        InvLabel("auto", "PENDING");
+
+                        continue;   //THIS MAY BE A BAD IDEA
                     }
 
                     Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
