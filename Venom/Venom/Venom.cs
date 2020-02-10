@@ -50,7 +50,6 @@ namespace VenomNamespace
         public bool mbeat = false;
         public bool ttf = false;
         public bool cyc = false;
-        public bool cbool = false;
         public bool rerun = false;
         public bool autogen = false;
         public bool cycstart = false;
@@ -554,12 +553,7 @@ namespace VenomNamespace
                     //Save to global for auto test execution
                     if (autogen)
                         gstatus = statusval;
-                    if (cbool && autogen)
-                    {
-                        iplist[AUTOINDEX].Result = StatusLookup(statusval);
-                        SetText("status", source, AUTOINDEX);
-                        return;
-                    }
+
                     // Lookup status reason byte pass or fail reason
                     foreach (var member in iplist)
                     {
@@ -582,6 +576,7 @@ namespace VenomNamespace
                             }
                         }
                     }
+
                 }
 
                 /*if (sb.Contains("cc_SetKvpResult"))
@@ -1676,10 +1671,12 @@ namespace VenomNamespace
                     CycExec(cai, ipd, ipbytes, "set", "down");
                     Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
                     ipd.Result = "";
-                    cbool = true;
+
                     if (ipd.Signal != null)
                         ipd.Signal.Wait();
-                    cbool = false;
+
+                    Wait(2000);
+
                     if (ipd.Result.Contains("timeout"))
                     {
                         cwait = false;
@@ -1718,7 +1715,6 @@ namespace VenomNamespace
         {
             try
             {
-
                 //Prepare IP address for sending via MQTT
                 string[] ipad = ipd.IPAddress.Split('.');
                 byte[] ipbytes = new byte[4];
@@ -2272,14 +2268,14 @@ namespace VenomNamespace
 
                         case 16:    //RSSI Strong Check
                             if (!LBL_Auto.Text.Contains("FAIL"))
-                            {
-                                int val = Int32.Parse(rssi);
+                            {                                
                                 if (string.IsNullOrEmpty(rssi))
                                 {
                                     InvColor(i, "red");
                                     ipd.Result = "FAIL - RSSI value was not able to be obtained.";
                                     changed = true;
                                 }
+                                int val = Int32.Parse(rssi);
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) != -1) //Indicate -67 or better
                                 {
                                     InvColor(i, "grn");
@@ -2679,7 +2675,10 @@ namespace VenomNamespace
                     timer.Interval = TMAX;
                     timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
                     timer.Start();
-                    
+                    Invoke((MethodInvoker)delegate  //REMOVE
+                    {
+                        LBL_i.Text = i.ToString();
+                    });
                     //Parse payload into byte array
                     byte[] paybytes;
                     if (ipd.Next == "UPGRADE")
@@ -2708,11 +2707,13 @@ namespace VenomNamespace
                     {
                         switch (i)
                         {
-                            case (0):   //Test cases that involve sending cycles
+                            case (0):   //Test cases that involve sending cycles using Upgrade
+                                CheckBeat("init", cai, ipd);
+                                TestInit(ipbytes, cai, ipd, i);
                                 thread_waits = CycRun(cai, ipd, ipbytes);
                                 check = false;
                                 break;
-                            case (1):
+                            case (1):   //Send Downgrade back to SOP
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                                     thread_waits = true;
                                 else
@@ -2724,7 +2725,7 @@ namespace VenomNamespace
                                 }
                                 check = false;
                                 break;
-                            case (2):
+                            case (2):   //Non-TTF or cycle test cases using Upgrade
                                 CheckBeat("init", cai, ipd);
                                 TestInit(ipbytes, cai, ipd, i);
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
@@ -2738,7 +2739,7 @@ namespace VenomNamespace
                                 }
                                 check = true;
                                 break;
-                            case (3):
+                            case (3):   //Non-TTF or cycle test cases using Downgrade
                                 CheckBeat("init", cai, ipd);
                                 TestInit(ipbytes, cai, ipd, i);
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
@@ -2752,12 +2753,12 @@ namespace VenomNamespace
                                 }
                                 check = true;
                                 break;
-                            case (4):
+                            case (4):   //Run TTF using Upgrade
                                 TTFRun(cai, ipd, ipbytes);
                                 thread_waits = true;
                                 check = false;
                                 break;
-                            case (5):
+                            case (5):   //Send Downgrade back to SOP
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                                     thread_waits = true;
                                 else
@@ -2814,13 +2815,12 @@ namespace VenomNamespace
                     InvLabel("ud", "PENDING");
 
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
-                    StartTimer(4 * RECONWAIT);
+                    StartTimer(5 * RECONWAIT + 15000);  //Allow 5 minutes for product to reboot and reconnection attempts to end (happy path)
 
                     Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
 
                     MqttRecon(cai, "con"); //Start process to reconnect MQTT
                     Wait(RECONWAIT-6000); //Give time to reconnect
-                    StopTimer();
 
                     //See if IP changed and we need a new CAI
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
@@ -2836,7 +2836,6 @@ namespace VenomNamespace
                         Wait(3000);
 
                         MqttRecon(cai, "con"); //Establish MQTT with new CAI
-                        StartTimer(RECONWAIT);
                         Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
                         StopTimer();
 
@@ -2844,7 +2843,7 @@ namespace VenomNamespace
                         {
                             if (cancel_request)
                                 return;
-                            if (cai.IsMqttConnected && cai.IsTraceOn)
+                            if (cai.IsMqttConnected && cai.IsTraceOn)   //Keep looping to recon
                             {
                                 if (cai.IPAddress != ipd.IPAddress)
                                     ipd.IPAddress = cai.IPAddress;
@@ -2869,6 +2868,7 @@ namespace VenomNamespace
 
                     if (cai == null || recontot == MQTTMAX)
                     {
+                        StopTimer();
                         ipd.Result = "FAIL - Unable to reconnect to product. Unable to check test case result(s).";
 
                         SetText("status", "Force Close", ipd.TabIndex);
@@ -3157,8 +3157,8 @@ namespace VenomNamespace
                     if (autogen)
                     {
                         autogen = false;
-                        BTN_MakeList.Enabled = true;
-                        BTN_Import.Enabled = true;
+                        //BTN_MakeList.Enabled = true;  REMOVE COMMENT WHEN SUPPORT AGAIN
+                        //BTN_Import.Enabled = true;
                     }
                 }
 
@@ -3314,13 +3314,16 @@ namespace VenomNamespace
                 BTN_Clr.Enabled = true;
                 TB_LogDir.Enabled = true;
                 LB_IPs.Enabled = true;
-                BTN_Import.Enabled = true;
-                BTN_MakeList.Enabled = true;
+                //BTN_Import.Enabled = true;
+                //BTN_MakeList.Enabled = true;  REMOVE COMMENT WHEN SUPPORT AGAIN
                 BTN_LogDir.Enabled = true;
                 BTN_Auto.Enabled = true;
                 LabelSet(false);
                 LBL_Auto.Text = "PENDING";
                 LBL_UD.Text = "PENDING";
+                LBL_Rmn.Visible = false;
+                LBL_Time.Visible = false;
+                LBL_Time.Text = "00:00:00";
                 StopTimer();
                 if (operation)
                 {

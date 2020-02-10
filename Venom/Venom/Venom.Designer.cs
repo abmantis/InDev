@@ -49,6 +49,8 @@ namespace VenomNamespace
             this.TMR_Tick = new System.Windows.Forms.Timer(this.components);
             this.LBL_Rmn = new System.Windows.Forms.Label();
             this.LBL_Time = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
+            this.LBL_i = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -76,9 +78,9 @@ namespace VenomNamespace
             // 
             // BTN_LogDir
             // 
-            this.BTN_LogDir.Location = new System.Drawing.Point(18, 12);
+            this.BTN_LogDir.Location = new System.Drawing.Point(21, 12);
             this.BTN_LogDir.Name = "BTN_LogDir";
-            this.BTN_LogDir.Size = new System.Drawing.Size(119, 23);
+            this.BTN_LogDir.Size = new System.Drawing.Size(116, 23);
             this.BTN_LogDir.TabIndex = 10;
             this.BTN_LogDir.Text = "Set Log Directory";
             this.BTN_LogDir.UseVisualStyleBackColor = true;
@@ -124,29 +126,31 @@ namespace VenomNamespace
             // 
             // BTN_MakeList
             // 
-            this.BTN_MakeList.Location = new System.Drawing.Point(21, 53);
+            this.BTN_MakeList.Location = new System.Drawing.Point(527, 348);
             this.BTN_MakeList.Name = "BTN_MakeList";
             this.BTN_MakeList.Size = new System.Drawing.Size(97, 23);
             this.BTN_MakeList.TabIndex = 96;
             this.BTN_MakeList.Text = "Test List Control";
             this.BTN_MakeList.UseVisualStyleBackColor = true;
+            this.BTN_MakeList.Visible = false;
             this.BTN_MakeList.Click += new System.EventHandler(this.BTN_MakeList_Click);
             // 
             // BTN_Import
             // 
-            this.BTN_Import.Location = new System.Drawing.Point(127, 53);
+            this.BTN_Import.Location = new System.Drawing.Point(633, 348);
             this.BTN_Import.Name = "BTN_Import";
             this.BTN_Import.Size = new System.Drawing.Size(92, 23);
             this.BTN_Import.TabIndex = 97;
             this.BTN_Import.Text = "Import Test List";
             this.BTN_Import.UseVisualStyleBackColor = true;
+            this.BTN_Import.Visible = false;
             this.BTN_Import.Click += new System.EventHandler(this.BTN_Import_Click);
             // 
             // BTN_Auto
             // 
-            this.BTN_Auto.Location = new System.Drawing.Point(225, 53);
+            this.BTN_Auto.Location = new System.Drawing.Point(21, 50);
             this.BTN_Auto.Name = "BTN_Auto";
-            this.BTN_Auto.Size = new System.Drawing.Size(97, 23);
+            this.BTN_Auto.Size = new System.Drawing.Size(100, 23);
             this.BTN_Auto.TabIndex = 98;
             this.BTN_Auto.Text = "Auto Test List";
             this.BTN_Auto.UseVisualStyleBackColor = true;
@@ -156,7 +160,7 @@ namespace VenomNamespace
             // 
             this.LBL_Auto.AutoSize = true;
             this.LBL_Auto.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_Auto.Location = new System.Drawing.Point(413, 58);
+            this.LBL_Auto.Location = new System.Drawing.Point(212, 55);
             this.LBL_Auto.Name = "LBL_Auto";
             this.LBL_Auto.Size = new System.Drawing.Size(58, 15);
             this.LBL_Auto.TabIndex = 99;
@@ -166,7 +170,7 @@ namespace VenomNamespace
             // LBL_VAR
             // 
             this.LBL_VAR.AutoSize = true;
-            this.LBL_VAR.Location = new System.Drawing.Point(500, 58);
+            this.LBL_VAR.Location = new System.Drawing.Point(299, 55);
             this.LBL_VAR.Name = "LBL_VAR";
             this.LBL_VAR.Size = new System.Drawing.Size(34, 13);
             this.LBL_VAR.TabIndex = 100;
@@ -176,7 +180,7 @@ namespace VenomNamespace
             // LBL_OTA
             // 
             this.LBL_OTA.AutoSize = true;
-            this.LBL_OTA.Location = new System.Drawing.Point(342, 58);
+            this.LBL_OTA.Location = new System.Drawing.Point(141, 55);
             this.LBL_OTA.Name = "LBL_OTA";
             this.LBL_OTA.Size = new System.Drawing.Size(65, 13);
             this.LBL_OTA.TabIndex = 101;
@@ -187,7 +191,7 @@ namespace VenomNamespace
             // 
             this.LBL_UD.AutoSize = true;
             this.LBL_UD.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_UD.Location = new System.Drawing.Point(540, 58);
+            this.LBL_UD.Location = new System.Drawing.Point(339, 55);
             this.LBL_UD.Name = "LBL_UD";
             this.LBL_UD.Size = new System.Drawing.Size(58, 15);
             this.LBL_UD.TabIndex = 102;
@@ -202,7 +206,7 @@ namespace VenomNamespace
             // LBL_Rmn
             // 
             this.LBL_Rmn.AutoSize = true;
-            this.LBL_Rmn.Location = new System.Drawing.Point(630, 58);
+            this.LBL_Rmn.Location = new System.Drawing.Point(429, 55);
             this.LBL_Rmn.Name = "LBL_Rmn";
             this.LBL_Rmn.Size = new System.Drawing.Size(60, 13);
             this.LBL_Rmn.TabIndex = 103;
@@ -213,18 +217,39 @@ namespace VenomNamespace
             // 
             this.LBL_Time.AutoSize = true;
             this.LBL_Time.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_Time.Location = new System.Drawing.Point(694, 58);
+            this.LBL_Time.Location = new System.Drawing.Point(493, 55);
             this.LBL_Time.Name = "LBL_Time";
             this.LBL_Time.Size = new System.Drawing.Size(51, 15);
             this.LBL_Time.TabIndex = 104;
             this.LBL_Time.Text = "00:00:00";
             this.LBL_Time.Visible = false;
             // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(578, 55);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(87, 13);
+            this.label1.TabIndex = 105;
+            this.label1.Text = "i value REMOVE";
+            // 
+            // LBL_i
+            // 
+            this.LBL_i.AutoSize = true;
+            this.LBL_i.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.LBL_i.Location = new System.Drawing.Point(671, 55);
+            this.LBL_i.Name = "LBL_i";
+            this.LBL_i.Size = new System.Drawing.Size(15, 15);
+            this.LBL_i.TabIndex = 106;
+            this.LBL_i.Text = "0";
+            // 
             // Venom
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(771, 368);
+            this.Controls.Add(this.LBL_i);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.LBL_Time);
             this.Controls.Add(this.LBL_Rmn);
             this.Controls.Add(this.LBL_UD);
@@ -268,6 +293,8 @@ namespace VenomNamespace
         private Timer TMR_Tick;
         private Label LBL_Rmn;
         private Label LBL_Time;
+        private Label label1;
+        private Label LBL_i;
     }
 }
 
