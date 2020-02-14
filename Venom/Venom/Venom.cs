@@ -54,6 +54,8 @@ namespace VenomNamespace
         public bool autogen = false;
         public bool cycstart = false;
         public bool cancel_request = false;
+        public bool skipcyc = false;
+        public bool skipttf = false;
 
         public string curfilename;
         public string ccuri = "";
@@ -219,11 +221,15 @@ namespace VenomNamespace
                     // Process OTA-related messages
                     if (autogen)
                     {
-                        if (sb.Contains("progress"))
+                        if (sb.Contains("progress"))    //Count progress messages sent
                         {
                             prog++;
                             return;
                         }
+
+                        if (sb.Contains("tatus"))   //Ignore status messages
+                            return;
+
                         if (!mbeat)
                         {
                             mbeat = true;
@@ -258,7 +264,7 @@ namespace VenomNamespace
                         {
                             lock (writeobj)
                             {
-                                ProcessPayload("rssi", data.Source.ToString(), "mbeat", val.ToString());
+                                ProcessPayload("rssi", data.Source.ToString(), "MQTT Message", val.ToString());
                             }
                         }
                     }
@@ -441,24 +447,27 @@ namespace VenomNamespace
                     prov = split[1].Replace("]", "");
                     return;
                 }
+                              
 
                 if (!ttf && !cyc && source.Contains("mbeat"))
+                //if (sb.Contains("\"info\"") && !ttf)
                 {
+                    //if (source.Contains("MQTT") && sb.Equals("rssi"))
                     if (sb.Equals("rssi"))
                     {
                         rssi = raw;
                         return;
                     }
-
                     string[] parts = sb.Replace("[", "").Split(':');
                     parts[2].Replace("]", "");
                     string[] split = parts[2].Split(',');
                     ispp = split[0].Replace("\"", "");
                     ispp = ispp.Replace("]", "");
-                    vers = split[1].Replace("\"", "");
-                    vers = vers.Replace("]", "");
+                    //vers = split[1].Replace("\"", "");
+                    //vers = vers.Replace("]", "");
                     return;
                 }
+
                 // Locate if OTA payload has been sent and update status
                 if (sb.Contains("\"update\"") && !ttf)
                 {
@@ -937,7 +946,7 @@ namespace VenomNamespace
 
                         DialogResult dialogResult = MessageBox.Show("The AutoGen Test Execution REQUIRES the product to be Idle(Standby) with Remote Enable ON." +
                                                                 "You MUST be on the lowest [SOP] version with an UPGRADE version set. " +
-                                                                "If these are BOTh true, press Yes to continue or No to exit.",
+                                                                "If these are ALL true, press Yes to continue or No to exit.",
                                                                 "Verify Start State", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
                         if (dialogResult == DialogResult.No)
                             return;
@@ -1247,7 +1256,18 @@ namespace VenomNamespace
                 switch (type)
                 {
                     case "bright":
-                        pay = "0008FF3333020200090A";  //Sys set brightness to 10
+                        pay = ipd.Set + "0A";  //Sys set brightness to 10
+                        bytes = new byte[pay.Length / 2];
+                        for (int i = 0; i < bytes.Length; i++)
+                        {
+                            bytes[i] = byte.Parse(pay.Substring(2 * i, 2), NumberStyles.AllowHexSpecifier);
+
+                        }
+                        topic = "iot-2/cmd/cc_SetKvp/fmt/binary";
+                        break;
+
+                    case "resetb":
+                        pay = ipd.Set + "46";  //Sys set brightness to 70
                         bytes = new byte[pay.Length / 2];
                         for (int i = 0; i < bytes.Length; i++)
                         {
@@ -1279,7 +1299,7 @@ namespace VenomNamespace
                         break;
 
                     case "cncl":
-                        pay = "0008FF33330307000101";   //Remote cancel
+                        pay = ipd.Cncl;   //Remote cancel
                         bytes = new byte[pay.Length / 2];
                         for (int i = 0; i < bytes.Length; i++)
                         {
@@ -1317,7 +1337,7 @@ namespace VenomNamespace
                 if (var == 0)   //Invalid CRC
                 {
                     string[] parts = ipd.Payload.Split(',');
-                    parts[0] = "{\"update\":{\"crc32\":\"FFFFFFFF\",";
+                    parts[0] = "{\"update\":{\"crc32\":\"00000000\",";  //Bad CRC for TTF (even if a valid crc it would mean ubd file is empty i.e. not valid anyway)
                     string pay = parts[0] + parts[1];
                     byte[] paybytes = Encoding.ASCII.GetBytes(pay);
 
@@ -1447,6 +1467,7 @@ namespace VenomNamespace
 
                 InvLabel("ud", "DOWNGRADE");    //Last TTF sends multiple downgrade payloads, update labels (logs blocked for download event during TTFs)
                 InvLabel("auto", "Downloading");
+                ipd.Result = "";    //Purge failed results from previous tests 
                 ttf = false;
             }
             catch
@@ -1557,6 +1578,7 @@ namespace VenomNamespace
                         if (LBL_Auto.Text.Equals("Downloading"))
                         {
                             ipd.LList.AddLast("PASS - The setting was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.");
+                            //RemoteOps(cai, ipd, ipbytes, "resetb");
                             return true;
                         }
 
@@ -1565,6 +1587,7 @@ namespace VenomNamespace
                             ipd.LList.AddLast("FAIL - The setting was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.");
                             return false;
                         }
+
                     }
                 }
 
@@ -1812,14 +1835,15 @@ namespace VenomNamespace
                             ipd.Serial = cai.SerialNumber;
                             break;
                         case 7:    //Upgrade Version Number check
-                            ipd.Vers = vers;
+                            string[] stru = cai.VersionNumber.Replace(" ", "").Split('|');
+                            ipd.Vers = stru[0];
                             break;
                         case 8:    //Downgrade Model/Serial Number check
                             ipd.Model = cai.ModelNumber;
                             ipd.Serial = cai.SerialNumber;
                             break;
                         case 9:    //Downgrade Version Number check
-                            ipd.Vers = vers;
+                            //Set in case 7
                             break;
                         case 10:    //Upgrade CCURI check
                             ipd.CCURI = ccuri;
@@ -1840,7 +1864,8 @@ namespace VenomNamespace
                                     //No special initialization required
                             break;
                         case 16:    //RSSI check
-                            RemoteOps(cai, ipd, ipbytes, "rssi");
+                            if (string.IsNullOrEmpty(rssi))
+                                RemoteOps(cai, ipd, ipbytes, "rssi");
                             break;
                         case 17:    //OTAs possible after OTA
                                     //No special initialization required
@@ -1986,23 +2011,25 @@ namespace VenomNamespace
                         case 7:    //Upgrade Version Number check
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
+                                string[] str = cai.VersionNumber.Replace(" ", "").Split('|');
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
                                 {
-                                    if (!mbeat)
-                                        vers = null;
-                                    if (string.IsNullOrEmpty(vers))
+                                    //if (!mbeat)
+                                    //vers = null;
+                                    //if (string.IsNullOrEmpty(vers))
+                                    if (string.IsNullOrEmpty(ipd.Vers))
                                     {
                                         InvColor(i, "red");
                                         ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
                                     }
-                                    else if (vers == ipd.Vers)
+                                    else if (str[0] == ipd.Vers)
                                     {
-                                        ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
+                                        ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + str[0] + " after OTA. This may be a FAIL result depending on platform expected value.";
                                         InvColor(i, "yll");
                                     }
                                     else
                                     {
-                                        ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
+                                        ipd.Result = "PASS - Version was changed to " + str[0] + " from the starting value of " + ipd.Vers + ".";
                                         InvColor(i, "grn");
                                     }
                                     changed = true;
@@ -2069,23 +2096,25 @@ namespace VenomNamespace
                         case 9:    //Downgrade Version Number check
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
+                                string[] str = cai.VersionNumber.Replace(" ", "").Split('|');
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "UPGRADE")
                                 {
-                                    if (!mbeat)
-                                        vers = null;
-                                    if (string.IsNullOrEmpty(vers))
+                                    //if (!mbeat)
+                                    //vers = null;
+                                    if (string.IsNullOrEmpty(ipd.Vers))
+                                        //if (string.IsNullOrEmpty(vers))
                                     {
                                         InvColor(i, "red");
                                         ipd.Result = "FAIL - Version was not able to be stored and cannot be verified.";
                                     }
-                                    else if (vers == ipd.Vers)
+                                    else if (str[0] == ipd.Vers)
                                     {
-                                        ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + vers + " after OTA. This may be a FAIL result depending on platform expected value.";
+                                        ipd.Result = "CHECK - Version was EQUAL to " + ipd.Vers + " before and " + str[0] + " after OTA. This may be a FAIL result depending on platform expected value.";
                                         InvColor(i, "yll");
                                     }
                                     else
                                     {
-                                        ipd.Result = "PASS - Version was changed to " + vers + " from the starting value of " + ipd.Vers + ".";
+                                        ipd.Result = "PASS - Version was changed to " + str[0] + " from the starting value of " + ipd.Vers + ".";
                                         InvColor(i, "grn");
                                     }
                                     changed = true;
@@ -2267,22 +2296,23 @@ namespace VenomNamespace
                             break;
 
                         case 16:    //RSSI Strong Check
-                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            if (!results.Rows[i]["OTA Result"].ToString().Contains("PASS"))   //Only check once (computer and product are in fixed locations)
                             {                                
                                 if (string.IsNullOrEmpty(rssi))
                                 {
                                     InvColor(i, "red");
                                     ipd.Result = "FAIL - RSSI value was not able to be obtained.";
+                                    rssi = "0";
                                     changed = true;
                                 }
                                 int val = Int32.Parse(rssi);
-                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) != -1) //Indicate -67 or better
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val !=0 && val.CompareTo(-67) != -1) //Indicate -67 or better
                                 {
                                     InvColor(i, "grn");
                                     ipd.Result = "PASS - OTA was successfully installed with a STRONG RSSI value of " + rssi + " and with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
                                     changed = true;
                                 }
-                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val.CompareTo(-67) == -1) //Indicate worse than -67
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val != 0 && val.CompareTo(-67) == -1) //Indicate worse than -67
                                 {
                                     InvColor(i, "red");
                                     ipd.Result = "FAIL - OTA was successfully installed but the RSSI value of " + rssi + " was too great (signal too weak for the STRONG test)."; //OTA result label did not have FAIL so it is PASS
@@ -2305,7 +2335,7 @@ namespace VenomNamespace
                         case 17:    //OTAs are possible after OTA check
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
-                                if (iter > 2 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                if (iter > 4 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL")) //Check on last iteration
                                 {
                                     if (autottl > 0)
                                     {
@@ -2633,7 +2663,11 @@ namespace VenomNamespace
         public void RunAuto(ManualResetEventSlim sig, string ipindex)
         {
             try
-            {
+            {   
+                //Not currently used 
+                //uPLibrary.Networking.M2Mqtt.Utility.Trace.TraceLevel = uPLibrary.Networking.M2Mqtt.Utility.TraceLevel.Verbose;
+                //uPLibrary.Networking.M2Mqtt.Utility.Trace.TraceListener = WriteDebugTrace;
+
                 if (cancel_request)
                 {
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
@@ -2709,11 +2743,15 @@ namespace VenomNamespace
                         {
                             case (0):   //Test cases that involve sending cycles using Upgrade
                                 CheckBeat("init", cai, ipd);
-                                TestInit(ipbytes, cai, ipd, i);
+                                TestInit(ipbytes, cai, ipd, i); //First time through we have to update globals from null
+                                if (skipcyc)
+                                    continue;
                                 thread_waits = CycRun(cai, ipd, ipbytes);
                                 check = false;
                                 break;
                             case (1):   //Send Downgrade back to SOP
+                                if (skipcyc)
+                                    continue;
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                                     thread_waits = true;
                                 else
@@ -2754,11 +2792,17 @@ namespace VenomNamespace
                                 check = true;
                                 break;
                             case (4):   //Run TTF using Upgrade
+                                if (skipttf)
+                                    continue;
+                                CheckBeat("init", cai, ipd);    //rem this and next
+                                TestInit(ipbytes, cai, ipd, i);
                                 TTFRun(cai, ipd, ipbytes);
                                 thread_waits = true;
                                 check = false;
                                 break;
                             case (5):   //Send Downgrade back to SOP
+                                if (skipttf)
+                                    continue;
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
                                     thread_waits = true;
                                 else
@@ -2815,7 +2859,7 @@ namespace VenomNamespace
                     InvLabel("ud", "PENDING");
 
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
-                    StartTimer(5 * RECONWAIT + 15000);  //Allow 5 minutes for product to reboot and reconnection attempts to end (happy path)
+                    StartTimer(4 * RECONWAIT + 30000);  //Allow 5 minutes for product to reboot and reconnection attempts to end (happy path)
 
                     Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
 
@@ -2836,7 +2880,8 @@ namespace VenomNamespace
                         Wait(3000);
 
                         MqttRecon(cai, "con"); //Establish MQTT with new CAI
-                        Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
+                        Wait(31000); //Give more time to reconnect and rescan list for new changes
+
                         StopTimer();
 
                         for (int j = 0; j < MQTTMAX; j++)
@@ -2854,8 +2899,9 @@ namespace VenomNamespace
                             Wait(3000);
 
                             MqttRecon(cai, "con");    //Reconnect MQTT
-                            StartTimer(RECONWAIT);
-                            Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
+
+                            StartTimer(31000);
+                            Wait(31000); //Give more time to reconnect and rescan list for new changes
                             StopTimer();
 
                             cai = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC); //Search again to see if CAI has changed
@@ -2898,8 +2944,10 @@ namespace VenomNamespace
                         CheckBeat("check", cai, ipd);
                         TestCheck(cai, ipd, i);
                     }
-
+                    if (res.Contains("FAIL"))   //Skip next OTA as it would send wrong version (EX. No upgrade so don't downgrade)
+                        i += 1;
                     ipd.Result = "";
+                    prog = 0;   //Reset progress message counter
                     InvLabel("auto", "PENDING");
 
                 }
@@ -3157,8 +3205,7 @@ namespace VenomNamespace
                     if (autogen)
                     {
                         autogen = false;
-                        //BTN_MakeList.Enabled = true;  REMOVE COMMENT WHEN SUPPORT AGAIN
-                        //BTN_Import.Enabled = true;
+                        ResetForm(true);                        
                     }
                 }
 
@@ -3298,6 +3345,8 @@ namespace VenomNamespace
             ttf = false;
             cycstart = false;
             cyc = false;
+            skipcyc = false;
+            skipttf = false;
             ccuri = "";
             vers = "";
             ispp = "";
@@ -3446,7 +3495,17 @@ namespace VenomNamespace
         }
         private void TMR_Tick_Tick(object sender, EventArgs e)
         {
-            
+            if (cancel_request)
+            {
+                if (LBL_Time.Enabled)
+                Invoke((MethodInvoker)delegate
+                {
+                    LBL_Time.Enabled = false;
+                    LBL_Time.Visible = false;
+
+                });
+                return;
+            }
             timeleft -= 1000;
 
             if (timeleft < 0)
@@ -3461,5 +3520,9 @@ namespace VenomNamespace
                     t.Seconds);
             });
         }
+        /*public static void WriteDebugTrace(string format, params object[] args) Lucas extra debug logging....doesn't work right now
+        {
+            File.AppendAllLines(@"c:\temp\wideboxdebugtrace.log", new List<string>() { string.Format(format, args) });
+        }*/
     }
 }

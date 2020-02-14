@@ -30,7 +30,7 @@ namespace VenomNamespace
             parent = ParentForm;
             CB_Product.Items.AddRange(new object[] {"NAR Cooking",
                                                     "EMEA Cooking", "NAR Laundry", "Other (any remote cycle)"});
-            CB_Variant.Items.AddRange(new object[] {"HMI","ACU", "WiFi", "Multi"});
+            CB_Variant.Items.AddRange(new object[] {"HMI","ACU", "WiFi", "Expansion"});
             // Generate tables
             sbind.DataSource = parent.results;
             parent.DGV_Data.AutoGenerateColumns = true;
@@ -52,6 +52,8 @@ namespace VenomNamespace
             TB_Other.Text = "";
             CB_Product.ResetText();
             CB_Variant.ResetText();
+            CB_NoCyc.Checked = false;
+            CB_NoTTF.Checked = false;
         }
         public void CB_Variant_SelectedValueChanged(object sender, EventArgs e)
         {
@@ -141,11 +143,24 @@ namespace VenomNamespace
                 pay = up;
                 newip.Type = "UPGRADE";
             }
-
             if (parent.LB_IPs.Items.Count == 0)
             {
                 if (parent.iplist.FirstOrDefault(x => x.IPAddress == TB_IP.Text) == null)
                     parent.LB_IPs.Items.Add(cai.IPAddress);
+
+                if (CB_Product.Text.Contains("Cooking") || CB_Product.Text.Contains("Other"))
+                {
+                    newip.Set = "0008FF33330203000A";
+                    newip.Prod = "Cooking";
+                    newip.Cncl = "0008FF3333030F000201";
+                }
+
+                else
+                {
+                    newip.Set = "0008FF333302020009";
+                    newip.Cncl = "0008FF33330307000101";
+                    newip.Prod = "Laundry";
+                }
 
                 parent.iplist.Add(newip);
             }
@@ -195,15 +210,21 @@ namespace VenomNamespace
             //Set MQTT payload to start standard bake 350 for whatever product or allow user to input one            
 
             if (CB_Product.Text.Equals("NAR Cooking"))
-                mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
-            else if (CB_Product.Text.Equals("EMEA Cooking"))
-                mqttpay = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)          ;
+                mqttpay = "001BFF33330310000C02030D00010000005A0310000106E6030F000202"; // Standard bake 350 for upper oven for 1.5 minute;
+                //mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
+                    else if (CB_Product.Text.Equals("EMEA Cooking"))
+                mqttpay = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)          
             else if (CB_Product.Text.Equals("NAR Laundry"))
                 mqttpay = "0026FF333305050006010505001503050500180305050014000505000A010505000D000307000102"; // Standard wash cycle for Janus washer (wash cavity)
             else
                 mqttpay = CB_Product.Text;
+            //
+            //See if anything is skipped
+            if (CB_NoCyc.Checked)
+                parent.skipcyc = true;
+            if (CB_NoTTF.Checked)
+                parent.skipttf = true;
 
-            //mqttpay = mqttpay.Substring(16, mqttpay.Length - 32);
 
             try
             {
@@ -264,7 +285,7 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay);
                             break;
                         case 17:
-                            BuildList(cai, "RQM 186529 OTA [General] : Post Condition : After OTA is successful, OTAs are still possible (Appliances are able to receive and apply OTAs)", mqttpay);
+                            BuildList(cai, "RQM 186529 OTA [General] : Post Condition : After OTA is successful OTAs are still possible (Appliances are able to receive and apply OTAs)", mqttpay);
                             break;
                         case 18:
                             BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);

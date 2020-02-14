@@ -1,0 +1,79 @@
+. names of test cases (ota type) - default name is generic ota test -DONE
+
+. create seperate form for autogen - DONE
+
+. ability for multiple nodes (seperate) - DONE
+
+. change radio buttons to drop list - DONE
+	add Other selection that shows text box to dump a mqtt bake 350 in  - DONE
+	add check to make sure filled out correclty (all fields not empty)  - DONE
+
+4. add email features (results and csv's)
+
+5. switch to mac address being unique - verify what situation robin saw about changing ips (could be very small changes additional lookup etc.) - IN PROGRESS
+
+6. remote enable ?? - will need to figure this out
+   send email that remote enable is disabled and ota testing cannot continue
+   revisit auto subscription issue for indigo - DONE
+
+
+7. add button to paylist to insert a bake 350 - OUT OF SCOPE
+
+8. revist venom parent form clicking 'stop running' button click logic, must close all threads - DONE
+   lock all buttons and fields while running - DONE
+
+9. set ideal sizes for window form and datagrid columns - resize forms on load to ideal? - DONE
+
+10. check mqtt ota payload to make sure right format (update:update:) - BAD IDEA - DONE
+
+11. figure out why log is multi writing (using foreach so thread writes multiple times, set to only find one ip and write result) - DONE
+    may want to make output 'server' like in parallel prog (example on school github)
+
+12. figure out why status 0 return (immediate) did not get caught and then saw massive lag - DONE
+
+13. Update 2 hour timeout clock saw multiple calls of the method - DONE
+    add ability to log timeout failure if thread dies and move onto next
+    don't end thread (will be needed for dload/iap while loops in RunTask)
+    can call sig.Wait(X) with X timeout, can query timeout also??
+    after timeout is reached, check result in dgv (bad sync from wait-->set but result was good)
+
+14. fix 'loop'
+
+15. figure out a way to test for white screen and do node query
+    node query on new api (tbd but on bruno m2m github) 
+    model/serial number do NOT populate when white screen locked
+ 
+16. need extra detection of ota success from trace in case mqtt is down and status doesn't post otherwise, thread stuck
+    just need to add an extra OR for trace (what is unique to trace when final status is sent on mqtt out)when status is 
+    checked within process payload perhaps :1545 
+
+17. try_catch everything any thread could touch - DONE
+
+18. Add pop up window containing complete execution information - DONE
+    add average time of ota to log (track beginning - end) maybe do average time of each run
+
+19. fix endthread() or ideally, improve logic to never call it (tied to 13.) - DONE
+    could use sig.Wait(timeout) this will not kill thread and will release lock after timeout
+
+20. See why previous result is getting overwritten - DONE
+
+21. Add button to move test case in list up/down
+
+22. for traceconnect, move cai/cio outside of func call, then see if !cai.IsTrace and add cai as traceconn param (purge old responses req params) - DONE
+
+23. prevent non-csv files from being imported and check if first field is a valid ip address (index 0)
+    if not, don't import
+
+24. for long wait calls (1 min and over - see CONSTANTS) don't call wait cause it can't be interrupted 
+    (use a manualresetevent that EACH thread makes) - otherwise, all threads will wait on one lock at a time, turns into linear execution
+    can we make such logic for the th.Start in wait itself? - DONE
+
+25. all autogen test cases will need a way to check for pass fail
+    download ota, can get app input?
+    model/sn check
+    extra thread to check these values and update DGV? - turn into slave master?
+
+26. DGV use autosizecolumn after import or add on paylist window - DONE
+
+
+

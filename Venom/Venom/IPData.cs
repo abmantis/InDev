@@ -156,6 +156,26 @@ namespace VenomNamespace
             get { return _llist; }
             set { _llist = value; }
         }
+        private string _prod;
+        public string Prod
+        {
+            get { return _prod; }
+            set { _prod = value; }
+        }
+
+        private string _set;
+        public string Set
+        {
+            get { return _set; }
+            set { _set = value; }
+        }
+
+        private string _cncl;
+        public string Cncl
+        {
+            get { return _cncl; }
+            set { _cncl = value; }
+        }
         public IPData(string ip, string payload)
         {
             _ipaddress = ip;
@@ -179,6 +199,9 @@ namespace VenomNamespace
             _prov = "";
             _clm = "";
             _llist = null;
+            _prod = "";
+            _cncl = "";
+            _set = "";
         }
 
     }
