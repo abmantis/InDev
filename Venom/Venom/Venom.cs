@@ -22,7 +22,7 @@ namespace VenomNamespace
         public int TESTCASEMAX = 26; //Max test cases that can be automated
         public int NODECASEMAX = 23; //Max automated test case per node
         public static int ATTEMPTMAX = 3;
-        public static int MQTTMAX = 4;
+        public static int MQTTMAX = 7;
         public static int TTFCNT = 4;
         public static int CYCGO = 0;    //Cycles fire on autogen iteration i=0
         public static int TMAX = 90 * 60000; //OTA max thread time in ms before the thread needs to end (got stuck)
@@ -1680,6 +1680,15 @@ namespace VenomNamespace
                 cyc = true;
                 bool cwait = false;
                 ipd.LList = new LinkedList<string>();
+
+                if (clm == "0")
+                {
+                    //Send subscribe message before sending cycle
+                    byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
+                    SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, cai, ipd);
+                    Wait(2000);
+                }
+
                 if (CycExec(cai, ipd, ipbytes, "cyc", "down"))
                     cwait = true;
                 else
@@ -2870,7 +2879,7 @@ namespace VenomNamespace
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                     ConnectedApplianceInfo cai_n;
                     cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
-
+                    int itemp;
                     if (cai_n != null)
                     {
                         cai = cai_n;
@@ -2883,18 +2892,26 @@ namespace VenomNamespace
                         Wait(31000); //Give more time to reconnect and rescan list for new changes
 
                         StopTimer();
-
+                        int tempREMOVE = 0;
                         for (int j = 0; j < MQTTMAX; j++)
                         {
                             if (cancel_request)
                                 return;
-                            if (cai.IsMqttConnected && cai.IsTraceOn)   //Keep looping to recon
+                            for (int f = 0; f < 5; f++) //Poll MQTT and Trace 5 times to see if they are coonnected, waiting random intervals between
                             {
-                                if (cai.IPAddress != ipd.IPAddress)
-                                    ipd.IPAddress = cai.IPAddress;
-                                break;
-                            }
+                                itemp = rand.Next(200, 2001);   //Set random interval to wait in ms
+                                Wait(itemp);
+                                if (cai.IsMqttConnected && cai.IsTraceOn)   //Keep looping to recon
+                                {
+                                    if (cai.IPAddress != ipd.IPAddress)
+                                        ipd.IPAddress = cai.IPAddress;
+                                    break;
+                                }
+                                tempREMOVE++;
 
+                            }
+                            Console.WriteLine("IsConnectedZ called " + tempREMOVE + " times on connect attempt " + j + ".");
+                            tempREMOVE = 0;
                             MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
                             Wait(3000);
 
@@ -3157,7 +3174,7 @@ namespace VenomNamespace
                     Wait(2000);
 
                     WifiLocal.ConnectTo(cai);
-                    Wait(2000);
+                    Wait(5000);
 
                     WifiLocal.EnableTrace(cai, true);
                     Wait(2000);
