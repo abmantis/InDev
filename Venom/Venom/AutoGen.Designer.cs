@@ -42,6 +42,7 @@
             this.CB_Variant = new System.Windows.Forms.ComboBox();
             this.CB_NoCyc = new System.Windows.Forms.CheckBox();
             this.CB_NoTTF = new System.Windows.Forms.CheckBox();
+            this.CB_Save = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -166,11 +167,22 @@
             this.CB_NoTTF.Text = "Skip Tests to Fail";
             this.CB_NoTTF.UseVisualStyleBackColor = true;
             // 
+            // CB_Save
+            // 
+            this.CB_Save.AutoSize = true;
+            this.CB_Save.Location = new System.Drawing.Point(592, 124);
+            this.CB_Save.Name = "CB_Save";
+            this.CB_Save.Size = new System.Drawing.Size(112, 17);
+            this.CB_Save.TabIndex = 32;
+            this.CB_Save.Text = "Remember Values";
+            this.CB_Save.UseVisualStyleBackColor = true;
+            // 
             // AutoGen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(718, 160);
+            this.Controls.Add(this.CB_Save);
             this.Controls.Add(this.CB_NoTTF);
             this.Controls.Add(this.CB_NoCyc);
             this.Controls.Add(this.label4);
@@ -209,5 +221,6 @@
         private System.Windows.Forms.ComboBox CB_Variant;
         private System.Windows.Forms.CheckBox CB_NoCyc;
         private System.Windows.Forms.CheckBox CB_NoTTF;
+        private System.Windows.Forms.CheckBox CB_Save;
     }
 }

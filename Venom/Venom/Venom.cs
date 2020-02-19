@@ -29,6 +29,7 @@ namespace VenomNamespace
         public static int CYCWAIT = 1 * 30000; //Amount of time to let cycle run
         public static int TTFWAIT = 1 * 10000; //Amount of time to wait for TTF result
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
+        public static int LASTITER = 5;
         public const byte API_NUMBER = 0;
         
         //Global timer
@@ -1025,7 +1026,7 @@ namespace VenomNamespace
                         g_time.Stop();
                         g_time.Reset();
                         if (autogen)
-                            LabelSet(false);
+                            LabelSet(false);    //Can change all above to just ResetForm(true);
                         try
                         {
                             if (autogen)
@@ -1118,6 +1119,8 @@ namespace VenomNamespace
                     LBL_OTA.Visible = true;
                     LBL_UD.Visible = true;
                     LBL_VAR.Visible = true;
+                    LBL_Phase.Visible = true;
+                    LBL_i.Visible = true;
                 }
                 else
                 {
@@ -1125,6 +1128,10 @@ namespace VenomNamespace
                     LBL_OTA.Visible = false;
                     LBL_UD.Visible = false;
                     LBL_VAR.Visible = false;
+                    LBL_Phase.Visible = false;
+                    LBL_i.Visible = false;
+                    LBL_Time.Visible = false;
+                    LBL_Rmn.Visible = false;
                 }
             });
         }
@@ -1136,6 +1143,8 @@ namespace VenomNamespace
                     LBL_Auto.Text = text;
                 if (source == "ud")
                     LBL_UD.Text = text;
+                if (source == "phase")
+                    LBL_Phase.Text = text;
                 DGV_Data.Refresh();
             });
         }
@@ -1242,7 +1251,7 @@ namespace VenomNamespace
         {
             try
             {
-                if (clm == "0")
+                if (clm != "1")
                 {
                     //Send subscribe message before sending cycle
                     byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
@@ -1681,13 +1690,6 @@ namespace VenomNamespace
                 bool cwait = false;
                 ipd.LList = new LinkedList<string>();
 
-                if (clm == "0")
-                {
-                    //Send subscribe message before sending cycle
-                    byte[] paybytes = Encoding.ASCII.GetBytes("{\"sublist\":[1,144,147]}");
-                    SendMQTT(ipbytes, "iot-2/cmd/subscribe/fmt/json", paybytes, cai, ipd);
-                    Wait(2000);
-                }
 
                 if (CycExec(cai, ipd, ipbytes, "cyc", "down"))
                     cwait = true;
@@ -2344,9 +2346,11 @@ namespace VenomNamespace
                         case 17:    //OTAs are possible after OTA check
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
+                                
                                 if (iter > 4 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL")) //Check on last iteration
                                 {
-                                    if (autottl > 0)
+                                    //Console.WriteLine("iter is " + iter + " and autottl is " + autottl);
+                                    if (autottl > 1)
                                     {
                                         InvColor(i, "grn");
                                         ipd.Result = "PASS - " + autottl + " OTAs have been sent, downloaded, and applied in successive order.";
@@ -2617,7 +2621,17 @@ namespace VenomNamespace
                             ipd.Signal.Wait();
 
                             if (ipd.Result.Contains("timeout"))
+                            {
                                 SetText("status", "Force Close", ipd.TabIndex);
+                                for (int i = 0; i < NODECASEMAX; i++)
+                                {
+                                    if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
+                                        results.Rows[i]["OTA Result"] = ipd.Result;
+
+                                    DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Red;
+                                }
+                            }
+                                
                         }
 
                         timer.Stop();
@@ -2718,10 +2732,9 @@ namespace VenomNamespace
                     timer.Interval = TMAX;
                     timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
                     timer.Start();
-                    Invoke((MethodInvoker)delegate  //REMOVE
-                    {
-                        LBL_i.Text = i.ToString();
-                    });
+
+                    InvLabel("phase", i.ToString() + " of 5");
+
                     //Parse payload into byte array
                     byte[] paybytes;
                     if (ipd.Next == "UPGRADE")
@@ -2744,6 +2757,8 @@ namespace VenomNamespace
                     {
                         ipbytes[j] = byte.Parse(ipad[j]);
                     }
+
+                    Console.WriteLine("Iteration " + i + " starting to run.");
 
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
@@ -2865,21 +2880,31 @@ namespace VenomNamespace
                         autottl++;
                     }
 
+                    if (i == LASTITER)
+                    {
+                        ipd.Result = "";
+                        // Close all WifiBasic connections
+                        WifiLocal.CloseAll(true);
+                        Wait(2000);
+                        continue;
+                    }
+
                     InvLabel("ud", "PENDING");
 
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
-                    StartTimer(4 * RECONWAIT + 30000);  //Allow 5 minutes for product to reboot and reconnection attempts to end (happy path)
+                    StartTimer(7 * RECONWAIT + 30000);  //Allow x minutes for product to reboot and reconnection attempts to end (happy path)
 
                     Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
 
                     MqttRecon(cai, "con"); //Start process to reconnect MQTT
                     Wait(RECONWAIT-6000); //Give time to reconnect
 
+
                     //See if IP changed and we need a new CAI
                     System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
                     ConnectedApplianceInfo cai_n;
                     cai_n = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC);
-                    int itemp;
+
                     if (cai_n != null)
                     {
                         cai = cai_n;
@@ -2889,36 +2914,27 @@ namespace VenomNamespace
                         Wait(3000);
 
                         MqttRecon(cai, "con"); //Establish MQTT with new CAI
-                        Wait(31000); //Give more time to reconnect and rescan list for new changes
+                        Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
 
-                        StopTimer();
-                        int tempREMOVE = 0;
+                        //StopTimer();
                         for (int j = 0; j < MQTTMAX; j++)
                         {
                             if (cancel_request)
                                 return;
-                            for (int f = 0; f < 5; f++) //Poll MQTT and Trace 5 times to see if they are coonnected, waiting random intervals between
+                            if (cai.IsMqttConnected && cai.IsTraceOn)
                             {
-                                itemp = rand.Next(200, 2001);   //Set random interval to wait in ms
-                                Wait(itemp);
-                                if (cai.IsMqttConnected && cai.IsTraceOn)   //Keep looping to recon
-                                {
-                                    if (cai.IPAddress != ipd.IPAddress)
-                                        ipd.IPAddress = cai.IPAddress;
-                                    break;
-                                }
-                                tempREMOVE++;
-
+                                if (cai.IPAddress != ipd.IPAddress)
+                                    ipd.IPAddress = cai.IPAddress;
+                                break;
                             }
-                            Console.WriteLine("IsConnectedZ called " + tempREMOVE + " times on connect attempt " + j + ".");
-                            tempREMOVE = 0;
+
                             MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
                             Wait(3000);
 
                             MqttRecon(cai, "con");    //Reconnect MQTT
 
-                            StartTimer(31000);
-                            Wait(31000); //Give more time to reconnect and rescan list for new changes
+                            //StartTimer(RECONWAIT);
+                            Wait(RECONWAIT); //Give more time to reconnect and rescan list for new changes
                             StopTimer();
 
                             cai = cio_n.FirstOrDefault(x => x.MacAddress == ipd.MAC); //Search again to see if CAI has changed
@@ -3387,8 +3403,7 @@ namespace VenomNamespace
                 LabelSet(false);
                 LBL_Auto.Text = "PENDING";
                 LBL_UD.Text = "PENDING";
-                LBL_Rmn.Visible = false;
-                LBL_Time.Visible = false;
+                LBL_Phase.Text = "0 of 5";
                 LBL_Time.Text = "00:00:00";
                 StopTimer();
                 if (operation)

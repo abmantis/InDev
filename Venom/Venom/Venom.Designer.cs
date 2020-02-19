@@ -49,7 +49,7 @@ namespace VenomNamespace
             this.TMR_Tick = new System.Windows.Forms.Timer(this.components);
             this.LBL_Rmn = new System.Windows.Forms.Label();
             this.LBL_Time = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
+            this.LBL_Phase = new System.Windows.Forms.Label();
             this.LBL_i = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
@@ -224,24 +224,26 @@ namespace VenomNamespace
             this.LBL_Time.Text = "00:00:00";
             this.LBL_Time.Visible = false;
             // 
-            // label1
+            // LBL_Phase
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(578, 55);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(87, 13);
-            this.label1.TabIndex = 105;
-            this.label1.Text = "i value REMOVE";
+            this.LBL_Phase.AutoSize = true;
+            this.LBL_Phase.Location = new System.Drawing.Point(578, 55);
+            this.LBL_Phase.Name = "LBL_Phase";
+            this.LBL_Phase.Size = new System.Drawing.Size(77, 13);
+            this.LBL_Phase.TabIndex = 105;
+            this.LBL_Phase.Text = "Current Phase:";
+            this.LBL_Phase.Visible = false;
             // 
             // LBL_i
             // 
             this.LBL_i.AutoSize = true;
             this.LBL_i.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_i.Location = new System.Drawing.Point(671, 55);
+            this.LBL_i.Location = new System.Drawing.Point(655, 55);
             this.LBL_i.Name = "LBL_i";
-            this.LBL_i.Size = new System.Drawing.Size(15, 15);
+            this.LBL_i.Size = new System.Drawing.Size(36, 15);
             this.LBL_i.TabIndex = 106;
-            this.LBL_i.Text = "0";
+            this.LBL_i.Text = "0 of 5";
+            this.LBL_i.Visible = false;
             // 
             // Venom
             // 
@@ -249,7 +251,7 @@ namespace VenomNamespace
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(771, 368);
             this.Controls.Add(this.LBL_i);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.LBL_Phase);
             this.Controls.Add(this.LBL_Time);
             this.Controls.Add(this.LBL_Rmn);
             this.Controls.Add(this.LBL_UD);
@@ -293,7 +295,7 @@ namespace VenomNamespace
         private Timer TMR_Tick;
         private Label LBL_Rmn;
         private Label LBL_Time;
-        private Label label1;
+        private Label LBL_Phase;
         private Label LBL_i;
     }
 }

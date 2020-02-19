@@ -54,6 +54,7 @@ namespace VenomNamespace
             CB_Variant.ResetText();
             CB_NoCyc.Checked = false;
             CB_NoTTF.Checked = false;
+            CB_Save.Checked = false;
         }
         public void CB_Variant_SelectedValueChanged(object sender, EventArgs e)
         {
@@ -332,7 +333,8 @@ namespace VenomNamespace
         }
         private void AutoGen_Load(object sender, EventArgs e)
         {
-            //ResetForm(); //ENABLE WHEN UPLOADING TO STORE
+            if (!CB_Save.Checked)
+                ResetForm(); //ENABLE WHEN UPLOADING TO STORE
         }
 
     }
