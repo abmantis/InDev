@@ -66,7 +66,7 @@ namespace VenomNamespace
             this.DGV_Data.Location = new System.Drawing.Point(127, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(624, 254);
+            this.DGV_Data.Size = new System.Drawing.Size(620, 203);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
@@ -88,7 +88,7 @@ namespace VenomNamespace
             // 
             // BTN_Payload
             // 
-            this.BTN_Payload.Location = new System.Drawing.Point(21, 260);
+            this.BTN_Payload.Location = new System.Drawing.Point(21, 214);
             this.BTN_Payload.Name = "BTN_Payload";
             this.BTN_Payload.Size = new System.Drawing.Size(100, 35);
             this.BTN_Payload.TabIndex = 14;
@@ -98,12 +98,14 @@ namespace VenomNamespace
             // 
             // BTN_Remove
             // 
-            this.BTN_Remove.Location = new System.Drawing.Point(21, 231);
+            this.BTN_Remove.Enabled = false;
+            this.BTN_Remove.Location = new System.Drawing.Point(448, 293);
             this.BTN_Remove.Name = "BTN_Remove";
             this.BTN_Remove.Size = new System.Drawing.Size(100, 23);
             this.BTN_Remove.TabIndex = 85;
             this.BTN_Remove.Text = "Remove IP";
             this.BTN_Remove.UseVisualStyleBackColor = true;
+            this.BTN_Remove.Visible = false;
             this.BTN_Remove.Click += new System.EventHandler(this.BTN_Remove_Click);
             // 
             // LB_IPs
@@ -111,12 +113,12 @@ namespace VenomNamespace
             this.LB_IPs.FormattingEnabled = true;
             this.LB_IPs.Location = new System.Drawing.Point(21, 88);
             this.LB_IPs.Name = "LB_IPs";
-            this.LB_IPs.Size = new System.Drawing.Size(100, 134);
+            this.LB_IPs.Size = new System.Drawing.Size(100, 108);
             this.LB_IPs.TabIndex = 87;
             // 
             // BTN_Clr
             // 
-            this.BTN_Clr.Location = new System.Drawing.Point(21, 301);
+            this.BTN_Clr.Location = new System.Drawing.Point(21, 255);
             this.BTN_Clr.Name = "BTN_Clr";
             this.BTN_Clr.Size = new System.Drawing.Size(100, 36);
             this.BTN_Clr.TabIndex = 89;
@@ -126,7 +128,7 @@ namespace VenomNamespace
             // 
             // BTN_MakeList
             // 
-            this.BTN_MakeList.Location = new System.Drawing.Point(527, 348);
+            this.BTN_MakeList.Location = new System.Drawing.Point(554, 293);
             this.BTN_MakeList.Name = "BTN_MakeList";
             this.BTN_MakeList.Size = new System.Drawing.Size(97, 23);
             this.BTN_MakeList.TabIndex = 96;
@@ -137,7 +139,7 @@ namespace VenomNamespace
             // 
             // BTN_Import
             // 
-            this.BTN_Import.Location = new System.Drawing.Point(633, 348);
+            this.BTN_Import.Location = new System.Drawing.Point(660, 293);
             this.BTN_Import.Name = "BTN_Import";
             this.BTN_Import.Size = new System.Drawing.Size(92, 23);
             this.BTN_Import.TabIndex = 97;
@@ -170,7 +172,7 @@ namespace VenomNamespace
             // LBL_VAR
             // 
             this.LBL_VAR.AutoSize = true;
-            this.LBL_VAR.Location = new System.Drawing.Point(299, 55);
+            this.LBL_VAR.Location = new System.Drawing.Point(319, 55);
             this.LBL_VAR.Name = "LBL_VAR";
             this.LBL_VAR.Size = new System.Drawing.Size(34, 13);
             this.LBL_VAR.TabIndex = 100;
@@ -191,7 +193,7 @@ namespace VenomNamespace
             // 
             this.LBL_UD.AutoSize = true;
             this.LBL_UD.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_UD.Location = new System.Drawing.Point(339, 55);
+            this.LBL_UD.Location = new System.Drawing.Point(359, 55);
             this.LBL_UD.Name = "LBL_UD";
             this.LBL_UD.Size = new System.Drawing.Size(58, 15);
             this.LBL_UD.TabIndex = 102;
@@ -206,7 +208,7 @@ namespace VenomNamespace
             // LBL_Rmn
             // 
             this.LBL_Rmn.AutoSize = true;
-            this.LBL_Rmn.Location = new System.Drawing.Point(429, 55);
+            this.LBL_Rmn.Location = new System.Drawing.Point(463, 55);
             this.LBL_Rmn.Name = "LBL_Rmn";
             this.LBL_Rmn.Size = new System.Drawing.Size(60, 13);
             this.LBL_Rmn.TabIndex = 103;
@@ -217,7 +219,7 @@ namespace VenomNamespace
             // 
             this.LBL_Time.AutoSize = true;
             this.LBL_Time.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_Time.Location = new System.Drawing.Point(493, 55);
+            this.LBL_Time.Location = new System.Drawing.Point(527, 55);
             this.LBL_Time.Name = "LBL_Time";
             this.LBL_Time.Size = new System.Drawing.Size(51, 15);
             this.LBL_Time.TabIndex = 104;
@@ -227,7 +229,7 @@ namespace VenomNamespace
             // LBL_Phase
             // 
             this.LBL_Phase.AutoSize = true;
-            this.LBL_Phase.Location = new System.Drawing.Point(578, 55);
+            this.LBL_Phase.Location = new System.Drawing.Point(636, 55);
             this.LBL_Phase.Name = "LBL_Phase";
             this.LBL_Phase.Size = new System.Drawing.Size(77, 13);
             this.LBL_Phase.TabIndex = 105;
@@ -238,7 +240,7 @@ namespace VenomNamespace
             // 
             this.LBL_i.AutoSize = true;
             this.LBL_i.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_i.Location = new System.Drawing.Point(655, 55);
+            this.LBL_i.Location = new System.Drawing.Point(715, 55);
             this.LBL_i.Name = "LBL_i";
             this.LBL_i.Size = new System.Drawing.Size(36, 15);
             this.LBL_i.TabIndex = 106;
@@ -249,7 +251,7 @@ namespace VenomNamespace
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(771, 368);
+            this.ClientSize = new System.Drawing.Size(767, 309);
             this.Controls.Add(this.LBL_i);
             this.Controls.Add(this.LBL_Phase);
             this.Controls.Add(this.LBL_Time);

@@ -19,7 +19,7 @@ namespace VenomNamespace
     {
         public int AUTOINDEX = 0;
         public int AUTOCNT = 6; //Amount of times OTA payload combinations (upgrade --> downgrade) aka X OTAs will be sent total
-        public int TESTCASEMAX = 26; //Max test cases that can be automated
+        public int TESTCASEMAX = 26; //Max test cases that can be automated, can be changed if some skipped
         public int NODECASEMAX = 23; //Max automated test case per node
         public static int ATTEMPTMAX = 3;
         public static int MQTTMAX = 7;
@@ -448,17 +448,18 @@ namespace VenomNamespace
                     prov = split[1].Replace("]", "");
                     return;
                 }
-                              
+
+                if (sb.Equals("rssi"))
+                {
+                    rssi = raw;
+                    return;
+                }
 
                 if (!ttf && !cyc && source.Contains("mbeat"))
                 //if (sb.Contains("\"info\"") && !ttf)
                 {
                     //if (source.Contains("MQTT") && sb.Equals("rssi"))
-                    if (sb.Equals("rssi"))
-                    {
-                        rssi = raw;
-                        return;
-                    }
+                    
                     string[] parts = sb.Replace("[", "").Split(':');
                     parts[2].Replace("]", "");
                     string[] split = parts[2].Split(',');
@@ -1011,7 +1012,7 @@ namespace VenomNamespace
                     if (dialogResult == DialogResult.Yes)
                     {
                         BTN_Payload.Text = "Run Test List";
-                        BTN_Remove.Enabled = true;
+                        //BTN_Remove.Enabled = true;
                         BTN_Clr.Enabled = true;
                         TB_LogDir.Enabled = true;
                         LB_IPs.Enabled = true;
@@ -1144,7 +1145,7 @@ namespace VenomNamespace
                 if (source == "ud")
                     LBL_UD.Text = text;
                 if (source == "phase")
-                    LBL_Phase.Text = text;
+                    LBL_i.Text = text;
                 DGV_Data.Refresh();
             });
         }
@@ -1476,7 +1477,7 @@ namespace VenomNamespace
 
                 InvLabel("ud", "DOWNGRADE");    //Last TTF sends multiple downgrade payloads, update labels (logs blocked for download event during TTFs)
                 InvLabel("auto", "Downloading");
-                ipd.Result = "";    //Purge failed results from previous tests 
+                ipd.Result = "";    //Purge failed results from previous tests as we were forcing fail states
                 ttf = false;
             }
             catch
@@ -2222,7 +2223,11 @@ namespace VenomNamespace
                             {
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
                                 {
-
+                                    if (string.IsNullOrEmpty(ipd.Prov))
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Provision state could not be obtained";
+                                    }
                                     if (prov != ipd.Prov)
                                     {
                                         InvColor(i, "red");
@@ -2253,6 +2258,11 @@ namespace VenomNamespace
                             {
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
                                 {
+                                    if (string.IsNullOrEmpty(ipd.Clm))
+                                    {
+                                        InvColor(i, "red");
+                                        ipd.Result = "FAIL - Claim state could not be obtained";
+                                    }
                                     if (clm != ipd.Clm)
                                     {
                                         InvColor(i, "red");
@@ -2346,10 +2356,10 @@ namespace VenomNamespace
                         case 17:    //OTAs are possible after OTA check
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
-                                
+                                Console.WriteLine("iter is " + iter + " and autottl is " + autottl);
                                 if (iter > 4 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL")) //Check on last iteration
                                 {
-                                    //Console.WriteLine("iter is " + iter + " and autottl is " + autottl);
+                                    
                                     if (autottl > 1)
                                     {
                                         InvColor(i, "grn");
@@ -2759,7 +2769,7 @@ namespace VenomNamespace
                     }
 
                     Console.WriteLine("Iteration " + i + " starting to run.");
-
+                    
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
                     {
@@ -2844,6 +2854,9 @@ namespace VenomNamespace
                                            
                     }
 
+                    int tstart = (int)g_time.ElapsedMilliseconds;   //Start timers to detect version already installed
+                    int tstop;
+
                     // Set wait signal to be unlocked by thread after job is complete (result seen from log)
                     if (thread_waits)
                     {
@@ -2851,6 +2864,13 @@ namespace VenomNamespace
                            " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
                         ipd.Signal.Wait();
 
+                        tstop = (int)g_time.ElapsedMilliseconds;
+                        if (tstop-tstart < RECONWAIT && ipd.Result.Contains("PASS"))    //Less than a minute OTA with pass means version installed so not valid test
+                        {
+                            ipd.Result = "FAIL - Version sent already installed caused waiting thread to release too quickly."
+;                           SetText("status", "Force Close", ipd.TabIndex);
+                            SetText("auto", "Force Close", ipd.TabIndex);
+                        }
                         if (ipd.Result.Contains("timeout"))
                         {
                             SetText("status", "Force Close", ipd.TabIndex);
@@ -3392,7 +3412,7 @@ namespace VenomNamespace
             Invoke((MethodInvoker)delegate {
 
                 BTN_Payload.Text = "Run Test List";
-                BTN_Remove.Enabled = true;
+                //BTN_Remove.Enabled = true;
                 BTN_Clr.Enabled = true;
                 TB_LogDir.Enabled = true;
                 LB_IPs.Enabled = true;
@@ -3403,7 +3423,7 @@ namespace VenomNamespace
                 LabelSet(false);
                 LBL_Auto.Text = "PENDING";
                 LBL_UD.Text = "PENDING";
-                LBL_Phase.Text = "0 of 5";
+                LBL_i.Text = "0 of 5";
                 LBL_Time.Text = "00:00:00";
                 StopTimer();
                 if (operation)

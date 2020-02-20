@@ -43,6 +43,7 @@
             this.CB_NoCyc = new System.Windows.Forms.CheckBox();
             this.CB_NoTTF = new System.Windows.Forms.CheckBox();
             this.CB_Save = new System.Windows.Forms.CheckBox();
+            this.BTN_Clr = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -150,7 +151,7 @@
             // CB_NoCyc
             // 
             this.CB_NoCyc.AutoSize = true;
-            this.CB_NoCyc.Location = new System.Drawing.Point(132, 124);
+            this.CB_NoCyc.Location = new System.Drawing.Point(240, 126);
             this.CB_NoCyc.Name = "CB_NoCyc";
             this.CB_NoCyc.Size = new System.Drawing.Size(105, 17);
             this.CB_NoCyc.TabIndex = 30;
@@ -160,7 +161,7 @@
             // CB_NoTTF
             // 
             this.CB_NoTTF.AutoSize = true;
-            this.CB_NoTTF.Location = new System.Drawing.Point(243, 124);
+            this.CB_NoTTF.Location = new System.Drawing.Point(351, 126);
             this.CB_NoTTF.Name = "CB_NoTTF";
             this.CB_NoTTF.Size = new System.Drawing.Size(107, 17);
             this.CB_NoTTF.TabIndex = 31;
@@ -170,18 +171,29 @@
             // CB_Save
             // 
             this.CB_Save.AutoSize = true;
-            this.CB_Save.Location = new System.Drawing.Point(592, 124);
+            this.CB_Save.Location = new System.Drawing.Point(592, 126);
             this.CB_Save.Name = "CB_Save";
             this.CB_Save.Size = new System.Drawing.Size(112, 17);
             this.CB_Save.TabIndex = 32;
             this.CB_Save.Text = "Remember Values";
             this.CB_Save.UseVisualStyleBackColor = true;
             // 
+            // BTN_Clr
+            // 
+            this.BTN_Clr.Location = new System.Drawing.Point(132, 122);
+            this.BTN_Clr.Name = "BTN_Clr";
+            this.BTN_Clr.Size = new System.Drawing.Size(94, 23);
+            this.BTN_Clr.TabIndex = 33;
+            this.BTN_Clr.Text = "Clear";
+            this.BTN_Clr.UseVisualStyleBackColor = true;
+            this.BTN_Clr.Click += new System.EventHandler(this.BTN_Clr_Click);
+            // 
             // AutoGen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(718, 160);
+            this.Controls.Add(this.BTN_Clr);
             this.Controls.Add(this.CB_Save);
             this.Controls.Add(this.CB_NoTTF);
             this.Controls.Add(this.CB_NoCyc);
@@ -222,5 +234,6 @@
         private System.Windows.Forms.CheckBox CB_NoCyc;
         private System.Windows.Forms.CheckBox CB_NoTTF;
         private System.Windows.Forms.CheckBox CB_Save;
+        private System.Windows.Forms.Button BTN_Clr;
     }
 }

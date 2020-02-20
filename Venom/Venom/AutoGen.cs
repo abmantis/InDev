@@ -211,9 +211,9 @@ namespace VenomNamespace
             //Set MQTT payload to start standard bake 350 for whatever product or allow user to input one            
 
             if (CB_Product.Text.Equals("NAR Cooking"))
-                mqttpay = "001BFF33330310000C02030D00010000005A0310000106E6030F000202"; // Standard bake 350 for upper oven for 1.5 minute;
-                //mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
-                    else if (CB_Product.Text.Equals("EMEA Cooking"))
+                //mqttpay = "001BFF33330310000C02030D00010000005A0310000106E6030F000202"; // Standard bake 350 for upper oven for 1.5 minute;
+                mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
+            else if (CB_Product.Text.Equals("EMEA Cooking"))
                 mqttpay = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)          
             else if (CB_Product.Text.Equals("NAR Laundry"))
                 mqttpay = "0026FF333305050006010505001503050500180305050014000505000A010505000D000307000102"; // Standard wash cycle for Janus washer (wash cavity)
@@ -226,6 +226,8 @@ namespace VenomNamespace
             if (CB_NoTTF.Checked)
                 parent.skipttf = true;
 
+            int skipped = 0;
+            parent.TESTCASEMAX = 26;
 
             try
             {
@@ -241,15 +243,35 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay);
                             break;
                         case 2:
+                            if (CB_NoCyc.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 131835 OTA : Downloading : User Starts Cycle from App", mqttpay);
                             break;
                         case 3:
+                            if (CB_NoCyc.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 131837 OTA : Downloading : User Changes Settings from App", mqttpay);
                             break;
                         case 4:
+                            if (CB_NoCyc.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 131839 OTA : Programming & Progress Status : User Starts Cycle from App", mqttpay);
                             break;
                         case 5:
+                            if (CB_NoCyc.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 131841 OTA : Programming & Progress Status : User Changes Settings from App", mqttpay);
                             break;
                         case 6:
@@ -280,6 +302,11 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 186300 OTA [General] - Consumer is informed of the update status on app", mqttpay);
                             break;
                         case 15:
+                            if (CB_NoTTF.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay);
                             break;
                         case 16:
@@ -292,12 +319,27 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);
                             break;
                         case 19:
+                            if (CB_NoTTF.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay);
                             break;
                         case 20:
+                            if (CB_NoTTF.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay);
                             break;
                         case 21:
+                            if (CB_NoTTF.Checked)
+                            {
+                                skipped++;
+                                break;
+                            }
                             BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay); 
                             break;
                         case 22:
@@ -305,11 +347,11 @@ namespace VenomNamespace
                                 BuildList(cai, "RQM 131821 OTA : Generic : Forced Update : HMI Update", mqttpay);
                             break;
                         case 23:
-                            if (node == "WIFI")
+                            if (node == "WiFi")
                                 BuildList(cai, "RQM 132549 OTA : Generic : Forced Update : Wifi Radio", mqttpay);
                             break;
                         case 24:
-                            if (node == "EXP")
+                            if (node == "Expansion")
                                 BuildList(cai, "RQM 132550 OTA : Generic : Forced Update : All Updatable Modules Updated", mqttpay);
                             break;
                         case 25:
@@ -323,6 +365,7 @@ namespace VenomNamespace
                 }
                 parent.DGV_Data.Refresh();
                 parent.autogen = true;
+                parent.TESTCASEMAX -= skipped;
                 parent.BTN_MakeList.Enabled = false;
                 parent.BTN_Import.Enabled = false;
                 parent.SizeCol();
@@ -337,5 +380,9 @@ namespace VenomNamespace
                 ResetForm(); //ENABLE WHEN UPLOADING TO STORE
         }
 
+        private void BTN_Clr_Click(object sender, EventArgs e)
+        {
+            ResetForm();
+        }
     }
 }
