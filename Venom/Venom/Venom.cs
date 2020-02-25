@@ -57,6 +57,7 @@ namespace VenomNamespace
         public bool cancel_request = false;
         public bool skipcyc = false;
         public bool skipttf = false;
+        public bool skipgen = false;
 
         public string curfilename;
         public string ccuri = "";
@@ -251,7 +252,7 @@ namespace VenomNamespace
                             ProcessPayload("Programming", data.Source.ToString(), "MQTT Message", "NA");
                         }
 
-                    if (autogen && savedExtractedMessage.Contains("1020001"))
+                    if (autogen && !ttf && savedExtractedMessage.Contains("1020001"))
                     {
                         string pdata = savedExtractedMessage.Substring(savedExtractedMessage.Length - 2);
                         string un_data = pdata;
@@ -313,7 +314,7 @@ namespace VenomNamespace
                 }
             }
 
-            if (autogen && !tbeat && data.ContentAsString.StartsWith("web_reveal.c:main:1444"))
+            if (autogen && !tbeat && data.ContentAsString.StartsWith("web_reveal.c:main:14") && data.ContentAsString.Contains("linkstate"))
             {
                 tbeat = true;
                 lock (writeobj)
@@ -803,11 +804,16 @@ namespace VenomNamespace
                 {
                     if (source == "Final")
                     {
+                        int total;
+                        if (autogen)
+                            total = autottl;
+                        else
+                            total = iplist.Count();
                         string[] results = type.Split('\t');
                         using (StreamWriter sw = File.AppendText(curfilename))
                         {
                             sw.WriteLine(DateTime.Now.ToString("MM/dd/yy hh:mm:ss") + ", " +
-                                iplist.Count() + " OTA Update(s) ran with a total running time of " + results[0] +
+                                total + " OTA Update(s) ran with a total running time of " + results[0] +
                                 "  that resulted in an average run time per OTA Update of " + results[1]
                                 + ".");
                         }
@@ -1035,7 +1041,7 @@ namespace VenomNamespace
                                 StopTimer();
                                 InvLabel("auto", "PENDING");
                                 InvLabel("ud", "PENDING");
-                                FailLeft();
+                                FailLeft(0, false);
 
                                 if (iplist[AUTOINDEX].Signal != null)
                                     iplist[AUTOINDEX].Signal.Set();
@@ -1080,12 +1086,16 @@ namespace VenomNamespace
                                     thread.Interrupt();
                             }
 
+                            // Close all WifiBasic connections
+                            WifiLocal.CloseAll(true);
+                            Wait(2000);
+
                             return;
                         }
 
                         catch
                         {
-                            MessageBox.Show("Catastrophic thread closure error. Closing all threads and parent environment (Widebox).", "Error: Threads Failed to Close",
+                            MessageBox.Show("Catastrophic thread closure error. Closing all threads.", "Error: Threads Failed to Close",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                             //Environment.Exit(1);
                         }
@@ -1104,8 +1114,7 @@ namespace VenomNamespace
                     MessageBox.Show("No IP Address in IP List. Please populate list and try again.", "Error: No IP in List",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 else
-                    MessageBox.Show("DataGrid has become corrupted. Please Import again OR go to Test List Control and" +
-                        " Save your current DataGrid then Import.", "Error: DataGrid corrupted",
+                    MessageBox.Show("DataGrid is empty or has become corrupted. Please try again.", "Error: DataGrid corrupted",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -1161,6 +1170,56 @@ namespace VenomNamespace
                     DGV_Data.Rows[index].Cells[6].Style.BackColor = Color.Green;
                 if (type == "res")
                     DGV_Data.Rows[index].Cells[6].Style.BackColor = default(Color);
+
+                if (type =="remhi")
+                {
+                    for (int i = 0; i < index; i++)
+                    {
+                        DGV_Data.Rows[index].Cells[5].Style.ForeColor = Color.White;
+                        DGV_Data.Rows[index].Cells[5].Style.BackColor = Color.Black;
+                    }                    
+                }
+                if (type == "genhi")
+                {
+                    for (int i = 4; i < index; i++)
+                    {
+                        DGV_Data.Rows[index].Cells[5].Style.ForeColor = Color.White;
+                        DGV_Data.Rows[index].Cells[5].Style.BackColor = Color.Black;
+                    }
+                }
+                if (type == "ttfhi")
+                {
+                    for (int i = 19; i < index; i++)
+                    {
+                        DGV_Data.Rows[index].Cells[5].Style.ForeColor = Color.White;
+                        DGV_Data.Rows[index].Cells[5].Style.BackColor = Color.Black;
+                    }
+                }
+
+                if (type == "uremhi")
+                {
+                    for (int i = 0; i < index; i++)
+                    {
+                        DGV_Data.Rows[index].Cells[5].Style.ForeColor = default(Color);
+                        DGV_Data.Rows[index].Cells[5].Style.BackColor = default(Color);
+                    }
+                }
+                if (type == "ugenhi")
+                {
+                    for (int i = 4; i < index; i++)
+                    {
+                        DGV_Data.Rows[index].Cells[5].Style.ForeColor = default(Color);
+                        DGV_Data.Rows[index].Cells[5].Style.BackColor = default(Color);
+                    }
+                }
+                if (type == "uttfhi")
+                {
+                    for (int i = 19; i < index; i++)
+                    {
+                        DGV_Data.Rows[index].Cells[5].Style.ForeColor = default(Color);
+                        DGV_Data.Rows[index].Cells[5].Style.BackColor = default(Color);
+                    }
+                }
 
                 DGV_Data.Refresh();
             });
@@ -1437,13 +1496,13 @@ namespace VenomNamespace
 
                     if (multcnt == (stop - 1))  //Stop holds all OTA sent subtract 1 for the first valid, count extra only
                     {
-                        InvColor(15, "grn");
+                        InvColor(22, "grn");
                         ipd.Result = "PASS - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The product detected and did not download " + multcnt + " extra OTAs.";
                     }
 
                     else
                     {
-                        InvColor(15, "red");
+                        InvColor(22, "red");
                         ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The product detected and did not download " + multcnt + " extra OTAs.";
                     }
                     SetText("auto", "AutoGen Result", 15);  //Table index for this test case
@@ -1499,7 +1558,8 @@ namespace VenomNamespace
                 {
                     if (type.Equals("cyc"))
                     {
-                        int next = rand.Next(0, 2); //Random to start cycle or send payload first
+                        int next = 0;   //UNDO FOR RELEASE, ONLY KEEP FOR DEV
+                        //int next = rand.Next(0, 2); //Random to start cycle or send payload first
                         byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
                         if (next == 0)
                         {
@@ -1572,6 +1632,41 @@ namespace VenomNamespace
                                 return false;
                             }
                         }
+
+                        /*byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+
+                        RemoteOps(cai, ipd, ipbytes, "cyc");
+
+                        if (!cycstart)
+                        {
+                            ipd.LList.AddFirst("FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.");
+                            return false;
+                        }
+                        cycstart = false;
+
+                        if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
+                        {
+                            ipd.LList.AddFirst("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.");
+                            RemoteOps(cai, ipd, ipbytes, "cncl");
+                            return false;
+                        }
+
+                        StartTimer(CYCWAIT);
+                        Wait(CYCWAIT);
+                        StopTimer();
+
+                        RemoteOps(cai, ipd, ipbytes, "cncl");
+
+                        if (LBL_Auto.Text.Equals("Downloading"))
+                        {
+                            ipd.LList.AddFirst("PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.");
+                            return true;
+                        }
+                        else
+                        {
+                            ipd.LList.AddFirst("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however no download was started. Unable to verify test case outcome.");
+                            return false;
+                        }*/
                     }
                     if (type.Equals("set"))
                     {
@@ -1700,11 +1795,12 @@ namespace VenomNamespace
                     InvLabel("auto", "FAIL");
                     ipd.Result = "FAIL - Unable to send OTA payload to product using MQTT. Unable to validate OTA test case results.";
                 }
-                ipd.Result = "";    //Purge result from previous test
                 if (cwait)
                 {
+                    ipd.Result = "";    //Purge result from previous test
                     CycExec(cai, ipd, ipbytes, "set", "down");
                     Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
+
                     ipd.Result = "";
 
                     if (ipd.Signal != null)
@@ -1836,10 +1932,10 @@ namespace VenomNamespace
                     //Global values are pulled from trace and mqtt logs by CheckBeat()
                     switch (i)
                     {
-                        case 0:    //OTA upgrade in Idle
+                        case 4:    //OTA upgrade in Idle
                                    //No special initialization required
                             break;
-                        case 1:    //OTA downgrade in Idle
+                        case 5:    //OTA downgrade in Idle
                                    //No special initialization required
                             break;
                         case 6:    //Upgrade Model/Serial Number check
@@ -1872,7 +1968,7 @@ namespace VenomNamespace
                         case 14:    //Progress message check
                                     //No special initialization required
                             break;
-                        case 15:    //Payload sent multiple times
+                        case 15:    //Node OTA success check
                                     //No special initialization required
                             break;
                         case 16:    //RSSI check
@@ -1894,7 +1990,7 @@ namespace VenomNamespace
                         case 21:    //Invalid CRC check
                                     //No special initialization required
                             break;
-                        case 22:    //Node OTA success check
+                        case 22:    //Payload sent multiple times
                                     //No special initialization required
                             break;
 
@@ -1929,7 +2025,7 @@ namespace VenomNamespace
 
                     switch (i)
                     {
-                        case 0:    //Idle OTA upgrade success check
+                        case 4:    //Idle OTA upgrade success check
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && ipd.Next == "DOWNGRADE")
@@ -1951,7 +2047,7 @@ namespace VenomNamespace
                                 SetText("auto", "AutoGen Result", i);
                             break;
 
-                        case 1:    //Idle OTA downgrade success check
+                        case 5:    //Idle OTA downgrade success check
                             if (!LBL_Auto.Text.Contains("FAIL"))
 
                             {
@@ -2231,7 +2327,7 @@ namespace VenomNamespace
                                     if (prov != ipd.Prov)
                                     {
                                         InvColor(i, "red");
-                                        ipd.Result = "FAIL - Provision state was DIFFERENT than initial Provision= " + ipd.Prov + " and after OTA Provision= " + prov + ".";
+                                        ipd.Result = "FAIL - Provision state was DIFFERENT than initial Provision = " + ipd.Prov + " and after OTA Provision = " + prov + ".";
                                     }
                                     else
                                     {
@@ -2266,7 +2362,7 @@ namespace VenomNamespace
                                     if (clm != ipd.Clm)
                                     {
                                         InvColor(i, "red");
-                                        ipd.Result = "FAIL - Claim state was DIFFERENT than initial Claim= " + ipd.Clm + " and after OTA Claim= " + clm + ".";
+                                        ipd.Result = "FAIL - Claim state was DIFFERENT than initial Claim = " + ipd.Clm + " and after OTA Claim = " + clm + ".";
                                     }
                                     else
                                     {
@@ -2316,9 +2412,33 @@ namespace VenomNamespace
                                 SetText("auto", "AutoGen Result", i);
                             break;
 
+                        case 15:    //Node OTA success check
+                            if (!LBL_Auto.Text.Contains("FAIL"))
+                            {
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
+                                {
+                                    InvColor(i, "grn");
+                                    ipd.Result = "PASS - OTA for node " + ipd.Node + " was successfully installed.";
+                                    changed = true;
+                                }
+                            }
+
+                            else
+                            {
+                                InvColor(i, "red");
+                                ipd.Result = "FAIL - OTA for node " + ipd.Node + " was NOT successfully installed.";
+                                changed = true;
+                            }
+
+                            if (changed)
+                                SetText("auto", "AutoGen Result", i);
+                            break;
+
                         case 16:    //RSSI Strong Check
-                            if (!results.Rows[i]["OTA Result"].ToString().Contains("PASS"))   //Only check once (computer and product are in fixed locations)
-                            {                                
+                            if (!LBL_Auto.Text.Contains("FAIL"))   
+                            {
+                                if (results.Rows[i]["OTA Result"].ToString().Contains("PASS")) //Only check once (computer and product are in fixed locations)
+                                    break;
                                 if (string.IsNullOrEmpty(rssi))
                                 {
                                     InvColor(i, "red");
@@ -2327,7 +2447,7 @@ namespace VenomNamespace
                                     changed = true;
                                 }
                                 int val = Int32.Parse(rssi);
-                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val !=0 && val.CompareTo(-67) != -1) //Indicate -67 or better
+                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL") && val != 0 && val.CompareTo(-67) != -1) //Indicate -67 or better
                                 {
                                     InvColor(i, "grn");
                                     ipd.Result = "PASS - OTA was successfully installed with a STRONG RSSI value of " + rssi + " and with Status result of PASS."; //OTA result label did not have FAIL so it is PASS
@@ -2341,7 +2461,6 @@ namespace VenomNamespace
                                 }
 
                             }
-
                             else
                             {
                                 InvColor(i, "red");
@@ -2421,28 +2540,6 @@ namespace VenomNamespace
                                 SetText("auto", "AutoGen Result", i);
                             break;
 
-                        case 22:    //Node OTA success check
-                            if (!LBL_Auto.Text.Contains("FAIL"))
-                            {
-                                if (!results.Rows[i]["OTA Result"].ToString().Contains("FAIL"))
-                                {
-                                    InvColor(i, "grn");
-                                    ipd.Result = "PASS - OTA for node " + ipd.Node + " was successfully installed.";
-                                    changed = true;
-                                }
-                            }
-
-                            else
-                            {
-                                InvColor(i, "red");
-                                ipd.Result = "FAIL - OTA for node " + ipd.Node + " was NOT successfully installed.";
-                                changed = true;
-                            }
-
-                            if (changed)
-                                SetText("auto", "AutoGen Result", i);
-                            break;
-
                         default:
                             break;
                     }
@@ -2456,29 +2553,96 @@ namespace VenomNamespace
             }
 
         }
-        public void FailLeft()
+        public void PendCheck(int i, string num)
         {
             try
             {
-
-                for (int i = 0; i < NODECASEMAX; i++)
+                if (skipcyc && new[] { "131835", "131837", "131839", "131841" }.Contains(num))
                 {
-                    if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
+                    results.Rows[i]["OTA Result"] = "Skipped by User.";
+                    DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                    return;
+                }
+
+                if (skipttf && new[] { "131862", "132552", "131865", "131854" }.Contains(num))
+                {
+                    results.Rows[i]["OTA Result"] = "Skipped by User.";
+                    DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                    return;
+                }
+
+                if (skipgen && new[] { "131812", "154635", "131844", "131845", "131845", "131846", "131847"
+                                     , "131849", "131850", "131851", "131852", "186300", "186529", "131863"
+                                     ,"154667", "131821", "132549","132550", "131822",}.Contains(num))
+                {
+                    results.Rows[i]["OTA Result"] = "Skipped by User.";
+                    DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                    return;
+                }
+            }
+            catch {
+                MessageBox.Show("Catastrophic PendCheck error.", "Error",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+        }
+        public void FailLeft(int phase, bool type)
+        {
+            try
+            {
+                if (type)
+                {
+                    string i = phase.ToString();
+                    for (int j = 0; j < NODECASEMAX; j++)
                     {
-                        if (cancel_request)
+                        if (results.Rows[j]["OTA Result"].ToString().Contains("PENDING"))
                         {
-                            results.Rows[i]["OTA Result"] = "Cancelled by User.";
-                            DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                            if (new[] { "0", "1" }.Contains(i) && j < 4)    //Target range for remote test cases only
+                            {
+                                results.Rows[j]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
+                                DGV_Data.Rows[j].Cells[6].Style.BackColor = Color.Red;
+                            }
+                            else if (new[] { "4", "5" }.Contains(i) && j > 18)  //Target range for TTF cases only
+                            {
+                                results.Rows[j]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
+                                DGV_Data.Rows[j].Cells[6].Style.BackColor = Color.Red;
+                            }
+                            else     //Target range for generic test cases
+                            {
+                                results.Rows[j]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
+                                DGV_Data.Rows[j].Cells[6].Style.BackColor = Color.Red;
+                            }
                         }
-                        else
-                        {
-
-                            results.Rows[i]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
-                            DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Red;
-                        }
-
+                        
                     }
                 }
+                else
+                {
+                    for (int i = 0; i < NODECASEMAX; i++)
+                    {
+                        if (results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
+                        {
+                            if (cancel_request)
+                            {
+                                results.Rows[i]["OTA Result"] = "Cancelled by User.";
+                                DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                            }
+                            else if (skipcyc || skipttf)
+                            {
+                                string[] str = results.Rows[i]["Name"].ToString().Split(' ');
+                                PendCheck(i, str[1]);
+                            }
+                            else
+                            {
+                                results.Rows[i]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
+                                DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Red;
+                            }
+
+                        }
+                    }
+                }
+                
             }
             catch
             {
@@ -2509,27 +2673,10 @@ namespace VenomNamespace
                         break;
 
                     if (node.Value.Contains("PASS"))
-                    {
-                        if (i == 0)
-                            SetCyc(ipd, 2, "grn", node);
-                        if (i == 1)
-                            SetCyc(ipd, 3, "grn", node);
-                        if (i == 2)
-                            SetCyc(ipd, 4, "grn", node);
-                        if (i == 3)
-                            SetCyc(ipd, 5, "grn", node);
-                    }
-                    else
-                    {
-                        if (i == 0)
-                            SetCyc(ipd, 2, "red", node);
-                        if (i == 1)
-                            SetCyc(ipd, 3, "red", node);
-                        if (i == 2)
-                            SetCyc(ipd, 4, "red", node);
-                        if (i == 3)
-                            SetCyc(ipd, 5, "red", node);
-                    }
+                        SetCyc(ipd, i, "grn", node);
+                    
+                    else                    
+                        SetCyc(ipd, i, "red", node);
 
                     node = node.Next;
                 }
@@ -2554,6 +2701,53 @@ namespace VenomNamespace
             {
                 cycstart = false;
             }
+        }
+        public byte[] SetTestTarget(IPData ipd, int i)
+        {
+            byte[] paybytes;
+            if (ipd.Next == "UPGRADE")
+            {
+                InvLabel("ud", ipd.Next);
+                paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+                ipd.Next = "DOWNGRADE";
+            }
+            else
+            {
+                InvLabel("ud", ipd.Next);
+                paybytes = Encoding.ASCII.GetBytes(ipd.Down);
+                ipd.Next = "UPGRADE";
+            }
+
+
+            if (i == 0 || i == 1)
+            {
+                InvLabel("phase", "REMOTE");
+                InvColor(4, "remhi");
+            }
+            if (i == 2 || i == 3)
+            {
+                InvLabel("phase", "GENERIC");
+                InvColor(19, "genhi");
+            }
+            if (i == 4 || i == 5)
+            {
+                InvLabel("phase", "TTF");
+                InvColor(23, "ttfhi");
+            }
+
+            return paybytes;
+        }
+        public void ResetTarget(int i)
+        {
+
+            if (i == 0 || i == 1)
+                InvColor(4, "uremhi");
+
+            if (i == 2 || i == 3)
+                InvColor(19, "ugenhi");
+
+            if (i == 4 || i == 5)
+                InvColor(23, "uttfhi");
         }
         public void RunTask(ConnectedApplianceInfo cai, ManualResetEventSlim sig, string ipindex, Barrier barrier)
         {
@@ -2728,7 +2922,7 @@ namespace VenomNamespace
                     SetText("status", "Bad IP Address", ipd.TabIndex);
                     SetText("auto", "Bad IP Address", ipd.TabIndex);
                     Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
-                    FailLeft();
+                    FailLeft(0, false);
                     return; //THIS MAY BE A BAD IDEA
                 }
 
@@ -2743,22 +2937,8 @@ namespace VenomNamespace
                     timer.Elapsed += (sender, e) => ProgressThread(sender, e, ipd);
                     timer.Start();
 
-                    InvLabel("phase", i.ToString() + " of 5");
-
                     //Parse payload into byte array
-                    byte[] paybytes;
-                    if (ipd.Next == "UPGRADE")
-                    {
-                        InvLabel("ud", ipd.Next);
-                        paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
-                        ipd.Next = "DOWNGRADE";
-                    }
-                    else
-                    {
-                        InvLabel("ud", ipd.Next);
-                        paybytes = Encoding.ASCII.GetBytes(ipd.Down);
-                        ipd.Next = "UPGRADE";
-                    }
+                    byte[] paybytes = SetTestTarget(ipd, i);
 
                     //Prepare IP address for sending via MQTT
                     string[] ipad = ipd.IPAddress.Split('.');
@@ -2769,7 +2949,7 @@ namespace VenomNamespace
                     }
 
                     Console.WriteLine("Iteration " + i + " starting to run.");
-                    
+
                     // See if sending over MQTT or Revelation
                     if (ipd.Delivery.Equals("MQTT"))
                     {
@@ -2797,7 +2977,9 @@ namespace VenomNamespace
                                 }
                                 check = false;
                                 break;
-                            case (2):   //Non-TTF or cycle test cases using Upgrade
+                            case (2):   //Generic test cases using Upgrade
+                                if (skipgen)
+                                    continue;
                                 CheckBeat("init", cai, ipd);
                                 TestInit(ipbytes, cai, ipd, i);
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
@@ -2811,7 +2993,9 @@ namespace VenomNamespace
                                 }
                                 check = true;
                                 break;
-                            case (3):   //Non-TTF or cycle test cases using Downgrade
+                            case (3):   //Generic test cases using Downgrade
+                                if (skipgen)
+                                    continue;
                                 CheckBeat("init", cai, ipd);
                                 TestInit(ipbytes, cai, ipd, i);
                                 if (SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd))
@@ -2870,11 +3054,13 @@ namespace VenomNamespace
                             ipd.Result = "FAIL - Version sent already installed caused waiting thread to release too quickly."
 ;                           SetText("status", "Force Close", ipd.TabIndex);
                             SetText("auto", "Force Close", ipd.TabIndex);
+                            FailLeft(i, true);
                         }
                         if (ipd.Result.Contains("timeout"))
                         {
                             SetText("status", "Force Close", ipd.TabIndex);
                             SetText("auto", "Force Close", ipd.TabIndex);
+                            FailLeft(i, true);
                         }
                     }
 
@@ -2902,10 +3088,10 @@ namespace VenomNamespace
 
                     if (i == LASTITER)
                     {
+                        InvLabel("auto", "CHECK");
+                        CheckBeat("check", cai, ipd);
+                        TestCheck(cai, ipd, i);
                         ipd.Result = "";
-                        // Close all WifiBasic connections
-                        WifiLocal.CloseAll(true);
-                        Wait(2000);
                         continue;
                     }
 
@@ -3002,8 +3188,11 @@ namespace VenomNamespace
                     ipd.Result = "";
                     prog = 0;   //Reset progress message counter
                     InvLabel("auto", "PENDING");
+                    ResetTarget(i);
 
                 }
+
+                ResetTarget(5);
                 FinalResult();
             }
             catch
@@ -3463,7 +3652,7 @@ namespace VenomNamespace
                     if (autogen)
                     {
                         totalran = autottl;
-                        FailLeft();
+                        FailLeft(0, false);
                     }
                     else
                         totalran = iplist.Count();

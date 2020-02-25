@@ -40,10 +40,11 @@
             this.label15 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.CB_Variant = new System.Windows.Forms.ComboBox();
-            this.CB_NoCyc = new System.Windows.Forms.CheckBox();
-            this.CB_NoTTF = new System.Windows.Forms.CheckBox();
             this.CB_Save = new System.Windows.Forms.CheckBox();
             this.BTN_Clr = new System.Windows.Forms.Button();
+            this.CB_NoCyc = new System.Windows.Forms.CheckBox();
+            this.CB_NoTTF = new System.Windows.Forms.CheckBox();
+            this.CB_NoGen = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -56,7 +57,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(20, 15);
+            this.label1.Location = new System.Drawing.Point(20, 16);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(61, 13);
             this.label1.TabIndex = 1;
@@ -66,14 +67,14 @@
             // 
             this.TB_UP.Location = new System.Drawing.Point(132, 49);
             this.TB_UP.Name = "TB_UP";
-            this.TB_UP.Size = new System.Drawing.Size(572, 20);
+            this.TB_UP.Size = new System.Drawing.Size(609, 20);
             this.TB_UP.TabIndex = 7;
             // 
             // TB_DWN
             // 
             this.TB_DWN.Location = new System.Drawing.Point(132, 85);
             this.TB_DWN.Name = "TB_DWN";
-            this.TB_DWN.Size = new System.Drawing.Size(572, 20);
+            this.TB_DWN.Size = new System.Drawing.Size(609, 20);
             this.TB_DWN.TabIndex = 8;
             // 
             // label6
@@ -96,7 +97,7 @@
             // 
             // BTN_Gen
             // 
-            this.BTN_Gen.Location = new System.Drawing.Point(23, 122);
+            this.BTN_Gen.Location = new System.Drawing.Point(18, 122);
             this.BTN_Gen.Name = "BTN_Gen";
             this.BTN_Gen.Size = new System.Drawing.Size(94, 23);
             this.BTN_Gen.TabIndex = 24;
@@ -107,7 +108,7 @@
             // CB_Product
             // 
             this.CB_Product.FormattingEnabled = true;
-            this.CB_Product.Location = new System.Drawing.Point(422, 11);
+            this.CB_Product.Location = new System.Drawing.Point(470, 8);
             this.CB_Product.Name = "CB_Product";
             this.CB_Product.Size = new System.Drawing.Size(158, 21);
             this.CB_Product.TabIndex = 25;
@@ -116,7 +117,7 @@
             // TB_Other
             // 
             this.TB_Other.Enabled = false;
-            this.TB_Other.Location = new System.Drawing.Point(597, 12);
+            this.TB_Other.Location = new System.Drawing.Point(634, 8);
             this.TB_Other.Name = "TB_Other";
             this.TB_Other.Size = new System.Drawing.Size(107, 20);
             this.TB_Other.TabIndex = 26;
@@ -125,53 +126,33 @@
             // label15
             // 
             this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(372, 14);
+            this.label15.Location = new System.Drawing.Point(420, 12);
             this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(44, 13);
+            this.label15.Size = new System.Drawing.Size(47, 13);
             this.label15.TabIndex = 27;
-            this.label15.Text = "Product";
+            this.label15.Text = "Product:";
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(229, 14);
+            this.label4.Location = new System.Drawing.Point(291, 12);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(60, 13);
+            this.label4.Size = new System.Drawing.Size(36, 13);
             this.label4.TabIndex = 29;
-            this.label4.Text = "Node Type";
+            this.label4.Text = "Node:";
             // 
             // CB_Variant
             // 
             this.CB_Variant.FormattingEnabled = true;
-            this.CB_Variant.Location = new System.Drawing.Point(291, 11);
+            this.CB_Variant.Location = new System.Drawing.Point(327, 8);
             this.CB_Variant.Name = "CB_Variant";
             this.CB_Variant.Size = new System.Drawing.Size(75, 21);
             this.CB_Variant.TabIndex = 28;
             // 
-            // CB_NoCyc
-            // 
-            this.CB_NoCyc.AutoSize = true;
-            this.CB_NoCyc.Location = new System.Drawing.Point(240, 126);
-            this.CB_NoCyc.Name = "CB_NoCyc";
-            this.CB_NoCyc.Size = new System.Drawing.Size(105, 17);
-            this.CB_NoCyc.TabIndex = 30;
-            this.CB_NoCyc.Text = "Skip Cycle Tests";
-            this.CB_NoCyc.UseVisualStyleBackColor = true;
-            // 
-            // CB_NoTTF
-            // 
-            this.CB_NoTTF.AutoSize = true;
-            this.CB_NoTTF.Location = new System.Drawing.Point(351, 126);
-            this.CB_NoTTF.Name = "CB_NoTTF";
-            this.CB_NoTTF.Size = new System.Drawing.Size(107, 17);
-            this.CB_NoTTF.TabIndex = 31;
-            this.CB_NoTTF.Text = "Skip Tests to Fail";
-            this.CB_NoTTF.UseVisualStyleBackColor = true;
-            // 
             // CB_Save
             // 
             this.CB_Save.AutoSize = true;
-            this.CB_Save.Location = new System.Drawing.Point(592, 126);
+            this.CB_Save.Location = new System.Drawing.Point(629, 126);
             this.CB_Save.Name = "CB_Save";
             this.CB_Save.Size = new System.Drawing.Size(112, 17);
             this.CB_Save.TabIndex = 32;
@@ -188,15 +169,46 @@
             this.BTN_Clr.UseVisualStyleBackColor = true;
             this.BTN_Clr.Click += new System.EventHandler(this.BTN_Clr_Click);
             // 
+            // CB_NoCyc
+            // 
+            this.CB_NoCyc.AutoSize = true;
+            this.CB_NoCyc.Location = new System.Drawing.Point(290, 126);
+            this.CB_NoCyc.Name = "CB_NoCyc";
+            this.CB_NoCyc.Size = new System.Drawing.Size(87, 17);
+            this.CB_NoCyc.TabIndex = 34;
+            this.CB_NoCyc.Text = "Skip Remote";
+            this.CB_NoCyc.UseVisualStyleBackColor = true;
+            // 
+            // CB_NoTTF
+            // 
+            this.CB_NoTTF.AutoSize = true;
+            this.CB_NoTTF.Location = new System.Drawing.Point(382, 126);
+            this.CB_NoTTF.Name = "CB_NoTTF";
+            this.CB_NoTTF.Size = new System.Drawing.Size(70, 17);
+            this.CB_NoTTF.TabIndex = 35;
+            this.CB_NoTTF.Text = "Skip TTF";
+            this.CB_NoTTF.UseVisualStyleBackColor = true;
+            // 
+            // CB_NoGen
+            // 
+            this.CB_NoGen.AutoSize = true;
+            this.CB_NoGen.Location = new System.Drawing.Point(458, 126);
+            this.CB_NoGen.Name = "CB_NoGen";
+            this.CB_NoGen.Size = new System.Drawing.Size(87, 17);
+            this.CB_NoGen.TabIndex = 36;
+            this.CB_NoGen.Text = "Skip Generic";
+            this.CB_NoGen.UseVisualStyleBackColor = true;
+            // 
             // AutoGen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(718, 160);
-            this.Controls.Add(this.BTN_Clr);
-            this.Controls.Add(this.CB_Save);
+            this.ClientSize = new System.Drawing.Size(760, 158);
+            this.Controls.Add(this.CB_NoGen);
             this.Controls.Add(this.CB_NoTTF);
             this.Controls.Add(this.CB_NoCyc);
+            this.Controls.Add(this.BTN_Clr);
+            this.Controls.Add(this.CB_Save);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.CB_Variant);
             this.Controls.Add(this.label15);
@@ -231,9 +243,10 @@
         private System.Windows.Forms.Label label15;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.ComboBox CB_Variant;
-        private System.Windows.Forms.CheckBox CB_NoCyc;
-        private System.Windows.Forms.CheckBox CB_NoTTF;
         private System.Windows.Forms.CheckBox CB_Save;
         private System.Windows.Forms.Button BTN_Clr;
+        private System.Windows.Forms.CheckBox CB_NoCyc;
+        private System.Windows.Forms.CheckBox CB_NoTTF;
+        private System.Windows.Forms.CheckBox CB_NoGen;
     }
 }

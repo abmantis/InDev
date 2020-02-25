@@ -229,7 +229,7 @@ namespace VenomNamespace
             // LBL_Phase
             // 
             this.LBL_Phase.AutoSize = true;
-            this.LBL_Phase.Location = new System.Drawing.Point(636, 55);
+            this.LBL_Phase.Location = new System.Drawing.Point(602, 55);
             this.LBL_Phase.Name = "LBL_Phase";
             this.LBL_Phase.Size = new System.Drawing.Size(77, 13);
             this.LBL_Phase.TabIndex = 105;
@@ -240,11 +240,11 @@ namespace VenomNamespace
             // 
             this.LBL_i.AutoSize = true;
             this.LBL_i.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.LBL_i.Location = new System.Drawing.Point(715, 55);
+            this.LBL_i.Location = new System.Drawing.Point(693, 55);
             this.LBL_i.Name = "LBL_i";
-            this.LBL_i.Size = new System.Drawing.Size(36, 15);
+            this.LBL_i.Size = new System.Drawing.Size(58, 15);
             this.LBL_i.TabIndex = 106;
-            this.LBL_i.Text = "0 of 5";
+            this.LBL_i.Text = "PENDING";
             this.LBL_i.Visible = false;
             // 
             // Venom

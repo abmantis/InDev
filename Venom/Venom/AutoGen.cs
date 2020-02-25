@@ -54,6 +54,7 @@ namespace VenomNamespace
             CB_Variant.ResetText();
             CB_NoCyc.Checked = false;
             CB_NoTTF.Checked = false;
+            CB_NoGen.Checked = false;
             CB_Save.Checked = false;
         }
         public void CB_Variant_SelectedValueChanged(object sender, EventArgs e)
@@ -211,8 +212,8 @@ namespace VenomNamespace
             //Set MQTT payload to start standard bake 350 for whatever product or allow user to input one            
 
             if (CB_Product.Text.Equals("NAR Cooking"))
-                //mqttpay = "001BFF33330310000C02030D00010000005A0310000106E6030F000202"; // Standard bake 350 for upper oven for 1.5 minute;
-                mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
+                mqttpay = "001BFF33330310000C02030D00010000005A0310000106E6030F000202"; // Standard bake 350 for upper oven for 1.5 minute;
+                //mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
             else if (CB_Product.Text.Equals("EMEA Cooking"))
                 mqttpay = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)          
             else if (CB_Product.Text.Equals("NAR Laundry"))
@@ -225,9 +226,9 @@ namespace VenomNamespace
                 parent.skipcyc = true;
             if (CB_NoTTF.Checked)
                 parent.skipttf = true;
+            if (CB_NoGen.Checked)
+                parent.skipgen = true;
 
-            int skipped = 0;
-            parent.TESTCASEMAX = 26;
 
             try
             {
@@ -237,42 +238,22 @@ namespace VenomNamespace
                     switch (i)
                     {
                         case 0:
-                            BuildList(cai, "RQM 131812 OTA : Generic : Forced Update : Unit in Idle State", mqttpay);
+                            BuildList(cai, "RQM 131835 OTA : Remote : User Starts Cycle from App", mqttpay);
                             break;
                         case 1:
-                            BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay);
+                            BuildList(cai, "RQM 131837 OTA : Remote : User Changes Settings from App", mqttpay);
                             break;
                         case 2:
-                            if (CB_NoCyc.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 131835 OTA : Downloading : User Starts Cycle from App", mqttpay);
+                            BuildList(cai, "RQM 131839 OTA : Remote : User Starts Cycle from App", mqttpay);
                             break;
                         case 3:
-                            if (CB_NoCyc.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 131837 OTA : Downloading : User Changes Settings from App", mqttpay);
+                            BuildList(cai, "RQM 131841 OTA : Remote : User Changes Settings from App", mqttpay);
                             break;
                         case 4:
-                            if (CB_NoCyc.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 131839 OTA : Programming & Progress Status : User Starts Cycle from App", mqttpay);
+                            BuildList(cai, "RQM 131812 OTA : Generic : Forced Update : Unit in Idle State", mqttpay);
                             break;
                         case 5:
-                            if (CB_NoCyc.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 131841 OTA : Programming & Progress Status : User Changes Settings from App", mqttpay);
+                            BuildList(cai, "RQM 154635 OTA : Generic : Forced Update : Downgrade : Unit in Idle State", mqttpay);
                             break;
                         case 6:
                             BuildList(cai, "RQM 131844 OTA : Generic : Forced Update : Upgrade : Model/Serial Consistency Check", mqttpay);
@@ -293,70 +274,44 @@ namespace VenomNamespace
                             BuildList(cai, "RQM 131850 OTA : Generic : Forced Update : Downgrade : CCURI Check", mqttpay);
                             break;
                         case 12:
-                            BuildList(cai, "RQM 131851 OTA : Post Update : Check Provision State", mqttpay);
+                            BuildList(cai, "RQM 131851 OTA : Generic : Check Provision State", mqttpay);
                             break;
                         case 13:
-                            BuildList(cai, "RQM 131852 OTA : Post Update : Check Claimed Status", mqttpay);
+                            BuildList(cai, "RQM 131852 OTA : Generic : Check Claimed Status", mqttpay);
                             break;
                         case 14:
-                            BuildList(cai, "RQM 186300 OTA [General] - Consumer is informed of the update status on app", mqttpay);
+                            BuildList(cai, "RQM 186300 OTA : Generic : Consumer is informed of the update status on app", mqttpay);
                             break;
                         case 15:
-                            if (CB_NoTTF.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 131862 OTA : Generic : Forced OTA Payload Sent Multiple Times", mqttpay);
+                            if (node == "HMI")
+                                BuildList(cai, "RQM 131821 OTA : Generic : Forced Update : HMI Update", mqttpay);
+                            if (node == "WiFi")
+                                BuildList(cai, "RQM 132549 OTA : Generic : Forced Update : Wifi Radio", mqttpay);
+                            if (node == "Expansion")
+                                BuildList(cai, "RQM 132550 OTA : Generic : Forced Update : All Updatable Modules Updated", mqttpay);
+                            if (node == "ACU")
+                                BuildList(cai, "RQM 131822 OTA : Generic : Forced Update : ACU Update", mqttpay);
                             break;
                         case 16:
-                            BuildList(cai, "RQM 131863 OTA : Downloading : RSSI Strong Signal", mqttpay);
+                            BuildList(cai, "RQM 131863 OTA : Generic : RSSI Strong Signal", mqttpay);
                             break;
                         case 17:
-                            BuildList(cai, "RQM 186529 OTA [General] : Post Condition : After OTA is successful OTAs are still possible (Appliances are able to receive and apply OTAs)", mqttpay);
+                            BuildList(cai, "RQM 186529 OTA : Generic : Post Condition : After OTA is successful OTAs are still possible (Appliances are able to receive and apply OTAs)", mqttpay);
                             break;
                         case 18:
                             BuildList(cai, "RQM 154667 OTA : Generic : Forced Update : ISPPartNumber check", mqttpay);
                             break;
                         case 19:
-                            if (CB_NoTTF.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 132552 OTA : Downloading : Download Times Out After 5 Attempts", mqttpay);
+                            BuildList(cai, "RQM 132552 OTA : TTF : Download Times Out After 5 Attempts", mqttpay);
                             break;
                         case 20:
-                            if (CB_NoTTF.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 131865 OTA : Preconditions : Invalid URL", mqttpay);
+                            BuildList(cai, "RQM 131865 OTA : TTF : Invalid URL", mqttpay);
                             break;
                         case 21:
-                            if (CB_NoTTF.Checked)
-                            {
-                                skipped++;
-                                break;
-                            }
-                            BuildList(cai, "RQM 131854 OTA : Preconditions : Incorrect CRC", mqttpay); 
+                            BuildList(cai, "RQM 131854 OTA : TTF : Incorrect CRC", mqttpay); 
                             break;
                         case 22:
-                            if (node == "HMI")
-                                BuildList(cai, "RQM 131821 OTA : Generic : Forced Update : HMI Update", mqttpay);
-                            break;
-                        case 23:
-                            if (node == "WiFi")
-                                BuildList(cai, "RQM 132549 OTA : Generic : Forced Update : Wifi Radio", mqttpay);
-                            break;
-                        case 24:
-                            if (node == "Expansion")
-                                BuildList(cai, "RQM 132550 OTA : Generic : Forced Update : All Updatable Modules Updated", mqttpay);
-                            break;
-                        case 25:
-                            if (node == "ACU")
-                                BuildList(cai, "RQM 131822 OTA : Generic : Forced Update : ACU Update", mqttpay);
+                            BuildList(cai, "RQM 131862 OTA : TTF : Forced OTA Payload Sent Multiple Times", mqttpay);
                             break;
 
                         default:
@@ -365,7 +320,6 @@ namespace VenomNamespace
                 }
                 parent.DGV_Data.Refresh();
                 parent.autogen = true;
-                parent.TESTCASEMAX -= skipped;
                 parent.BTN_MakeList.Enabled = false;
                 parent.BTN_Import.Enabled = false;
                 parent.SizeCol();
