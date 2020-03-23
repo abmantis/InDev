@@ -233,6 +233,7 @@ namespace VenomNamespace
             try
             {
                 ClearAll();
+                parent.glblip = TB_IP.Text;
                 for (int i = 0; i < parent.TESTCASEMAX; i++)
                 {
                     switch (i)
@@ -332,6 +333,10 @@ namespace VenomNamespace
         {
             if (!CB_Save.Checked)
                 ResetForm(); //ENABLE WHEN UPLOADING TO STORE
+
+            CB_NoCyc.Checked = false;
+            CB_NoTTF.Checked = false;
+            CB_NoGen.Checked = false;
         }
 
         private void BTN_Clr_Click(object sender, EventArgs e)
