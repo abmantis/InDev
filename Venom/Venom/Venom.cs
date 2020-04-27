@@ -358,12 +358,11 @@ namespace VenomNamespace
                     {
                         gllist = new LinkedList<string>();
                         gllist.AddFirst(str[1]);
-                        Console.WriteLine("gllist is " );
+                        //Console.WriteLine("gllist is " );
                     }
                     else
                         gllist.AddLast(str[1]);
 
-                    printAllNode();
                 }
             }
         }
@@ -1223,6 +1222,11 @@ namespace VenomNamespace
                     LBL_UD.Text = text;
                 if (source == "phase")
                     LBL_i.Text = text;
+                if (source == "result")
+                {
+                    string[] tmp = text.Split(',');
+                    results.Rows[int.Parse(tmp[1])]["OTA Result"] = tmp[0];
+                }
                 DGV_Data.Refresh();
             });
         }
@@ -1372,9 +1376,10 @@ namespace VenomNamespace
             {
                 while (temp != null)
                 {
-                    Console.WriteLine(temp.Value);
+                    Console.Write(temp.Value + " ");
                     temp = temp.Next;
                 }
+                Console.Write('\n');
             }
         }
         private static void ProgressThread(object sender, ElapsedEventArgs e, IPData ipd)
@@ -1573,7 +1578,7 @@ namespace VenomNamespace
                     for (int j = 0; j < stop; j++)
                     {
                         intv = rand.Next(200, 2000);
-                        Wait(intv);
+                        Wait(5000 + intv);
                         SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
                         
                     }
@@ -1588,36 +1593,22 @@ namespace VenomNamespace
 
                     if (gllist != null)
                     {
-                        LinkedListNode<string> node = gllist.First;
-                        string val = gllist.First.Value;
-                        int match = -1;
+                        HashSet<string> uniqueNumbers = new HashSet<string>(gllist);
 
-                        for (int i = 0; i < 4; i++)
-                        {
-                            if (cancel_request)
-                                return;
-
-                            if (node == null)
-                                break;
-
-                            if (node.Value == val)    //On first iter correctly set back to 0, then add diffs
-                                match++;
-
-                            node = node.Next;
-                        }
+                        int match = uniqueNumbers.Count;
 
                         gllist.Clear();
-
-                        if (match >= 3)  //If multiple download messages seen in trace, very little match in 10s window (usually none)
+                        //CHANGE AMOUNT OF TIME , CAUGHT 10 OF 10 LAST TIME
+                        if (match <= 10)  //If multiple download messages seen in trace, unique numbers will be jumbled (4% , 0% , 5%, 1%, etc.)
                         {
                             InvColor(22, "grn");
-                            ipd.Result = "PASS - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that " + match + " download percent values matched within a 10s window (usually none will if mulitple downloads are running).";
+                            ipd.Result = "PASS - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that " + match + " unique download percent values were seen (this should be a small number).";
                         }
 
                         else
                         {
                             InvColor(22, "red");
-                            ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that " + match + " download percent values matched within a 10s window (usually none will if mulitple downloads are running)";
+                            ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that " + match + " unique download percent values were seen (this should be a small number).";
                         }
                     }
                     else
@@ -2725,21 +2716,25 @@ namespace VenomNamespace
             }
 
         }
-        public bool PendCheck(int i, string num)
+        public bool PendCheck(int i)
         {
             try
             {
+
+                string[] str = results.Rows[i]["Name"].ToString().Split(' ');
+                string num = str[1];
+
                 if (skipcyc && new[] { "131835", "131837", "131839", "131841" }.Contains(num))
                 {
-                    results.Rows[i]["OTA Result"] = "Skipped by User.";
-                    DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                    //results.Rows[i]["OTA Result"] = "Skipped by User.";
+                    //DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
                     return true;
                 }
 
                 if (skipttf && new[] { "131862", "132552", "131865", "131854" }.Contains(num))
                 {
-                    results.Rows[i]["OTA Result"] = "Skipped by User.";
-                    DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                    //results.Rows[i]["OTA Result"] = "Skipped by User.";
+                    //DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
                     return true;
                 }
 
@@ -2747,8 +2742,8 @@ namespace VenomNamespace
                                      , "131849", "131850", "131851", "131852", "186300", "186529", "131863"
                                      ,"154667", "131821", "132549","132550", "131822",}.Contains(num))
                 {
-                    results.Rows[i]["OTA Result"] = "Skipped by User.";
-                    DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+                    //results.Rows[i]["OTA Result"] = "Skipped by User.";
+                    //DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
                     return true;
                 }
                 return false;
@@ -2803,8 +2798,7 @@ namespace VenomNamespace
                             }
                             else if (skipcyc || skipttf || skipgen)
                             {
-                                string[] str = results.Rows[i]["Name"].ToString().Split(' ');
-                                if (!PendCheck(i, str[1]))
+                                if (!PendCheck(i))
                                 {
                                     results.Rows[i]["OTA Result"] = "FAIL - Test case failed to execute for unknown reason. Re-run AutoGenerated Suite or attempt manual retest.";
                                     DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Red;
@@ -3825,6 +3819,7 @@ namespace VenomNamespace
             cyc = false;
             skipcyc = false;
             skipttf = false;
+            skipgen = false;
             ccuri = "";
             vers = "";
             ispp = "";
@@ -3833,7 +3828,7 @@ namespace VenomNamespace
             rssi = "";
             glblip = "";
     }
-        private void ResetForm(bool operation)
+        public void ResetForm(bool operation)
         {
             Invoke((MethodInvoker)delegate {
 
