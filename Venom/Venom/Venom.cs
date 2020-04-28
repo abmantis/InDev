@@ -27,7 +27,7 @@ namespace VenomNamespace
         public static int CYCGO = 0;    //Cycles fire on autogen iteration i=0
         public static int TMAX = 90 * 60000; //OTA max thread time in ms before the thread needs to end (got stuck)
         public static int CYCWAIT = 1 * 30000; //Amount of time to let cycle run
-        public static int TTFWAIT = 1 * 10000; //Amount of time to wait for TTF result
+        public static int TTFWAIT = 1 * 30000; //Amount of time to wait for TTF result
         public static int RECONWAIT = 1 * 60000; //MQTT max reconnect timer
         public static int LASTITER = 5;
         public const byte API_NUMBER = 0;
@@ -1575,19 +1575,20 @@ namespace VenomNamespace
                     int stop = rand.Next(2, 5);
                     int intv;
                     byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
+
                     for (int j = 0; j < stop; j++)
                     {
                         intv = rand.Next(200, 2000);
-                        Wait(5000 + intv);
+                        Wait(8000 + intv);
                         SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
-                        
+
                     }
-                    StartTimer(TTFWAIT);
-                    Wait(TTFWAIT);
+                    StartTimer(20000);
+                    Wait(10000);
+                    multdload = true;
+                    Wait(10000);
                     StopTimer();
 
-                    multdload = true;
-                    Wait(20000);
                     multdload = false;
 
 
@@ -1595,20 +1596,27 @@ namespace VenomNamespace
                     {
                         HashSet<string> uniqueNumbers = new HashSet<string>(gllist);
 
-                        int match = uniqueNumbers.Count;
-
+                        //string output = string.Join(" ", uniqueNumbers);
+                        //int match = uniqueNumbers.Count;
+                        bool pass = false;
+                        var orderedByAsc = uniqueNumbers.OrderBy(d => d);
+                        if (uniqueNumbers.SequenceEqual(orderedByAsc))
+                            pass = true;
+                        
+                        //Console.WriteLine("unique numbers " + output + '\n' + "gllist ");
+                        //printAllNode();
                         gllist.Clear();
-                        //CHANGE AMOUNT OF TIME , CAUGHT 10 OF 10 LAST TIME
-                        if (match <= 10)  //If multiple download messages seen in trace, unique numbers will be jumbled (4% , 0% , 5%, 1%, etc.)
+
+                        if (pass)  //If multiple download messages seen in trace, unique numbers will be jumbled (4% , 0% , 5%, 1%, etc.)
                         {
                             InvColor(22, "grn");
-                            ipd.Result = "PASS - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that " + match + " unique download percent values were seen (this should be a small number).";
+                            ipd.Result = "PASS - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that download percentages were NOT jumbled (4% , 0% , 5%, 1%, etc.) indicating multiple downloads were NOT running.";
                         }
 
                         else
                         {
                             InvColor(22, "red");
-                            ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that " + match + " unique download percent values were seen (this should be a small number).";
+                            ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that download percentages WERE jumbled (4% , 0% , 5%, 1%, etc.) indicating multiple downloads WERE running.";
                         }
                     }
                     else
