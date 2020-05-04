@@ -1603,8 +1603,8 @@ namespace VenomNamespace
                         if (uniqueNumbers.SequenceEqual(orderedByAsc))
                             pass = true;
                         
-                        //Console.WriteLine("unique numbers " + output + '\n' + "gllist ");
-                        //printAllNode();
+                        Console.WriteLine("unique numbers " + orderedByAsc + '\n' + "gllist ");
+                        printAllNode();
                         gllist.Clear();
 
                         if (pass)  //If multiple download messages seen in trace, unique numbers will be jumbled (4% , 0% , 5%, 1%, etc.)
