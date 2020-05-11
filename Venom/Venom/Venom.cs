@@ -317,6 +317,7 @@ namespace VenomNamespace
                 }
             }
 
+            //tbeat check INDIGO
             if (autogen && !tbeat && data.ContentAsString.StartsWith("web_reveal.c:main:14") && data.ContentAsString.Contains("linkstate"))
             {
                 tbeat = true;
@@ -325,6 +326,7 @@ namespace VenomNamespace
                     ProcessPayload("tbeat", data.Source.ToString(), "Trace Message", data.ContentAsString);
                 }
             }
+
             if (autogen && ttf && data.ContentAsString.StartsWith("paimage__getFromUrl(252): WGET failed, retrying"))
                 retcnt++;
 
@@ -336,7 +338,8 @@ namespace VenomNamespace
                 vers = parts[0];
             }
 
-            if (autogen && !mbeat && data.ContentAsString.Contains("cc="))
+            //mbeat check  INDIGO
+            if (autogen && !mbeat && data.ContentAsString.Contains("cc="))      
             {
                 mbeat = true;
                 lock (writeobj)
@@ -1603,8 +1606,8 @@ namespace VenomNamespace
                         if (uniqueNumbers.SequenceEqual(orderedByAsc))
                             pass = true;
                         
-                        Console.WriteLine("unique numbers " + orderedByAsc + '\n' + "gllist ");
-                        printAllNode();
+                        //Console.WriteLine("unique numbers " + orderedByAsc + '\n' + "gllist ");
+                        //printAllNode();
                         gllist.Clear();
 
                         if (pass)  //If multiple download messages seen in trace, unique numbers will be jumbled (4% , 0% , 5%, 1%, etc.)
@@ -2033,7 +2036,7 @@ namespace VenomNamespace
             }
             catch
             {
-                MessageBox.Show("Catastrophic SetCyc error.", "Error",
+                MessageBox.Show("Catastrophic CheckBeat error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
