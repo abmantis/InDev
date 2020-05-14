@@ -31,6 +31,8 @@ namespace VenomNamespace
             CB_Product.Items.AddRange(new object[] {"NAR Cooking",
                                                     "EMEA Cooking", "NAR Laundry", "Other (any remote cycle)"});
             CB_Variant.Items.AddRange(new object[] {"HMI","ACU", "WiFi", "Expansion"});
+            CB_Type.Items.AddRange(new object[] { "Indigo", "Gen4" });
+
             // Generate tables
             sbind.DataSource = parent.results;
             parent.DGV_Data.AutoGenerateColumns = true;
@@ -87,6 +89,8 @@ namespace VenomNamespace
             bool check = true;
             string var = CB_Variant.Text;
             string prod = CB_Product.Text;
+            string wtype = CB_Type.Text;
+
             //Check to make sure we have both upgrade and downgrade bundles and set type if we do
             if (!TB_UP.Text.Equals(""))
             {
@@ -117,6 +121,10 @@ namespace VenomNamespace
 
             if (string.IsNullOrEmpty(prod))
                 check = false;
+
+            if (string.IsNullOrEmpty(wtype))
+                check = false;
+
             if (prod.Contains("Other"))
             {
                 if (TB_Other.Text.Equals("") || TB_Other.Text.Contains("Paste"))
@@ -167,6 +175,14 @@ namespace VenomNamespace
                     newip.Cncl = "0008FF33330307000101";
                     newip.Prod = "Laundry";
                 }
+
+
+                string wtype = CB_Type.Text;
+
+                if (wtype.Contains("Indigo"))
+                    parent.indigo = true;
+                else
+                    parent.tourma = true;
 
                 parent.iplist.Add(newip);
             }

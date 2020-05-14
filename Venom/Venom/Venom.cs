@@ -60,6 +60,8 @@ namespace VenomNamespace
         public bool skipttf = false;
         public bool skipgen = false;
         public bool multdload = false;
+        public bool indigo = false;
+        public bool tourma = false;
 
         public string curfilename;
         public string ccuri = "";
@@ -254,8 +256,8 @@ namespace VenomNamespace
                         {
                             ProcessPayload("Programming", data.Source.ToString(), "MQTT Message", "NA");
                         }
-
-                    if (autogen && !ttf && savedExtractedMessage.Contains("1020001"))
+                    //Indigo RSSI
+                    if (autogen && indigo && !ttf && savedExtractedMessage.Contains("1020001"))
                     {
                         string pdata = savedExtractedMessage.Substring(savedExtractedMessage.Length - 2);
                         string un_data = pdata;
@@ -318,7 +320,7 @@ namespace VenomNamespace
             }
 
             //tbeat check INDIGO
-            if (autogen && !tbeat && data.ContentAsString.StartsWith("web_reveal.c:main:14") && data.ContentAsString.Contains("linkstate"))
+            if (autogen && indigo && !tbeat && data.ContentAsString.StartsWith("web_reveal.c:main:14") && data.ContentAsString.Contains("linkstate"))
             {
                 tbeat = true;
                 lock (writeobj)
@@ -327,19 +329,8 @@ namespace VenomNamespace
                 }
             }
 
-            if (autogen && ttf && data.ContentAsString.StartsWith("paimage__getFromUrl(252): WGET failed, retrying"))
-                retcnt++;
-
-            if (autogen && !ttf && !cyc && data.ContentAsString.StartsWith("Writing applianceUpdateVersion="))
-            {
-                string[] str = data.ContentAsString.Split('=');
-                string[] parts = str[1].Split(' ');
-                Console.WriteLine("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers);
-                vers = parts[0];
-            }
-
             //mbeat check  INDIGO
-            if (autogen && !mbeat && data.ContentAsString.Contains("cc="))      
+            if (autogen && indigo && !mbeat && data.ContentAsString.Contains("cc="))
             {
                 mbeat = true;
                 lock (writeobj)
@@ -348,7 +339,11 @@ namespace VenomNamespace
                 }
             }
 
-            if (autogen && ttf && multdload)
+            //Indigo TTFs
+            if (autogen && indigo && ttf && data.ContentAsString.StartsWith("paimage__getFromUrl(252): WGET failed, retrying"))
+                retcnt++;
+
+            if (autogen && indigo && ttf && multdload)
             {
                 /*if (data.ContentAsString.StartsWith("WR entering handleFirmwareUpdateApi(), launching download thread if isp not running")
                     || data.ContentAsString.StartsWith("Unable to start OTA"))
@@ -367,6 +362,15 @@ namespace VenomNamespace
                         gllist.AddLast(str[1]);
 
                 }
+            }
+
+            //Indigo vers
+            if (autogen && indigo && !ttf && !cyc && data.ContentAsString.StartsWith("Writing applianceUpdateVersion="))
+            {
+                string[] str = data.ContentAsString.Split('=');
+                string[] parts = str[1].Split(' ');
+                Console.WriteLine("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers);
+                vers = parts[0];
             }
         }
         #region WIRED BUS Message functions
@@ -478,7 +482,7 @@ namespace VenomNamespace
         {
             try
             {
-                if (sb.Equals("tbeat"))
+                if (indigo && sb.Equals("tbeat"))
                 {
                     string[] parts = raw.Split(' ');
                     string[] split = parts[6].Split('[');
@@ -490,12 +494,12 @@ namespace VenomNamespace
                     return;
                 }
 
-                if (sb.Equals("rssi"))
+                if (indigo && sb.Equals("rssi"))
                 {
                     rssi = raw;
                     return;
                 }
-                if (sb.Equals("mbeat"))  //mbeat from Trace call
+                if (indigo && sb.Equals("mbeat"))  //mbeat from Trace call
                 {
                     //88:e7: 12:03:f5: 55,WOC75EC0HS,2345678,7 | 1.193.0,cat = 13,cc = API144_COOKING_V40,prov = 1,grp = 0,ls = 3
                     mbeat = true;
@@ -508,7 +512,7 @@ namespace VenomNamespace
                         iplist[AUTOINDEX].Signal.Set();
                     return;
                 }
-                if (source.Contains("mbeat"))   //mbeat from MQTT call
+                if (indigo && source.Contains("mbeat"))   //mbeat from MQTT call
                 {
                     mbeat = true;
                     string[] parts = sb.Replace("[", "").Split(':');
@@ -653,38 +657,6 @@ namespace VenomNamespace
 
                 }
 
-                /*if (sb.Contains("cc_SetKvpResult"))
-                {
-                    string end = raw.Substring(raw.Length - 1);
-
-                    // Lookup status reason byte pass or fail reason
-                    foreach (var member in iplist)
-                    {
-                        if (member.IPAddress.ToString().Equals(ip))
-                        {
-                            if (member.Result.Contains("PASS") || member.Result.Contains("FAIL"))
-                                continue;
-                            else
-                            {
-                                //if (member.WaitType.Equals(""))
-                                    //break;
-                                if (end == "0")
-                                {
-                                    iplist[member.TabIndex].Result = "FAIL KVP SET was ACCEPTED";
-                                    iplist[member.TabIndex].Typeres = "ACCEPTED";
-                                }
-                                else
-                                {
-                                    iplist[member.TabIndex].Result = "PASS KVP SET was REJECTED";
-                                    iplist[member.TabIndex].Typeres = "REJECTED";
-                                }
-                                SetText("status", source, member.TabIndex);
-                                break;
-                            }
-                        }
-                    }
-
-                }*/
             }
 
             catch
@@ -3831,6 +3803,8 @@ namespace VenomNamespace
             skipcyc = false;
             skipttf = false;
             skipgen = false;
+            indigo = false;
+            tourma = false;
             ccuri = "";
             vers = "";
             ispp = "";

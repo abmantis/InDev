@@ -45,13 +45,15 @@
             this.CB_NoCyc = new System.Windows.Forms.CheckBox();
             this.CB_NoTTF = new System.Windows.Forms.CheckBox();
             this.CB_NoGen = new System.Windows.Forms.CheckBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.CB_Type = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // TB_IP
             // 
             this.TB_IP.Location = new System.Drawing.Point(86, 12);
             this.TB_IP.Name = "TB_IP";
-            this.TB_IP.Size = new System.Drawing.Size(127, 20);
+            this.TB_IP.Size = new System.Drawing.Size(121, 20);
             this.TB_IP.TabIndex = 0;
             // 
             // label1
@@ -108,7 +110,7 @@
             // CB_Product
             // 
             this.CB_Product.FormattingEnabled = true;
-            this.CB_Product.Location = new System.Drawing.Point(470, 8);
+            this.CB_Product.Location = new System.Drawing.Point(497, 7);
             this.CB_Product.Name = "CB_Product";
             this.CB_Product.Size = new System.Drawing.Size(158, 21);
             this.CB_Product.TabIndex = 25;
@@ -117,16 +119,16 @@
             // TB_Other
             // 
             this.TB_Other.Enabled = false;
-            this.TB_Other.Location = new System.Drawing.Point(634, 8);
+            this.TB_Other.Location = new System.Drawing.Point(661, 8);
             this.TB_Other.Name = "TB_Other";
-            this.TB_Other.Size = new System.Drawing.Size(107, 20);
+            this.TB_Other.Size = new System.Drawing.Size(80, 20);
             this.TB_Other.TabIndex = 26;
             this.TB_Other.Visible = false;
             // 
             // label15
             // 
             this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(420, 12);
+            this.label15.Location = new System.Drawing.Point(447, 11);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(47, 13);
             this.label15.TabIndex = 27;
@@ -135,7 +137,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(291, 12);
+            this.label4.Location = new System.Drawing.Point(330, 12);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(36, 13);
             this.label4.TabIndex = 29;
@@ -144,7 +146,7 @@
             // CB_Variant
             // 
             this.CB_Variant.FormattingEnabled = true;
-            this.CB_Variant.Location = new System.Drawing.Point(327, 8);
+            this.CB_Variant.Location = new System.Drawing.Point(366, 8);
             this.CB_Variant.Name = "CB_Variant";
             this.CB_Variant.Size = new System.Drawing.Size(75, 21);
             this.CB_Variant.TabIndex = 28;
@@ -199,11 +201,30 @@
             this.CB_NoGen.Text = "Skip Generic";
             this.CB_NoGen.UseVisualStyleBackColor = true;
             // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(213, 13);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(34, 13);
+            this.label2.TabIndex = 38;
+            this.label2.Text = "Type:";
+            // 
+            // CB_Type
+            // 
+            this.CB_Type.FormattingEnabled = true;
+            this.CB_Type.Location = new System.Drawing.Point(249, 9);
+            this.CB_Type.Name = "CB_Type";
+            this.CB_Type.Size = new System.Drawing.Size(75, 21);
+            this.CB_Type.TabIndex = 37;
+            // 
             // AutoGen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(760, 158);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.CB_Type);
             this.Controls.Add(this.CB_NoGen);
             this.Controls.Add(this.CB_NoTTF);
             this.Controls.Add(this.CB_NoCyc);
@@ -248,5 +269,7 @@
         private System.Windows.Forms.CheckBox CB_NoCyc;
         private System.Windows.Forms.CheckBox CB_NoTTF;
         private System.Windows.Forms.CheckBox CB_NoGen;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.ComboBox CB_Type;
     }
 }
