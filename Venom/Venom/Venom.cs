@@ -317,8 +317,22 @@ namespace VenomNamespace
                 {
                     ProcessPayload(sb, data.Source.ToString(), "Trace Message", data.ContentAsString);
                 }
+                return;
             }
+            //tbeat check TOURMA
+            if (autogen && tourma && !tbeat && data.ContentAsString.StartsWith("hs:"))
+            {
+                string[] split = data.ContentAsString.Split(':');
+                if (IsAllNumeric(split[1].Replace(" ", "")))
+                {
+                    lock (writeobj)
+                    {
+                        ProcessPayload("tbeat", data.Source.ToString(), "Trace Message", data.ContentAsString);
+                    }
+                }
 
+                return;    
+            }
             //tbeat check INDIGO
             if (autogen && indigo && !tbeat && data.ContentAsString.StartsWith("web_reveal.c:main:14") && data.ContentAsString.Contains("linkstate"))
             {
@@ -327,6 +341,8 @@ namespace VenomNamespace
                 {
                     ProcessPayload("tbeat", data.Source.ToString(), "Trace Message", data.ContentAsString);
                 }
+
+                return;
             }
 
             //mbeat check  INDIGO
@@ -337,6 +353,8 @@ namespace VenomNamespace
                 {
                     ProcessPayload("mbeat", data.Source.ToString(), "Trace Message", data.ContentAsString);
                 }
+
+                return;
             }
 
             //Indigo TTFs
@@ -362,6 +380,8 @@ namespace VenomNamespace
                         gllist.AddLast(str[1]);
 
                 }
+
+                return;
             }
 
             //Indigo vers
@@ -371,6 +391,8 @@ namespace VenomNamespace
                 string[] parts = str[1].Split(' ');
                 Console.WriteLine("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers);
                 vers = parts[0];
+
+                return;
             }
         }
         #region WIRED BUS Message functions
@@ -482,15 +504,39 @@ namespace VenomNamespace
         {
             try
             {
-                if (indigo && sb.Equals("tbeat"))
+
+                if (sb.Equals("tbeat"))
                 {
                     string[] parts = raw.Split(' ');
                     string[] split = parts[6].Split('[');
+                    //Shared on both
                     ccuri = split[1].Replace("]", "");
-                    split = parts[4].Split('[');
-                    clm = split[1].Replace("]", "");
-                    split = parts[3].Split('[');
-                    prov = split[1].Replace("]", "");
+
+                    if (indigo) //specialized Indigo format
+                    {
+                        split = parts[4].Split('[');
+                        clm = split[1].Replace("]", "");
+                        split = parts[3].Split('[');
+                        prov = split[1].Replace("]", "");
+                    }
+                    else //specialized tourma format
+                    {                
+                        //hs:134448 claimed=2 linkstate=3 tt=1[0] commprot=0 appstate=13 cc_uri[API144_COOKING_V22] cat[10] wise[286250] rssi[-52] v[15.7.0] store[0/10] isp[0] wcars[0-00000000-5ed44fe9]
+                        split = parts[9].Split('[');
+                        rssi = split[1].Replace("]", "");
+                        split = parts[1].Split('=');
+                        clm = split[1];
+                        split = parts[2].Split('=');
+                        prov = split[1];
+                    }
+
+                    Console.WriteLine("ccuri is " + ccuri);
+                    Console.WriteLine("clm is " + clm);
+                    Console.WriteLine("prov is " + prov);
+                    if (tourma)
+                        Console.WriteLine("rssi is " + rssi);
+                    //Console.WriteLine("Entire string was " + sb);
+
                     return;
                 }
 
@@ -499,7 +545,8 @@ namespace VenomNamespace
                     rssi = raw;
                     return;
                 }
-                if (indigo && sb.Equals("mbeat"))  //mbeat from Trace call
+
+                if (indigo && sb.Equals("mbeat"))  //Indigo mbeat from Trace call
                 {
                     //88:e7: 12:03:f5: 55,WOC75EC0HS,2345678,7 | 1.193.0,cat = 13,cc = API144_COOKING_V40,prov = 1,grp = 0,ls = 3
                     mbeat = true;
@@ -507,13 +554,15 @@ namespace VenomNamespace
                     string[] split = parts[3].Split('|');
                     vers = split[0];
                     Console.WriteLine("vers is " + vers);
-                    Console.WriteLine("Entire string was " + raw);
+                    Console.WriteLine("Trace mbeat string was " + raw);
                     if (iplist[AUTOINDEX].Signal != null)
                         iplist[AUTOINDEX].Signal.Set();
                     return;
                 }
-                if (indigo && source.Contains("mbeat"))   //mbeat from MQTT call
+
+                if (source.Contains("mbeat"))   //mbeat from MQTT call
                 {
+                    
                     mbeat = true;
                     string[] parts = sb.Replace("[", "").Split(':');
                     parts[2].Replace("]", "");
@@ -524,7 +573,7 @@ namespace VenomNamespace
                     vers = vers.Replace("]", "");
                     Console.WriteLine("ispp is " + ispp);
                     Console.WriteLine("vers is " + vers);
-                    Console.WriteLine("Entire string was " + sb);
+                    //Console.WriteLine("Entire string was " + sb);
                     if (iplist[AUTOINDEX].Signal != null)
                         iplist[AUTOINDEX].Signal.Set();
 
@@ -1160,6 +1209,10 @@ namespace VenomNamespace
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+        }
+        public bool IsAllNumeric(string value)
+        {
+            return value.All(char.IsNumber);
         }
         public void LabelSet(bool type)
         {
