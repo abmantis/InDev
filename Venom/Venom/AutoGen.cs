@@ -144,6 +144,13 @@ namespace VenomNamespace
             newip.Down = dwn;
             newip.Result = "PENDING";
 
+
+            string wtype = CB_Type.Text;
+            if (wtype.Contains("Indigo"))
+                parent.indigo = true;
+            else
+                parent.tourma = true;
+
             string pay;
             if (name.Contains("Downgrade"))
             {
@@ -164,9 +171,19 @@ namespace VenomNamespace
 
                 if (CB_Product.Text.Contains("Cooking") || CB_Product.Text.Contains("Other"))
                 {
-                    newip.Set = "0008FF33330203000A";
                     newip.Prod = "Cooking";
-                    newip.Cncl = "0008FF3333030F000201";
+
+                    if (parent.indigo)
+                    {
+                        newip.Cncl = "0008FF3333030F000201";
+                        newip.Set = "0008FF33330203000A";
+                    }
+                    
+                    else
+                    {
+                        newip.Cncl = "0008FF33330408000201";
+                        newip.Set = "0008FF33330203000A0A";
+                    }
                 }
 
                 else
@@ -175,15 +192,7 @@ namespace VenomNamespace
                     newip.Cncl = "0008FF33330307000101";
                     newip.Prod = "Laundry";
                 }
-
-
-                string wtype = CB_Type.Text;
-
-                if (wtype.Contains("Indigo"))
-                    parent.indigo = true;
-                else
-                    parent.tourma = true;
-
+                               
                 parent.iplist.Add(newip);
             }
 
@@ -232,8 +241,8 @@ namespace VenomNamespace
 
             if (!CheckFill())
             {
-                DialogResult checkresult = MessageBox.Show("You have NOT provided both an upgrade and downgrade OTA version. " +
-                                                            "Please check each text box and retry again.", "Error: Missing an Upgrade or Downgrade Payload",
+                DialogResult checkresult = MessageBox.Show("You have NOT filled out all required text boxes and drop downs. " +
+                                                            "Please check each text box and drop down and retry again.", "Error: Form Improperly Filled Out",
                                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }

@@ -51,6 +51,7 @@ namespace VenomNamespace
             this.LBL_Time = new System.Windows.Forms.Label();
             this.LBL_Phase = new System.Windows.Forms.Label();
             this.LBL_i = new System.Windows.Forms.Label();
+            this.RTB_Diag = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.DGV_Data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -66,7 +67,7 @@ namespace VenomNamespace
             this.DGV_Data.Location = new System.Drawing.Point(127, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(620, 203);
+            this.DGV_Data.Size = new System.Drawing.Size(622, 203);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
@@ -247,11 +248,23 @@ namespace VenomNamespace
             this.LBL_i.Text = "PENDING";
             this.LBL_i.Visible = false;
             // 
+            // RTB_Diag
+            // 
+            this.RTB_Diag.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.RTB_Diag.Location = new System.Drawing.Point(127, 306);
+            this.RTB_Diag.Name = "RTB_Diag";
+            this.RTB_Diag.Size = new System.Drawing.Size(622, 96);
+            this.RTB_Diag.TabIndex = 107;
+            this.RTB_Diag.Text = "";
+            // 
             // Venom
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(767, 309);
+            this.ClientSize = new System.Drawing.Size(783, 423);
+            this.Controls.Add(this.RTB_Diag);
             this.Controls.Add(this.LBL_i);
             this.Controls.Add(this.LBL_Phase);
             this.Controls.Add(this.LBL_Time);
@@ -299,6 +312,7 @@ namespace VenomNamespace
         private Label LBL_Time;
         private Label LBL_Phase;
         private Label LBL_i;
+        private RichTextBox RTB_Diag;
     }
 }
 

@@ -319,12 +319,15 @@ namespace VenomNamespace
                 }
                 return;
             }
+
             //tbeat check TOURMA
             if (autogen && tourma && !tbeat && data.ContentAsString.StartsWith("hs:"))
             {
                 string[] split = data.ContentAsString.Split(':');
-                if (IsAllNumeric(split[1].Replace(" ", "")))
+                string[] parts = split[1].Split(' ');
+                if (IsAllNumeric(parts[0].Replace(" ", "")))
                 {
+                    tbeat = true;
                     lock (writeobj)
                     {
                         ProcessPayload("tbeat", data.Source.ToString(), "Trace Message", data.ContentAsString);
@@ -333,6 +336,7 @@ namespace VenomNamespace
 
                 return;    
             }
+
             //tbeat check INDIGO
             if (autogen && indigo && !tbeat && data.ContentAsString.StartsWith("web_reveal.c:main:14") && data.ContentAsString.Contains("linkstate"))
             {
@@ -390,6 +394,8 @@ namespace VenomNamespace
                 string[] str = data.ContentAsString.Split('=');
                 string[] parts = str[1].Split(' ');
                 Console.WriteLine("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers);
+                RTB_Diag.AppendText("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers + Environment.NewLine);
+
                 vers = parts[0];
 
                 return;
@@ -529,12 +535,19 @@ namespace VenomNamespace
                         split = parts[2].Split('=');
                         prov = split[1];
                     }
-
                     Console.WriteLine("ccuri is " + ccuri);
                     Console.WriteLine("clm is " + clm);
                     Console.WriteLine("prov is " + prov);
+
+
+                    RTB_Diag.AppendText("ccuri is " + ccuri + Environment.NewLine);
+                    RTB_Diag.AppendText("clm is " + clm + Environment.NewLine);
+                    RTB_Diag.AppendText("prov is " + prov + Environment.NewLine);
                     if (tourma)
+                    {
                         Console.WriteLine("rssi is " + rssi);
+                        RTB_Diag.AppendText("rssi is " + rssi + Environment.NewLine);
+                    }
                     //Console.WriteLine("Entire string was " + sb);
 
                     return;
@@ -555,6 +568,9 @@ namespace VenomNamespace
                     vers = split[0];
                     Console.WriteLine("vers is " + vers);
                     Console.WriteLine("Trace mbeat string was " + raw);
+                    RTB_Diag.AppendText("vers is " + vers + Environment.NewLine);
+                    RTB_Diag.AppendText("Trace mbeat string was " + raw + Environment.NewLine);
+
                     if (iplist[AUTOINDEX].Signal != null)
                         iplist[AUTOINDEX].Signal.Set();
                     return;
@@ -573,6 +589,9 @@ namespace VenomNamespace
                     vers = vers.Replace("]", "");
                     Console.WriteLine("ispp is " + ispp);
                     Console.WriteLine("vers is " + vers);
+                    RTB_Diag.AppendText("ispp is " + ispp + Environment.NewLine);
+                    RTB_Diag.AppendText("vers is " + vers + Environment.NewLine);
+
                     //Console.WriteLine("Entire string was " + sb);
                     if (iplist[AUTOINDEX].Signal != null)
                         iplist[AUTOINDEX].Signal.Set();
@@ -677,6 +696,8 @@ namespace VenomNamespace
                     {
                         string[] strpp = parts[1].Split('"');
                         Console.WriteLine("ispp was " + ispp + " and is now changed to " + strpp[1]);
+                        RTB_Diag.AppendText("ispp was " + ispp + " and is now changed to " + strpp[1] + Environment.NewLine);
+
                         ispp = strpp[1];
                         gstatus = statusval;
                     }
@@ -933,6 +954,8 @@ namespace VenomNamespace
                         if (DGV_Data.Rows[listindex].Cells[6].Value.ToString().Contains("PASS") && res[0].Contains("timeout"))
                         {
                             Console.WriteLine("timeout called " + ++timeout + " times.");
+                            RTB_Diag.AppendText("timeout called " + ++timeout + " times." + Environment.NewLine);
+
                             return;
                         }
                         string pay = iplist[AUTOINDEX].Payload;
@@ -999,6 +1022,7 @@ namespace VenomNamespace
                                     t.Seconds,
                                     t.Milliseconds);
                         Console.WriteLine("Thread release signal was sent at " + s_dur + ".");
+                        RTB_Diag.AppendText("Thread release signal was sent at " + s_dur + "." + Environment.NewLine);
                     }
                 }
                 catch
@@ -1059,6 +1083,7 @@ namespace VenomNamespace
                     BTN_Auto.Enabled = false;
                     BTN_LogDir.Enabled = false;
                     cancel_request = false;
+                    RTB_Diag.Clear();
                     g_time.Start();
                     if (autogen)
                         LabelSet(true);
@@ -1334,6 +1359,8 @@ namespace VenomNamespace
                 if (cancel_request)
                 {
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                    RTB_Diag.AppendText("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed." + Environment.NewLine);
+
                     return true;
                 }
 
@@ -1371,6 +1398,8 @@ namespace VenomNamespace
                     catch (ThreadInterruptedException)
                     {
                         Console.WriteLine("Thread with ID " + Thread.CurrentThread.ManagedThreadId + " interrupted.");
+                        RTB_Diag.AppendText("Thread with ID " + Thread.CurrentThread.ManagedThreadId + " interrupted." + Environment.NewLine);
+
                     }
                 });
                 waits.Add(thread);
@@ -1416,6 +1445,7 @@ namespace VenomNamespace
             {
                 Console.WriteLine("End Thread was called for signal " + ipd.Signal.WaitHandle.Handle +
                               " and thread was released (set).");
+
                 ipd.Result = "FAIL - Thread timeout maximum reached. Unknown issue caused thread to be stuck. Unable to validate OTA pass or fail.";
                 if (ipd.Signal != null)
                     ipd.Signal.Set();
@@ -1527,7 +1557,8 @@ namespace VenomNamespace
                 if (var == 0)   //Invalid CRC
                 {
                     string[] parts = ipd.Payload.Split(',');
-                    parts[0] = "{\"update\":{\"crc32\":\"00000000\",";  //Bad CRC for TTF (even if a valid crc it would mean ubd file is empty i.e. not valid anyway)
+                    //WHEN DONE SET BACK TO ALL ZEROS
+                    parts[0] = "{\"update\":{\"crc32\":\"12345678\",";  //Bad CRC for TTF (even if a valid crc it would mean ubd file is empty i.e. not valid anyway)
                     string pay = parts[0] + parts[1];
                     byte[] paybytes = Encoding.ASCII.GetBytes(pay);
 
@@ -1710,7 +1741,7 @@ namespace VenomNamespace
                         if (next == 0)
                         {
                             RemoteOps(cai, ipd, ipbytes, "cyc");
-
+                            RTB_Diag.AppendText("Remote cycle sent" + Environment.NewLine);
                             if (!cycstart)
                             {
                                 ipd.LList.AddFirst("FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.");
@@ -1731,6 +1762,7 @@ namespace VenomNamespace
 
                             RemoteOps(cai, ipd, ipbytes, "cncl");
 
+                            RTB_Diag.AppendText("Remote cancel sent" + Environment.NewLine);
                             if (LBL_Auto.Text.Equals("Downloading"))
                             {
                                 ipd.LList.AddFirst("PASS - The cycle was accepted with KVP ACK result of ACCEPTED-00. The OTA download continued as expected.");
@@ -1756,6 +1788,7 @@ namespace VenomNamespace
 
                             RemoteOps(cai, ipd, ipbytes, "cyc");
 
+                            RTB_Diag.AppendText("Remote cycle sent" + Environment.NewLine);
                             if (!cycstart)
                             {
                                 ipd.LList.AddFirst("FAIL - The cycle was rejected with KVP ACK result of REJECTED-02. Unable to verify test case outcome.");
@@ -1765,6 +1798,8 @@ namespace VenomNamespace
                             cycstart = false;
 
                             RemoteOps(cai, ipd, ipbytes, "cncl");
+
+                            RTB_Diag.AppendText("Remote cancel sent" + Environment.NewLine);
 
                             if (LBL_Auto.Text.Equals("Downloading"))
                             {
@@ -1947,6 +1982,7 @@ namespace VenomNamespace
                     CycExec(cai, ipd, ipbytes, "set", "down");
                     Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
 
+                    RTB_Diag.AppendText("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + "." + Environment.NewLine);
                     ipd.Result = "";
 
                     if (ipd.Signal != null)
@@ -2000,16 +2036,21 @@ namespace VenomNamespace
                     ipbytes[j] = byte.Parse(ipad[j]);
                 }
 
+                RTB_Diag.AppendText("CheckBeat started" + Environment.NewLine);
                 if (type == "init")
                 {
                     if (!mbeat)
                     {
+                        RTB_Diag.AppendText("if !mbeat started" + Environment.NewLine);
                         byte[] paybytes = Encoding.ASCII.GetBytes("{\"get\": 0 }");
                         SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
-                        Wait(2000);
+                        Wait(2000);                    
                     }
                     if (tbeat && mbeat)
+                    {
+                        RTB_Diag.AppendText("mbeat and tbeat both true" + Environment.NewLine);
                         return true;
+                    }
                     else
                     {
                         for (int j = 0; j < MQTTMAX; j++)
@@ -2070,7 +2111,7 @@ namespace VenomNamespace
         {
             try
             {
-
+                RTB_Diag.AppendText("TestInit started" + Environment.NewLine);
                 for (int i = 0; i < NODECASEMAX; i++)
                 {
                     if (cancel_request)
@@ -2087,11 +2128,13 @@ namespace VenomNamespace
                         case 6:    //Upgrade Model/Serial Number check
                             ipd.Model = cai.ModelNumber;
                             ipd.Serial = cai.SerialNumber;
+                            RTB_Diag.AppendText("Upgrade Model / Serial set" + Environment.NewLine);
                             break;
                         case 7:    //Upgrade Version Number check
                             int j;
                             string[] stru = cai.VersionNumber.Replace(" ", "").Split('|');
                             bool result = int.TryParse(stru[0], out j);
+                            RTB_Diag.AppendText("Version set" + Environment.NewLine);
                             if (result)
                                 ipd.Vers = stru[0];
                             else
@@ -2101,6 +2144,8 @@ namespace VenomNamespace
                                     int tstart = (int)g_time.ElapsedMilliseconds;   //Start timers to detect version already installed
                                     int tstop;
                                     Console.WriteLine("mbeat wait reached.");
+                                    RTB_Diag.AppendText("mbeat wait reached." + Environment.NewLine);
+
                                     StartTimer(300000); //Wait 5 minutes for heartbeat
                                     ipd.Signal.Wait();
                                     tstop = (int)g_time.ElapsedMilliseconds;
@@ -2112,13 +2157,15 @@ namespace VenomNamespace
                                                 t.Seconds,
                                                 t.Milliseconds);
                                     Console.WriteLine("mbeat wait unlocked at time " + s_dur + " and vers = " + vers + ".");
-    
-                                        StopTimer();
+                                    RTB_Diag.AppendText("mbeat wait unlocked at time " + s_dur + " and vers = " + vers + "." + Environment.NewLine);
+
+                                    StopTimer();
                                 }
                                 if (ipd.Signal != null)
                                     ipd.Signal.Reset();
 
                                 Console.WriteLine("ipd.Version was " + ipd.Vers + " and vers was " + vers + " before setting ipd.Version = vers");
+                                RTB_Diag.AppendText("ipd.Version was " + ipd.Vers + " and vers was " + vers + " before setting ipd.Version = vers" + Environment.NewLine);
                                 ipd.Vers = vers;
                             }
                                 
@@ -2126,21 +2173,26 @@ namespace VenomNamespace
                         case 8:    //Downgrade Model/Serial Number check
                             ipd.Model = cai.ModelNumber;
                             ipd.Serial = cai.SerialNumber;
+                            RTB_Diag.AppendText("Downgrade Model / Serial set" + Environment.NewLine);
                             break;
                         case 9:    //Downgrade Version Number check
                             //Set in case 7
                             break;
                         case 10:    //Upgrade CCURI check
                             ipd.CCURI = ccuri;
+                            RTB_Diag.AppendText("Upgrade CCURI set" + Environment.NewLine);
                             break;
                         case 11:    //Downgrade CCURI check
                             ipd.CCURI = ccuri;
+                            RTB_Diag.AppendText("Downgrade CCURI set" + Environment.NewLine);
                             break;
                         case 12:    //Provision check
                             ipd.Prov = prov;
+                            RTB_Diag.AppendText("Provision set" + Environment.NewLine);
                             break;
                         case 13:    //Claim check
                             ipd.Clm = clm;
+                            RTB_Diag.AppendText("Claim set" + Environment.NewLine);
                             break;
                         case 14:    //Progress message check
                                     //No special initialization required
@@ -2151,12 +2203,15 @@ namespace VenomNamespace
                         case 16:    //RSSI check
                             if (string.IsNullOrEmpty(rssi))
                                 RemoteOps(cai, ipd, ipbytes, "rssi");
+
+                            RTB_Diag.AppendText("RSSI set" + Environment.NewLine);
                             break;
                         case 17:    //OTAs possible after OTA
                                     //No special initialization required
                             break;
                         case 18:    //ApplianceUpdateVersion check
                             ipd.ISPP = ispp;
+                            RTB_Diag.AppendText("ISPP set" + Environment.NewLine);
                             break;
                         case 19:    //5 retry check
                                     //No special initialization required
@@ -2675,6 +2730,8 @@ namespace VenomNamespace
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
                                 Console.WriteLine("iter is " + iter + " and autottl is " + autottl);
+                                RTB_Diag.AppendText("iter is " + iter + " and autottl is " + autottl + Environment.NewLine);
+
                                 if (iter > 4 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL")) //Check on last iteration
                                 {
                                     
@@ -3123,14 +3180,15 @@ namespace VenomNamespace
         public void RunAuto(ManualResetEventSlim sig, string ipindex)
         {
             try
-            {   
+            {
                 //Not currently used 
                 //uPLibrary.Networking.M2Mqtt.Utility.Trace.TraceLevel = uPLibrary.Networking.M2Mqtt.Utility.TraceLevel.Verbose;
                 //uPLibrary.Networking.M2Mqtt.Utility.Trace.TraceListener = WriteDebugTrace;
-
+                
                 if (cancel_request)
                 {
                     Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+
                     return;
                 }
 
@@ -3185,6 +3243,7 @@ namespace VenomNamespace
                     }
 
                     Console.WriteLine("Iteration " + i + " starting to run.");
+                    RTB_Diag.AppendText("Iteration " + i + " starting to run." + Environment.NewLine);
 
                     // Switch statement for each test group type (REMOTE, GENERIC, TTF)
                     if (ipd.Delivery.Equals("MQTT"))
@@ -3306,6 +3365,9 @@ namespace VenomNamespace
                     {
                         Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
                            " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+                        RTB_Diag.AppendText("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
+                           " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + "." + Environment.NewLine);
+
                         ipd.Signal.Wait();
 
                         tstop = (int)g_time.ElapsedMilliseconds;
