@@ -217,6 +217,15 @@ namespace VenomNamespace
                 parent.DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
             }
 
+            if (parent.tourma && i == 0)
+            {
+                newip.Result = "Test case skipped when using Gen4.";
+
+                parent.results.Rows[i]["OTA Result"] = newip.Result;
+
+                parent.DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+            }
+
         }
         private void BTN_Gen_Click(object sender, EventArgs e)
         {
