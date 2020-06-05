@@ -67,7 +67,7 @@ namespace VenomNamespace
             this.DGV_Data.Location = new System.Drawing.Point(127, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(622, 203);
+            this.DGV_Data.Size = new System.Drawing.Size(624, 206);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
@@ -100,7 +100,7 @@ namespace VenomNamespace
             // BTN_Remove
             // 
             this.BTN_Remove.Enabled = false;
-            this.BTN_Remove.Location = new System.Drawing.Point(448, 293);
+            this.BTN_Remove.Location = new System.Drawing.Point(21, 297);
             this.BTN_Remove.Name = "BTN_Remove";
             this.BTN_Remove.Size = new System.Drawing.Size(100, 23);
             this.BTN_Remove.TabIndex = 85;
@@ -129,7 +129,7 @@ namespace VenomNamespace
             // 
             // BTN_MakeList
             // 
-            this.BTN_MakeList.Location = new System.Drawing.Point(554, 293);
+            this.BTN_MakeList.Location = new System.Drawing.Point(24, 326);
             this.BTN_MakeList.Name = "BTN_MakeList";
             this.BTN_MakeList.Size = new System.Drawing.Size(97, 23);
             this.BTN_MakeList.TabIndex = 96;
@@ -140,7 +140,7 @@ namespace VenomNamespace
             // 
             // BTN_Import
             // 
-            this.BTN_Import.Location = new System.Drawing.Point(660, 293);
+            this.BTN_Import.Location = new System.Drawing.Point(24, 355);
             this.BTN_Import.Name = "BTN_Import";
             this.BTN_Import.Size = new System.Drawing.Size(92, 23);
             this.BTN_Import.TabIndex = 97;
@@ -253,9 +253,9 @@ namespace VenomNamespace
             this.RTB_Diag.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.RTB_Diag.Location = new System.Drawing.Point(127, 306);
+            this.RTB_Diag.Location = new System.Drawing.Point(127, 313);
             this.RTB_Diag.Name = "RTB_Diag";
-            this.RTB_Diag.Size = new System.Drawing.Size(622, 96);
+            this.RTB_Diag.Size = new System.Drawing.Size(624, 135);
             this.RTB_Diag.TabIndex = 107;
             this.RTB_Diag.Text = "";
             // 
@@ -263,7 +263,7 @@ namespace VenomNamespace
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(783, 423);
+            this.ClientSize = new System.Drawing.Size(781, 460);
             this.Controls.Add(this.RTB_Diag);
             this.Controls.Add(this.LBL_i);
             this.Controls.Add(this.LBL_Phase);

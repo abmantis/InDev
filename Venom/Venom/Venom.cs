@@ -774,10 +774,8 @@ namespace VenomNamespace
 
             catch
             {
-                /*MessageBox.Show("source was " + source + " raw was " + raw + " sb was " + sb, "Error",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Error);*/
-                MessageBox.Show("Catastrophic ProcessPayload error.", "Error",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -1732,7 +1730,7 @@ namespace VenomNamespace
                         else
                         {
                             InvColor(22, "red");
-                            ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that the isp byte was set to 1 (indicating OTA in progress) and " + dlcnt + " OTA began running.";
+                            ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that the isp byte was set to 1 (indicating OTA in progress) and " + dlcnt + " OTA(s) began running.";
                         }
                         SetText("auto", "AutoGen Result", 22);  //Table index for this test case
                         return;
@@ -4035,6 +4033,7 @@ namespace VenomNamespace
             retcnt = 0;
             prog = 0;
             timeleft = 0;
+            dlcnt = 0;
             tbeat = false;
             mbeat = false;
             ttf = false;
@@ -4045,6 +4044,7 @@ namespace VenomNamespace
             skipgen = false;
             indigo = false;
             tourma = false;
+            tfound = false;
             ccuri = "";
             vers = "";
             ispp = "";
