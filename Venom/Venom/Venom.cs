@@ -345,7 +345,7 @@ namespace VenomNamespace
                     if (!ttf)
                         tbeat = true;
 
-                    RTB_Diag.AppendText("From tbeat entering ProcessPayload with sb as " + data.ContentAsString + Environment.NewLine);
+                    //RTB_Diag.AppendText("tbeat calling ProcessPayload with sb= " + data.ContentAsString + Environment.NewLine);
                     lock (writeobj)
                     {
                         ProcessPayload("tbeat", data.Source.ToString(), "Trace Message", data.ContentAsString);
@@ -384,7 +384,12 @@ namespace VenomNamespace
                 retcnt++;
 
             if (autogen && tourma && ttf && multdload && data.ContentAsString.StartsWith("runFirmwareUpdatePA"))
+            {
+                RTB_Diag.AppendText("dlcnt increment from " + dlcnt + " to dlcnt++" + Environment.NewLine); RTB_Diag.ScrollToCaret();
                 dlcnt++;
+                multdload = false;
+
+            }
 
             //Indigo TTFs
             if (autogen && indigo && ttf && data.ContentAsString.StartsWith("paimage__getFromUrl(252): WGET failed, retrying"))
@@ -540,8 +545,10 @@ namespace VenomNamespace
                 {
                     string[] parts = raw.Split(' ');
                     string[] split = parts[6].Split('[');
+
                     //Shared on both
-                    ccuri = split[1].Replace("]", "");
+                    if (!ttf)
+                        ccuri = split[1].Replace("]", "");
 
                     if (indigo) //specialized Indigo format
                     {
@@ -566,13 +573,26 @@ namespace VenomNamespace
                         {
                             split = parts[12].Split('[');
                             string val = split[1].Replace("]", "");
-                            RTB_Diag.AppendText("Found isp= to " + val + Environment.NewLine);
+                            RTB_Diag.AppendText("Found isp= " + val + Environment.NewLine);
                             if (val == "1")
                             {
                                 RTB_Diag.AppendText("Found isp=1 in tbeat during TTF" + Environment.NewLine);
                                 tfound = true;
                                 tbeat = true;
                             }
+
+                            /*if (iplist[AUTOINDEX].Signal != null)
+                                iplist[AUTOINDEX].Signal.Set();
+
+                            long duration = g_time.ElapsedMilliseconds;
+                            TimeSpan t = TimeSpan.FromMilliseconds(duration);
+                            string s_dur = string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
+                                        t.Hours,
+                                        t.Minutes,
+                                        t.Seconds,
+                                        t.Milliseconds);
+                            Console.WriteLine("Thread release signal was sent at " + s_dur + ".");
+                            RTB_Diag.AppendText("Thread release signal was sent at " + s_dur + "." + Environment.NewLine); RTB_Diag.ScrollToCaret();*/
                             return;
                         }
                     }
@@ -1701,19 +1721,41 @@ namespace VenomNamespace
 
                     for (int j = 0; j < stop; j++)
                     {
-                        if (tourma && !multdload)
+                        if (tourma && !multdload && dlcnt == 0)
+                        {
+                            RTB_Diag.AppendText("multdload unlocked" + Environment.NewLine); RTB_Diag.ScrollToCaret();
                             multdload = true;
+                        }
                         intv = rand.Next(200, 2000);
                         Wait(8000 + intv);
                         SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd);
                         if (tourma && tbeat && !tfound)
+                        {
+                            RTB_Diag.AppendText("tbeat unlocked" + Environment.NewLine); RTB_Diag.ScrollToCaret();
                             tbeat = false;
+                        }
                     }
 
                     if (tourma)
                     {
                         if (!tbeat)
+                        {
+                            /*Console.WriteLine("TTF Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
+
+                            RTB_Diag.AppendText("TTF Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + "." + Environment.NewLine); RTB_Diag.ScrollToCaret();
+
+                            if (ipd.Signal != null)
+                                ipd.Signal.Wait();
+
+                            if (ipd.Signal != null)
+                                ipd.Signal.Reset();*/
+                            RTB_Diag.AppendText("tbeat not seen starting 30s timer." + Environment.NewLine); RTB_Diag.ScrollToCaret();
+
+                            StartTimer(30000);
+                            Wait(30000);
+                            StopTimer();
                             tbeat = true;
+                        }
                         if (multdload)
                             multdload = false;
                         if (tfound && dlcnt == 1)  //Check for isp=1 from tbeat
@@ -2104,9 +2146,9 @@ namespace VenomNamespace
 
                     RTB_Diag.AppendText("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + "." + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     ipd.Result = "";
-                    RTB_Diag.AppendText("CYCLE Programming unlocked." + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     if (ipd.Signal != null)
                         ipd.Signal.Wait();
+                    RTB_Diag.AppendText("CYCLE Programming unlocked." + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                     Wait(2000);
 

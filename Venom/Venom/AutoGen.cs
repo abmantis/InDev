@@ -181,8 +181,18 @@ namespace VenomNamespace
                     
                     else
                     {
-                        newip.Cncl = "0008FF33330408000201";
-                        newip.Set = "0008FF33330203000A0A";
+                        if (wtype.Contains("EMEA"))
+                        {
+                            newip.Cncl = "0008FF33330408000201";
+                            newip.Set = "0008FF33330203000A0A";
+                        }
+                        else
+                        {
+                            //00.08.FF.33.33.03.0F.00.02.01
+                            newip.Cncl = "0008FF3333030F000201";
+                            //00.08.FF.33.33.02.03.00.0A.0A
+                            newip.Set = "0008FF33330203000A0A";
+                        }
                     }
                 }
 
@@ -264,7 +274,6 @@ namespace VenomNamespace
 
             if (CB_Product.Text.Equals("NAR Cooking"))
                 mqttpay = "001BFF33330310000C02030D00010000005A0310000106E6030F000202"; // Standard bake 350 for upper oven for 1.5 minute;
-                //mqttpay = "001BFF33330310000C02030D00010000003C0310000106E6030F000202"; // Standard bake 350 for upper oven for 1 minute;
             else if (CB_Product.Text.Equals("EMEA Cooking"))
                 mqttpay = "001BFF33330B02001B0104090001028F04060001000000780408000202"; // Standard bake for Speed Oven (MWO bake instead of upper oven)          
             else if (CB_Product.Text.Equals("NAR Laundry"))
