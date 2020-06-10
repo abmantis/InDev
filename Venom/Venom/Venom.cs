@@ -538,11 +538,12 @@ namespace VenomNamespace
         
         public void ProcessPayload(string sb, string ip, string source, string raw)
         {
+            string call = "";
             try
             {
-
                 if (sb.Equals("tbeat"))
                 {
+                    call = "tbeat";
                     string[] parts = raw.Split(' ');
                     string[] split = parts[6].Split('[');
 
@@ -616,12 +617,14 @@ namespace VenomNamespace
 
                 if (indigo && sb.Equals("rssi"))
                 {
+                    call = "indigo rssi";
                     rssi = raw;
                     return;
                 }
 
                 if (indigo && sb.Equals("mbeat"))  //Indigo mbeat from Trace call
                 {
+                    call = "indigo mbeat";
                     //88:e7: 12:03:f5: 55,WOC75EC0HS,2345678,7 | 1.193.0,cat = 13,cc = API144_COOKING_V40,prov = 1,grp = 0,ls = 3
                     mbeat = true;
                     string[] parts = raw.Replace(" ", "").Split(',');
@@ -639,7 +642,7 @@ namespace VenomNamespace
 
                 if (source.Contains("mbeat"))   //mbeat from MQTT call
                 {
-                    
+                    call = "mbeat";
                     mbeat = true;
                     string[] parts = sb.Replace("[", "").Split(':');
                     parts[2].Replace("]", "");
@@ -664,7 +667,7 @@ namespace VenomNamespace
                 if (sb.Contains("\"update\"") && !ttf)
                 {
                     // Lookup status reason byte pass or fail reason
-
+                    call = "update no ttf";
                     foreach (var member in iplist)
                     {
                         if (member.IPAddress.ToString().Equals(ip))
@@ -689,7 +692,7 @@ namespace VenomNamespace
                 if (sb.Contains("Programming") || sb.Contains("IAP_MODE"))
                 {
                     // Lookup status reason byte pass or fail reason
-
+                    call = "programming or IAP_MODE";
                     foreach (var member in iplist)
                     {
                         if (member.IPAddress.ToString().Equals(ip))
@@ -709,6 +712,7 @@ namespace VenomNamespace
 
                 if (sb.Contains("\"progress\"") && source.Equals("MQTT Message"))
                 {
+                    call = "MQTT progress";
                     if (indigo && ttf)  //protect Indigo specific logic
                         return;
                     sb = sb.Replace("\"progress\":[", "@");
@@ -741,6 +745,7 @@ namespace VenomNamespace
                 //Locate the MQTT status message and check result
                 if (sb.Contains("\"status\""))
                 {
+                    call = "status";
                     //{ "@0,"W12345678"] }
                     // Overwrite status portion to have a point of reference directly next to status reason byte
                     sb = sb.Replace("\"status\":[", "@");
@@ -753,7 +758,8 @@ namespace VenomNamespace
 
                     // Convert status reason byte to a numeric value
                     int statusval = Int32.Parse(sb);
-
+                    RTB_Diag.AppendText("statusval was " + statusval + Environment.NewLine); RTB_Diag.ScrollToCaret();
+                    call = "status and " + statusval;
                     //Save to global for auto test execution
                     if (autogen)
                     {
@@ -763,6 +769,7 @@ namespace VenomNamespace
 
                         ispp = strpp[1];
                         gstatus = statusval;
+                        call = "status and " + gstatus + " and ispp " + ispp;
                     }
 
                     // Lookup status reason byte pass or fail reason
@@ -795,7 +802,7 @@ namespace VenomNamespace
             catch
             {
                 MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
-                    + raw + " sb was " + sb, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 

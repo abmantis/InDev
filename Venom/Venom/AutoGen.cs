@@ -176,7 +176,7 @@ namespace VenomNamespace
                     if (parent.indigo)
                     {
                         newip.Cncl = "0008FF3333030F000201";
-                        newip.Set = "0008FF33330203000A";
+                        newip.Set = "0008FF33330203000A0A";
                     }
                     
                     else
