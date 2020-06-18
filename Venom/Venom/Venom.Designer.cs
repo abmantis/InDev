@@ -59,15 +59,14 @@ namespace VenomNamespace
             // 
             this.DGV_Data.AllowUserToAddRows = false;
             this.DGV_Data.AllowUserToDeleteRows = false;
-            this.DGV_Data.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.DGV_Data.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.DGV_Data.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.DGV_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.DGV_Data.Location = new System.Drawing.Point(127, 88);
             this.DGV_Data.Name = "DGV_Data";
             this.DGV_Data.ReadOnly = true;
-            this.DGV_Data.Size = new System.Drawing.Size(624, 255);
+            this.DGV_Data.Size = new System.Drawing.Size(624, 326);
             this.DGV_Data.TabIndex = 2;
             // 
             // TB_LogDir
@@ -250,9 +249,10 @@ namespace VenomNamespace
             // 
             // RTB_Diag
             // 
-            this.RTB_Diag.Location = new System.Drawing.Point(127, 349);
+            this.RTB_Diag.Enabled = false;
+            this.RTB_Diag.Location = new System.Drawing.Point(127, 420);
             this.RTB_Diag.Name = "RTB_Diag";
-            this.RTB_Diag.Size = new System.Drawing.Size(624, 18);
+            this.RTB_Diag.Size = new System.Drawing.Size(624, 106);
             this.RTB_Diag.TabIndex = 107;
             this.RTB_Diag.Text = "";
             this.RTB_Diag.Visible = false;
@@ -261,7 +261,7 @@ namespace VenomNamespace
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(781, 373);
+            this.ClientSize = new System.Drawing.Size(781, 538);
             this.Controls.Add(this.RTB_Diag);
             this.Controls.Add(this.LBL_i);
             this.Controls.Add(this.LBL_Phase);

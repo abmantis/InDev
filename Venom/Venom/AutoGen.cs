@@ -52,6 +52,7 @@ namespace VenomNamespace
             TB_UP.Text = "";
             TB_IP.Text = "";
             TB_Other.Text = "";
+            CB_Type.ResetText();
             CB_Product.ResetText();
             CB_Variant.ResetText();
             CB_NoCyc.Checked = false;
@@ -175,6 +176,7 @@ namespace VenomNamespace
 
                     if (parent.indigo)
                     {
+                        //00.08.FF.33.33.03.0F.00.02.01
                         newip.Cncl = "0008FF3333030F000201";
                         newip.Set = "0008FF33330203000A0A";
                     }
@@ -419,6 +421,10 @@ namespace VenomNamespace
 
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
+            DialogResult dialogResult = MessageBox.Show("This will clear the entire AutoGen form. Please confirm you want to clear the entire form.", "Verify Clearing form", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (dialogResult != DialogResult.Yes)
+                return;
             ResetForm();
         }
     }

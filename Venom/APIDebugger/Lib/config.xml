@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BASIC_CONFIG xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <MyRqmProperties>
+    <SleepTime>-1</SleepTime>
+    <RQMServer>https://qm.whirlpool.oncloudone.com/qm</RQMServer>
+  </MyRqmProperties>
+  <CustomInterfaces>
+    <CustomInterface name="Scripting" classname="LuaScript" dllname="LuaScript.dll" isopen="false" ismaximized="false" />
+  </CustomInterfaces>
+  <MessageWindows Collapsed="False" SplitterDistance="600" />
+  <LogInterval IsLogging="False" Interval="0" />
+  <SuppressProtocolChangeOnStartup Value="False" />
+  <RestartException>System.IO.FileNotFoundException: File Not Found
+File name: 'C:\Users\kiddemc\source\repos\InDev\Venom\APIDebugger\Lib\config.xml'</RestartException>
+  <RevelationAsString>false</RevelationAsString>
+  <LogPath>C:\Users\kiddemc\source\repos\InDev\Venom\APIDebugger\Lib\Log\</LogPath>
+  <CustomInterfaceOptions>
+    <Wiredbasic WindowLocation="0,0" WindowSize="" WindowState="Normal">
+      <TextBoxes>
+        <TextBox Name="textNodeList" Text="1,2" />
+        <TextBox Name="textPollList" Text="1,2" />
+        <TextBox Name="textHeartBeat" Text="1" />
+        <TextBox Name="textTarget1" Text="1" />
+        <TextBox Name="textSAP1" Text="4" />
+        <TextBox Name="textTarget2" Text="1" />
+        <TextBox Name="textPayload1" Text="" />
+        <TextBox Name="textTarget3" Text="1" />
+        <TextBox Name="textSAP2" Text="4" />
+        <TextBox Name="textPayload7" Text="" />
+        <TextBox Name="textTarget4" Text="1" />
+        <TextBox Name="textSAP7" Text="4" />
+        <TextBox Name="textPayload2" Text="" />
+        <TextBox Name="textPayload6" Text="" />
+        <TextBox Name="textTarget5" Text="1" />
+        <TextBox Name="textSAP6" Text="4" />
+        <TextBox Name="textSAP3" Text="4" />
+        <TextBox Name="textPayload5" Text="" />
+        <TextBox Name="textTarget6" Text="1" />
+        <TextBox Name="textSAP5" Text="4" />
+        <TextBox Name="textPayload3" Text="" />
+        <TextBox Name="textPayload4" Text="" />
+        <TextBox Name="textTarget7" Text="1" />
+        <TextBox Name="textSAP4" Text="4" />
+      </TextBoxes>
+      <ComboBoxes>
+        <ComboBox Name="comboBoxBusProtocol" Text="WIDE" />
+        <ComboBox Name="comboBoxPCProtocol" Text="PPW (CCB/WideBox)" />
+        <ComboBox Name="comboMode" Text="SNIFFER" />
+        <ComboBox Name="comboCOM" Text="COM12" />
+        <ComboBox Name="comboWBAddress" Text="0" />
+      </ComboBoxes>
+      <CheckBoxes>
+        <CheckBox Name="checkBoxHeartBeat" Check="False" />
+        <CheckBox Name="checkBoxRevealAck" Check="False" />
+      </CheckBoxes>
+    </Wiredbasic>
+  </CustomInterfaceOptions>
+</BASIC_CONFIG>
