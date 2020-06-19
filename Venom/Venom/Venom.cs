@@ -81,7 +81,7 @@ namespace VenomNamespace
         public int prog = 0;
         public int thread_done = 0; //Count of threads that have no more tasks
 
-        public LinkedList<string> gllist = null;
+        public LinkedList<int> gllist = null;
 
         static object lockObj = new object();
         static object writeobj = new object();
@@ -317,7 +317,7 @@ namespace VenomNamespace
         {
 
             // Filter on relevant OTA topics only
-            if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:"))
+            if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:")) //may want to use || data.ContentAsString.StartsWith("mqtt-out:") to allow tourma trace to release locks
             {
                 //MQTT data in the Trace just comes as raw hex regardless of message format, so need to convert it to ASCII to get the payload
                 string[] parts = data.ContentAsString.Replace(" ", "").Split(':');
@@ -406,15 +406,15 @@ namespace VenomNamespace
 
                     if (gllist == null)
                     {
-                        gllist = new LinkedList<string>();
-                        gllist.AddFirst(str[1]);
+                        gllist = new LinkedList<int>();
+                        gllist.AddFirst(Int32.Parse(str[1]));
                         //Console.WriteLine("gllist is " );
                     }
                     else
-                        gllist.AddLast(str[1]);
+                        gllist.AddLast(Int32.Parse(str[1]));
 
                 }
-
+                
                 return;
             }
 
@@ -700,7 +700,7 @@ namespace VenomNamespace
                     }
                 }
 
-                if (sb.Contains("\"progress\"") && source.Equals("MQTT Message"))
+                if (sb.Contains("\"progress\"") && source.Equals("MQTT Message")) //may want to use && tourma to allow trace message to change to prog
                 {
                     call = "MQTT progress";
                     if (indigo && ttf)  //protect Indigo specific logic
@@ -1150,8 +1150,18 @@ namespace VenomNamespace
                     {
                         if (autogen)
                         {
-                            for (int i = 0; i < NODECASEMAX; i++)
+                            int j = 0;
+                            if (tourma)
                             {
+                                results.Rows[j]["OTA Result"] = "Test case skipped when using Gen4.";
+
+                                DGV_Data.Rows[j].Cells[6].Style.BackColor = Color.Yellow;
+
+                                j = 1;
+                            }
+                            for (int i = j; i < NODECASEMAX; i++)
+                            {
+
                                 if (!results.Rows[i]["OTA Result"].ToString().Contains("PENDING"))
                                     results.Rows[i]["OTA Result"] = "PENDING";
 
@@ -1481,10 +1491,10 @@ namespace VenomNamespace
         public void printAllNode()
         {
             //Node temp = head;
-            LinkedListNode<string> head = gllist.First;
-            LinkedListNode<string> temp = head;
+            LinkedListNode<int> head = gllist.First;
+            LinkedListNode<int> temp = head;
             // if the list is empty
-            if (head.Value == null)
+            if (head == null)
             {
                 Console.WriteLine("Nothing to print in the list");
                 //RTB_Diag.AppendText("Nothing to print in the list" + Environment.NewLine); RTB_Diag.ScrollToCaret();
@@ -1503,7 +1513,10 @@ namespace VenomNamespace
                 //RTB_Diag.AppendText(Environment.NewLine); RTB_Diag.ScrollToCaret();
 
             }
-        }
+        
+
+
+    }
         private static void ProgressThread(object sender, ElapsedEventArgs e, IPData ipd)
         {
             try
@@ -1729,7 +1742,7 @@ namespace VenomNamespace
 
                 if (var == 3)   //Multiple payload sent
                 {
-                    int stop = 3;//rand.Next(3, 6);
+                    int stop = 5;//rand.Next(3, 6);
                     int intv;
                     byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
 
@@ -1803,16 +1816,29 @@ namespace VenomNamespace
 
                     if (gllist != null)
                     {
-                        HashSet<string> uniqueNumbers = new HashSet<string>(gllist);
+                        //HashSet<string> uniqueNumbers = new HashSet<string>(gllist);
 
                         //string output = string.Join(" ", uniqueNumbers);
                         //int match = uniqueNumbers.Count;
-                        bool pass = false;
-                        var orderedByAsc = uniqueNumbers.OrderBy(d => d);
-                        if (uniqueNumbers.SequenceEqual(orderedByAsc))
-                            pass = true;
+                        bool pass = true;
+                        /*var orderedByAsc = uniqueNumbers.OrderBy(d => d);
+                        if (uniqueNumbers.SequenceEqual(orderedByAsc))*/
 
+                        // Traverse the list till last node and return 
+                        // false if a node is smaller than or equal 
+                        // its next. 
+                        for (LinkedListNode<int> t = gllist.First; t.Next != null; t = t.Next)
+                        {
+                            Console.WriteLine("Comparing gllist t.value " + t.Value + " to t.next.value " + t.Next.Value);
 
+                            if (!(t.Value <= t.Next.Value))
+                            {
+                                Console.WriteLine("Comparing gllist t.value " + t.Value + " to t.next.value " + t.Next.Value);
+                                pass = false;
+                            }
+                        }                      
+
+                                               
                         if (pass)  //If multiple download messages seen in trace, unique numbers will be jumbled (4% , 0% , 5%, 1%, etc.)
                         {
                             InvColor(22, "grn");
@@ -1823,8 +1849,10 @@ namespace VenomNamespace
                         {
                             InvColor(22, "red");
                             ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that download percentages WERE jumbled (4% , 0% , 5%, 1%, etc.) indicating multiple downloads WERE running.";
-                            Console.WriteLine("Multi dload FAILED with unique numbers " + orderedByAsc + '\n' + "gllist was ");
-                            MessageBox.Show("Multi dload FAILED with unique numbers " + orderedByAsc, "TTF Multi Download fail", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            //Console.WriteLine("Multi dload FAILED with unique numbers " + uniqueNumbers + Environment.NewLine);
+                            Console.WriteLine("Multi dload FAILED with orderedasc numbers " + Environment.NewLine);
+
+                            //MessageBox.Show("Multi dload FAILED with unique numbers " + orderedByAsc, "TTF Multi Download fail", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             //RTB_Diag.AppendText("unique numbers " + orderedByAsc + Environment.NewLine + "gllist "); RTB_Diag.ScrollToCaret();
 
                             printAllNode();
@@ -2508,6 +2536,8 @@ namespace VenomNamespace
                             break;
 
                         case 7:    //Upgrade Version Number check
+                            if (iter == LASTITER)   //Dont run on last iteration / overwrite previous results
+                                break;
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
                                 string[] str = cai.VersionNumber.Replace(" ", "").Split('|');
@@ -2604,6 +2634,8 @@ namespace VenomNamespace
                             break;
 
                         case 9:    //Downgrade Version Number check
+                            if (iter == LASTITER)   //Dont run on last iteration / overwrite previous results
+                                break;
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
                                 string[] str = cai.VersionNumber.Replace(" ", "").Split('|');
@@ -2888,10 +2920,10 @@ namespace VenomNamespace
                         case 17:    //OTAs are possible after OTA check
                             if (!LBL_Auto.Text.Contains("FAIL"))
                             {
-                                Console.WriteLine("iter is " + iter + " and autottl is " + autottl);
+                                //Console.WriteLine("iter is " + iter + " and autottl is " + autottl);
                                 //RTB_Diag.AppendText("iter is " + iter + " and autottl is " + autottl + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
-                                if (iter > 4 && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL")) //Check on last iteration
+                                if (iter ==LASTITER && !results.Rows[i]["OTA Result"].ToString().Contains("FAIL")) //Check on last iteration
                                 {
                                     
                                     if (autottl > 1)
@@ -3923,9 +3955,9 @@ namespace VenomNamespace
                     // Restart Wifi Connection
                     if (certMgr.IsLocalValid)
                     {
-                        if (tourma)
-                            WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
-                        else
+                        //if (tourma)
+                            //WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+                        //else
                             WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Digicert20202022));
 
                         Wait(2000);
