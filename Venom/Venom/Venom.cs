@@ -22,7 +22,7 @@ namespace VenomNamespace
         public int TESTCASEMAX = 26; //Max test cases that can be automated, can be changed if some skipped
         public int NODECASEMAX = 23; //Max automated test case per node
         public static int ATTEMPTMAX = 3;
-        public static int MQTTMAX = 20;
+        public static int MQTTMAX = 25;
         public static int TTFCNT = 4;
         public static int CYCGO = 0;    //Cycles fire on autogen iteration i=0
         public static int TMAX = 90 * 60000; //OTA max thread time in ms before the thread needs to end (got stuck)
@@ -1156,8 +1156,10 @@ namespace VenomNamespace
                                 results.Rows[j]["OTA Result"] = "Test case skipped when using Gen4.";
 
                                 DGV_Data.Rows[j].Cells[6].Style.BackColor = Color.Yellow;
+                                results.Rows[j+1]["OTA Result"] = "Test case skipped when using Gen4.";
 
-                                j = 1;
+                                DGV_Data.Rows[j+1].Cells[6].Style.BackColor = Color.Yellow;
+                                j = 2;
                             }
                             for (int i = j; i < NODECASEMAX; i++)
                             {
@@ -1742,7 +1744,7 @@ namespace VenomNamespace
 
                 if (var == 3)   //Multiple payload sent
                 {
-                    int stop = 5;//rand.Next(3, 6);
+                    int stop = rand.Next(4, 6);
                     int intv;
                     byte[] paybytes = Encoding.ASCII.GetBytes(ipd.Payload);
 
@@ -2016,6 +2018,8 @@ namespace VenomNamespace
                             }
 
                             ipd.LList.AddFirst("Test case skipped when using Gen4"); //set first result as skipping very first test case
+                            ipd.LList.AddLast("Test case skipped when using Gen4"); //set first result as skipping very first test case
+                            return true;
                         }
 
                         RemoteOps(cai, ipd, ipbytes, "bright");
@@ -3640,7 +3644,7 @@ namespace VenomNamespace
                     InvLabel("ud", "PENDING");
 
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
-                    StartTimer(20 * RECONWAIT + 30000);  //Allow MQTTMAX minutes for product to reboot and reconnection attempts to end (happy path)
+                    StartTimer(25 * RECONWAIT + 30000);  //Allow MQTTMAX minutes for product to reboot and reconnection attempts to end (happy path)
                     Console.WriteLine("4 minute reconwait started");
                     Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
                     
@@ -3689,7 +3693,6 @@ namespace VenomNamespace
                                     ipd.IPAddress = cai.IPAddress;
                                     glblip = ipd.IPAddress;
 
-                                    StopTimer();
                                 }
                                 break;
                             }
@@ -3714,6 +3717,8 @@ namespace VenomNamespace
                         Console.WriteLine("MQTT reconnect called " + recontot + " times.");
 
                     }
+
+                    StopTimer();
 
                     if (cai == null || recontot == MQTTMAX)
                     {
@@ -3759,13 +3764,21 @@ namespace VenomNamespace
                 ResetTarget(5);
                 FinalResult();
             }
-            catch
+            catch (Exception e)
             {
-                MessageBox.Show("Catastrophic RunAuto error.", "Error",
+                MessageBox.Show("Catastrophic RunAuto error. Exception was " + GetExceptionDetails(e), "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
+        }
+
+        public static string GetExceptionDetails(Exception exception)
+        {
+            return "Exception: " + exception.GetType()
+                + "\r\nInnerException: " + exception.InnerException
+                + "\r\nMessage: " + exception.Message
+                + "\r\nStackTrace: " + exception.StackTrace;
         }
         public void ProcessIP()
         {
@@ -3829,6 +3842,23 @@ namespace VenomNamespace
                 return;
             }
         }
+        /*public static string GetExceptionDetails(this Exception exception)
+        {
+            var properties = exception.GetType()
+                                    .GetProperties();
+            var fields = properties
+                             .Select(property => new {
+                                 Name = property.Name,
+                                 Value = property.GetValue(exception, null)
+                             })
+                             .Select(x => String.Format(
+                                 "{0} = {1}",
+                                 x.Name,
+                                 x.Value != null ? x.Value.ToString() : String.Empty
+                             ));
+            return String.Join("\n", fields);
+        }*/
+
         bool RevelationConnect(ConnectedApplianceInfo cai)
         {
             int traceattempt = 0;

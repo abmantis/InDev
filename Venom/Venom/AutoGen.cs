@@ -229,7 +229,7 @@ namespace VenomNamespace
                 parent.DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
             }
 
-            if (parent.tourma && i == 0)
+            if (parent.tourma && (i == 0 || i == 1))
             {
                 newip.Result = "Test case skipped when using Gen4.";
 
@@ -323,16 +323,16 @@ namespace VenomNamespace
                     switch (i)
                     {
                         case 0:
-                            BuildList(cai, "RQM 131835 OTA : Remote : User Starts Cycle from App", mqttpay, i);
+                            BuildList(cai, "RQM 131835 OTA : Remote : User Starts Cycle from App in Download", mqttpay, i);
                             break;
                         case 1:
-                            BuildList(cai, "RQM 131837 OTA : Remote : User Changes Settings from App", mqttpay, i);
+                            BuildList(cai, "RQM 131837 OTA : Remote : User Changes Settings from App in Download", mqttpay, i);
                             break;
                         case 2:
-                            BuildList(cai, "RQM 131839 OTA : Remote : User Starts Cycle from App", mqttpay, i);
+                            BuildList(cai, "RQM 131839 OTA : Remote : User Starts Cycle from App in IAP", mqttpay, i);
                             break;
                         case 3:
-                            BuildList(cai, "RQM 131841 OTA : Remote : User Changes Settings from App", mqttpay, i);
+                            BuildList(cai, "RQM 131841 OTA : Remote : User Changes Settings from App in IAP", mqttpay, i);
                             break;
                         case 4:
                             BuildList(cai, "RQM 131812 OTA : Generic : Forced Update : Unit in Idle State", mqttpay, i);
