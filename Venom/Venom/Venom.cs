@@ -423,7 +423,7 @@ namespace VenomNamespace
             {
                 string[] str = data.ContentAsString.Split('=');
                 string[] parts = str[1].Split(' ');
-                Console.WriteLine("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers);
+                //Console.WriteLine("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers);
                 //RTB_Diag.AppendText("writing applianceupdatevers is trying to write vers as " + parts[0] + " from the old global vers " + vers + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                 vers = parts[0];
@@ -584,9 +584,9 @@ namespace VenomNamespace
                             return;
                         }
                     }
-                    Console.WriteLine("ccuri is " + ccuri);
-                    Console.WriteLine("clm is " + clm);
-                    Console.WriteLine("prov is " + prov);
+                    //Console.WriteLine("ccuri is " + ccuri);
+                    //Console.WriteLine("clm is " + clm);
+                    //Console.WriteLine("prov is " + prov);
 
 
                     //RTB_Diag.AppendText("ccuri is " + ccuri + Environment.NewLine); RTB_Diag.ScrollToCaret();
@@ -594,7 +594,7 @@ namespace VenomNamespace
                     //RTB_Diag.AppendText("prov is " + prov + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     if (tourma)
                     {
-                        Console.WriteLine("rssi is " + rssi);
+                        //Console.WriteLine("rssi is " + rssi);
                         //RTB_Diag.AppendText("rssi is " + rssi + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     }
                     //Console.WriteLine("Entire string was " + sb);
@@ -617,8 +617,8 @@ namespace VenomNamespace
                     string[] parts = raw.Replace(" ", "").Split(',');
                     string[] split = parts[3].Split('|');
                     vers = split[0];
-                    Console.WriteLine("vers is " + vers);
-                    Console.WriteLine("Trace mbeat string was " + raw);
+                    //Console.WriteLine("vers is " + vers);
+                    //Console.WriteLine("Trace mbeat string was " + raw);
                     //RTB_Diag.AppendText("vers is " + vers + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     //RTB_Diag.AppendText("Trace mbeat string was " + raw + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     //RTB_Diag.AppendText("Trace mbeat unlocked " + Environment.NewLine); RTB_Diag.ScrollToCaret();
@@ -639,8 +639,8 @@ namespace VenomNamespace
                     ispp = ispp.Replace("]", "");
                     vers = split[1].Replace("\"", "");
                     vers = vers.Replace("]", "");
-                    Console.WriteLine("ispp is " + ispp);
-                    Console.WriteLine("vers is " + vers);
+                    //Console.WriteLine("ispp is " + ispp);
+                    //Console.WriteLine("vers is " + vers);
                     //RTB_Diag.AppendText("ispp is " + ispp + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     //RTB_Diag.AppendText("vers is " + vers + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
@@ -754,7 +754,7 @@ namespace VenomNamespace
                     if (autogen)
                     {
                         string[] strpp = parts[1].Split('"');
-                        Console.WriteLine("ispp was " + ispp + " and is now changed to " + strpp[1]);
+                        //Console.WriteLine("ispp was " + ispp + " and is now changed to " + strpp[1]);
                         //RTB_Diag.AppendText("ispp was " + ispp + " and is now changed to " + strpp[1] + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                         ispp = strpp[1];
@@ -1012,7 +1012,7 @@ namespace VenomNamespace
                             return;
                         if (DGV_Data.Rows[listindex].Cells[6].Value.ToString().Contains("PASS") && res[0].Contains("timeout"))
                         {
-                            Console.WriteLine("timeout called " + ++timeout + " times.");
+                            //Console.WriteLine("timeout called " + ++timeout + " times.");
                             //RTB_Diag.AppendText("timeout called " + ++timeout + " times." + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                             return;
@@ -1080,7 +1080,7 @@ namespace VenomNamespace
                                     t.Minutes,
                                     t.Seconds,
                                     t.Milliseconds);
-                        Console.WriteLine("Thread release signal was sent at " + s_dur + ".");
+                        //Console.WriteLine("Thread release signal was sent at " + s_dur + ".");
                         //RTB_Diag.AppendText("Thread release signal was sent at " + s_dur + "." + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     }
                 }
@@ -1429,7 +1429,7 @@ namespace VenomNamespace
 
                 if (cancel_request)
                 {
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                    //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                     //RTB_Diag.AppendText("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed." + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                     return true;
@@ -1468,7 +1468,7 @@ namespace VenomNamespace
                     }
                     catch (ThreadInterruptedException)
                     {
-                        Console.WriteLine("Thread with ID " + Thread.CurrentThread.ManagedThreadId + " interrupted.");
+                        //Console.WriteLine("Thread with ID " + Thread.CurrentThread.ManagedThreadId + " interrupted.");
                         //RTB_Diag.AppendText("Thread with ID " + Thread.CurrentThread.ManagedThreadId + " interrupted." + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                     }
@@ -1498,7 +1498,7 @@ namespace VenomNamespace
             // if the list is empty
             if (head == null)
             {
-                Console.WriteLine("Nothing to print in the list");
+                //Console.WriteLine("Nothing to print in the list");
                 //RTB_Diag.AppendText("Nothing to print in the list" + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
             }
@@ -1508,10 +1508,10 @@ namespace VenomNamespace
                 {
                     //RTB_Diag.AppendText(temp.Value + " ");
 
-                    Console.Write(temp.Value + " ");
+                    //Console.Write(temp.Value + " ");
                     temp = temp.Next;
                 }
-                Console.Write('\n');
+                //Console.Write('\n');
                 //RTB_Diag.AppendText(Environment.NewLine); RTB_Diag.ScrollToCaret();
 
             }
@@ -1831,11 +1831,11 @@ namespace VenomNamespace
                         // its next. 
                         for (LinkedListNode<int> t = gllist.First; t.Next != null; t = t.Next)
                         {
-                            Console.WriteLine("Comparing gllist t.value " + t.Value + " to t.next.value " + t.Next.Value);
+                            //Console.WriteLine("Comparing gllist t.value " + t.Value + " to t.next.value " + t.Next.Value);
 
                             if (!(t.Value <= t.Next.Value))
                             {
-                                Console.WriteLine("Comparing gllist t.value " + t.Value + " to t.next.value " + t.Next.Value);
+                                //Console.WriteLine("Comparing gllist t.value " + t.Value + " to t.next.value " + t.Next.Value);
                                 pass = false;
                             }
                         }                      
@@ -1852,7 +1852,7 @@ namespace VenomNamespace
                             InvColor(22, "red");
                             ipd.Result = "FAIL - A total of " + stop + " OTAs were sent (1 was valid and the rest extra). The log showed that download percentages WERE jumbled (4% , 0% , 5%, 1%, etc.) indicating multiple downloads WERE running.";
                             //Console.WriteLine("Multi dload FAILED with unique numbers " + uniqueNumbers + Environment.NewLine);
-                            Console.WriteLine("Multi dload FAILED with orderedasc numbers " + Environment.NewLine);
+                            //Console.WriteLine("Multi dload FAILED with orderedasc numbers " + Environment.NewLine);
 
                             //MessageBox.Show("Multi dload FAILED with unique numbers " + orderedByAsc, "TTF Multi Download fail", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             //RTB_Diag.AppendText("unique numbers " + orderedByAsc + Environment.NewLine + "gllist "); RTB_Diag.ScrollToCaret();
@@ -2166,7 +2166,7 @@ namespace VenomNamespace
                 {
                     ipd.Result = "";    //Purge result from previous test
                     CycExec(cai, ipd, ipbytes, "set", "down");
-                    Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
+                    //Console.WriteLine("CYCLE Programming Thread Wait reached with lock ID " + ipd.Signal.WaitHandle.Handle + ".");
 
                     ipd.Result = "";
                     if (ipd.Signal != null)
@@ -2334,7 +2334,7 @@ namespace VenomNamespace
                                 {
                                     int tstart = (int)g_time.ElapsedMilliseconds;   //Start timers to detect version already installed
                                     int tstop;
-                                    Console.WriteLine("mbeat wait reached.");
+                                    //Console.WriteLine("mbeat wait reached.");
                                     //RTB_Diag.AppendText("mbeat wait reached." + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                                     StartTimer(300000); //Wait 5 minutes for heartbeat
@@ -2347,7 +2347,7 @@ namespace VenomNamespace
                                                 t.Minutes,
                                                 t.Seconds,
                                                 t.Milliseconds);
-                                    Console.WriteLine("mbeat wait unlocked at time " + s_dur + " and vers = " + vers + ".");
+                                    //Console.WriteLine("mbeat wait unlocked at time " + s_dur + " and vers = " + vers + ".");
                                     //RTB_Diag.AppendText("mbeat wait unlocked at time " + s_dur + " and vers = " + vers + "." + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                                     StopTimer();
@@ -2355,7 +2355,7 @@ namespace VenomNamespace
                                 if (ipd.Signal != null)
                                     ipd.Signal.Reset();
 
-                                Console.WriteLine("ipd.Version was " + ipd.Vers + " and vers was " + vers + " before setting ipd.Version = vers");
+                                //Console.WriteLine("ipd.Version was " + ipd.Vers + " and vers was " + vers + " before setting ipd.Version = vers");
                                 //RTB_Diag.AppendText("ipd.Version was " + ipd.Vers + " and vers was " + vers + " before setting ipd.Version = vers" + Environment.NewLine); RTB_Diag.ScrollToCaret();
                                 ipd.Vers = vers;
                             }
@@ -3246,7 +3246,7 @@ namespace VenomNamespace
                 {
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                        //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
                     if (ipd.IPAddress.Equals(cai.IPAddress) && Thread.CurrentThread.Name.ToString().Equals(ipindex))
@@ -3308,8 +3308,8 @@ namespace VenomNamespace
                         // Set wait signal to be unlocked by thread after job is complete (result seen from log)
                         if (thread_waits)
                         {
-                            Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
-                               " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+                            //Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
+                             //  " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
                             ipd.Signal.Wait();
 
                             if (ipd.Result.Contains("timeout"))
@@ -3331,7 +3331,7 @@ namespace VenomNamespace
                         // Check to see if thread should be cancelled
                         if (cancel_request)
                         {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                            //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                             return;
                         }
                         System.Collections.ObjectModel.ReadOnlyCollection<ConnectedApplianceInfo> cio_n = WifiLocal.ConnectedAppliances;
@@ -3348,16 +3348,16 @@ namespace VenomNamespace
 
                         }
 
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                        //Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
                         ipd.Signal.Reset();
-                        Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
+                        //Console.WriteLine("MQTT reconnect called " + REMOVEME + " times.");
                     }
                     else
                     {
                         continue;
                     }
                 }
-                Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " reached barrier.");
+                //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " reached barrier.");
 
                 //Thread task cancelled or completed, signal others it is done
                 barrier.SignalAndWait();
@@ -3385,7 +3385,7 @@ namespace VenomNamespace
                 
                 if (cancel_request)
                 {
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                    //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
 
                     return;
                 }
@@ -3413,7 +3413,7 @@ namespace VenomNamespace
                     ipd.Result = "FAIL - Bad IP Address. Attempted to map new IP Address from MAC address failed.";
                     SetText("status", "Bad IP Address", ipd.TabIndex);
                     SetText("auto", "Bad IP Address", ipd.TabIndex);
-                    Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
+                    //Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
                     FailLeft(0, false);
                     return; //THIS MAY BE A BAD IDEA
                 }
@@ -3440,7 +3440,7 @@ namespace VenomNamespace
                         ipbytes[j] = byte.Parse(ipad[j]);
                     }
 
-                    Console.WriteLine("Iteration " + i + " starting to run.");
+                    //Console.WriteLine("Iteration " + i + " starting to run.");
                     //RTB_Diag.AppendText("Iteration " + i + " starting to run." + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
                     // Switch statement for each test group type (REMOTE, GENERIC, TTF)
@@ -3573,12 +3573,12 @@ namespace VenomNamespace
                     {
                         if (cancel_request)
                         {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                            //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
 
                             return;
                         }
-                        Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
-                           " and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
+                        //Console.WriteLine("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
+                           //" and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + ".");
                         //RTB_Diag.AppendText("Thread Wait reached. Thread with lock ID " + ipd.Signal.WaitHandle.Handle + " and name " + Thread.CurrentThread.Name +
                         //" and this IP Index (from thread order) " + ipd.IPIndex + " for this IP Address " + ipd.IPAddress + "." + Environment.NewLine); RTB_Diag.ScrollToCaret();
                         //if (ipd.Signal != null)
@@ -3613,7 +3613,7 @@ namespace VenomNamespace
                     // Check to see if thread should be cancelled
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                        //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
 
@@ -3645,12 +3645,12 @@ namespace VenomNamespace
 
                     MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
                     StartTimer(25 * RECONWAIT + 30000);  //Allow MQTTMAX minutes for product to reboot and reconnection attempts to end (happy path)
-                    Console.WriteLine("4 minute reconwait started");
+                    //Console.WriteLine("4 minute reconwait started");
                     Wait(3 * RECONWAIT); //Wait X minutes for product to finish fully rebooting out out of IAP
                     
                     MqttRecon(cai, "con"); //Start process to reconnect MQTT
                     Wait(RECONWAIT-6000); //Give time to reconnect
-                    Console.WriteLine("4 minute reconwait ended");
+                    //Console.WriteLine("4 minute reconwait ended");
                     bool mqtt_retry = false;
                     /*if (cai.IsMqttConnected && cai.IsTraceOn)
                     {
@@ -3698,8 +3698,8 @@ namespace VenomNamespace
                             }
                             else
                             {
-                                Console.WriteLine("Iter= " + j + " in MQTT recon showed that IsMqttConnected was " + cai.IsMqttConnected + " and that IsTraceOn was " +
-                                    cai.IsTraceOn);
+                                //Console.WriteLine("Iter= " + j + " in MQTT recon showed that IsMqttConnected was " + cai.IsMqttConnected + " and that IsTraceOn was " +
+                                   // cai.IsTraceOn);
                             }
 
                             MqttRecon(cai, "dis");  //Disconnect MQTT to prepare for reconnect
@@ -3714,7 +3714,7 @@ namespace VenomNamespace
                             recontot = j;
                         }
 
-                        Console.WriteLine("MQTT reconnect called " + recontot + " times.");
+                        //Console.WriteLine("MQTT reconnect called " + recontot + " times.");
 
                     }
 
@@ -3728,12 +3728,12 @@ namespace VenomNamespace
                         SetText("status", "Force Close", ipd.TabIndex);
                         SetText("auto", "Force Close", ipd.TabIndex);
 
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                        //Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
 
                         if (ipd.Signal != null)
                             ipd.Signal.Reset();
 
-                        Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
+                        //Console.WriteLine("Thread " + Thread.CurrentThread.Name + " failed to connect to CAI.");
 
                         ipd.Result = "";
                         InvLabel("auto", "PENDING");
@@ -3741,7 +3741,7 @@ namespace VenomNamespace
                         continue;   //THIS MAY BE A BAD IDEA
                     }
 
-                    Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
+                    //Console.WriteLine("Thread " + Thread.CurrentThread.Name + " finished a task.");
                     
                     if (ipd.Signal != null)
                         ipd.Signal.Reset();
@@ -3772,7 +3772,6 @@ namespace VenomNamespace
             }
 
         }
-
         public static string GetExceptionDetails(Exception exception)
         {
             return "Exception: " + exception.GetType()
@@ -3794,7 +3793,7 @@ namespace VenomNamespace
 
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                        //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return;
                     }
                     if (cai.IsTraceOn)
@@ -3858,7 +3857,6 @@ namespace VenomNamespace
                              ));
             return String.Join("\n", fields);
         }*/
-
         bool RevelationConnect(ConnectedApplianceInfo cai)
         {
             int traceattempt = 0;
@@ -3869,7 +3867,7 @@ namespace VenomNamespace
                 {
                     if (cancel_request)
                     {
-                        Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                        //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                         return false;
                     }
 
@@ -3941,7 +3939,7 @@ namespace VenomNamespace
                     {
                         if (cancel_request)
                         {
-                            Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
+                            //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " and ID " + Thread.CurrentThread.ManagedThreadId + " closed.");
                             return false;
                         }
                         //First round of attempts failed, close data / open data and try again
@@ -4239,7 +4237,7 @@ namespace VenomNamespace
                 if (thread_done == LB_IPs.Items.Count)
                 {
                     thread_done = 0;
-                    Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " was last and reset form.");
+                    //Console.WriteLine("Thread with name " + Thread.CurrentThread.Name + " was last and reset form.");
                     ResetForm(false);
                     g_time.Stop();
                     long duration = g_time.ElapsedMilliseconds;
