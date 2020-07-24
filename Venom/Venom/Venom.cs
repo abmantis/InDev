@@ -1161,6 +1161,16 @@ namespace VenomNamespace
                                 DGV_Data.Rows[j+1].Cells[6].Style.BackColor = Color.Yellow;
                                 j = 2;
                             }
+                            if (indigo && iplist[AUTOINDEX].Prod == "EMEA Laundry")
+                            {
+                                results.Rows[j]["OTA Result"] = "Test case skipped when using EMEA Laundry products.";
+
+                                DGV_Data.Rows[j].Cells[6].Style.BackColor = Color.Yellow;
+                                results.Rows[j + 1]["OTA Result"] = "Test case skipped when using EMEA Laundry products.";
+
+                                DGV_Data.Rows[j + 1].Cells[6].Style.BackColor = Color.Yellow;
+                                j = 2;
+                            }
                             for (int i = j; i < NODECASEMAX; i++)
                             {
 
@@ -1928,6 +1938,8 @@ namespace VenomNamespace
                         //int next = rand.Next(0, 2); //Random to start cycle or send payload first
                         if (tourma) //skip first test
                             return true;
+                        if (indigo && ipd.Prod == "EMEA Laundry")
+                            return true;
                         if (next == 0)
                         {
                             RemoteOps(cai, ipd, ipbytes, "cyc");
@@ -2012,13 +2024,28 @@ namespace VenomNamespace
 
                             if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd)) //start first OTA after skipping download cycle test
                             {
-                                ipd.LList.AddFirst("FAIL - The cycle was accepted with KVP ACK result of ACCEPTED-00 however, the payload was not able to be sent using MQTT. Unable to verify test case outcome.");
+                                ipd.LList.AddFirst("FAIL - The payload was not able to be sent using MQTT. Unable to verify test case outcome.");
                                 RemoteOps(cai, ipd, ipbytes, "cncl");
                                 return false;
                             }
 
                             ipd.LList.AddFirst("Test case skipped when using Gen4"); //set first result as skipping very first test case
                             ipd.LList.AddLast("Test case skipped when using Gen4"); //set first result as skipping very first test case
+                            return true;
+                        }
+
+                        if (indigo && ipd.Prod == "EMEA Laundry")
+                        {
+
+                            if (!SendMQTT(ipbytes, "iot-2/cmd/isp/fmt/json", paybytes, cai, ipd)) //start first OTA after skipping download cycle test
+                            {
+                                ipd.LList.AddFirst("FAIL - The payload was not able to be sent using MQTT. Unable to verify test case outcome.");
+                                RemoteOps(cai, ipd, ipbytes, "cncl");
+                                return false;
+                            }
+
+                            ipd.LList.AddFirst("Test case skipped when using EMEA Laundry products"); //set first result as skipping very first test case
+                            ipd.LList.AddLast("Test case skipped when using EMEA Laundry products"); //set first result as skipping very first test case
                             return true;
                         }
 

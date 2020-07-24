@@ -29,7 +29,7 @@ namespace VenomNamespace
             InitializeComponent();
             parent = ParentForm;
             CB_Product.Items.AddRange(new object[] {"NAR Cooking",
-                                                    "EMEA Cooking", "NAR Laundry", "Other (any remote cycle)"});
+                                                    "EMEA Cooking", "NAR Laundry", "EMEA Laundry","Other (any remote cycle)"});
             CB_Variant.Items.AddRange(new object[] {"HMI","ACU", "WiFi", "Expansion"});
             CB_Type.Items.AddRange(new object[] { "Indigo", "Gen4" });
 
@@ -183,7 +183,7 @@ namespace VenomNamespace
                     
                     else
                     {
-                        if (wtype.Contains("EMEA"))
+                        if (CB_Product.Text.Contains("EMEA"))
                         {
                             newip.Cncl = "0008FF33330408000201";
                             newip.Set = "0008FF33330203000A0A";
@@ -202,7 +202,10 @@ namespace VenomNamespace
                 {
                     newip.Set = "0008FF333302020009";
                     newip.Cncl = "0008FF33330307000101";
-                    newip.Prod = "Laundry";
+                    if (CB_Product.Text.Contains("EMEA Laundry"))
+                        newip.Prod = "EMEA Laundry";
+                    else
+                        newip.Prod = "Laundry";
                 }
                                
                 parent.iplist.Add(newip);
@@ -232,6 +235,15 @@ namespace VenomNamespace
             if (parent.tourma && (i == 0 || i == 1))
             {
                 newip.Result = "Test case skipped when using Gen4.";
+
+                parent.results.Rows[i]["OTA Result"] = newip.Result;
+
+                parent.DGV_Data.Rows[i].Cells[6].Style.BackColor = Color.Yellow;
+            }
+
+            if (parent.indigo && (i == 0 || i == 1) && CB_Product.Text.Contains("EMEA Laundry"))
+            {
+                newip.Result = "Test case skipped when using EMEA products.";
 
                 parent.results.Rows[i]["OTA Result"] = newip.Result;
 
