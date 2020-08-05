@@ -80,6 +80,7 @@ namespace VenomNamespace
         public int dlcnt = 0;
         public int prog = 0;
         public int thread_done = 0; //Count of threads that have no more tasks
+        public int glob_i = 0;
 
         public LinkedList<int> gllist = null;
 
@@ -223,8 +224,12 @@ namespace VenomNamespace
         public override void parseMqttMessages(ExtendedMqttMsgPublish data)
         {
             string savedExtractedMessage = "";
+            if (BTN_Payload.Text != "Stop Running") //Only parse when Venom is running
+                return;
             switch (data.Topic)
             {
+                
+
                 case "iot-2/evt/isp/fmt/json":
                     string sb = System.Text.Encoding.ASCII.GetString(data.Message);
                     // Process OTA-related messages
@@ -315,7 +320,8 @@ namespace VenomNamespace
 
         public override void parseTraceMessages(ExtendedTracePacket data)
         {
-
+            if (BTN_Payload.Text != "Stop Running") //Only parse when Venom is running
+                return;
             // Filter on relevant OTA topics only
             if (data.ContentAsString.StartsWith("mqtt_out_data:") || data.ContentAsString.StartsWith("mqtt_in_data:")) //may want to use || data.ContentAsString.StartsWith("mqtt-out:") to allow tourma trace to release locks
             {
@@ -789,10 +795,13 @@ namespace VenomNamespace
 
             }
 
-            catch
+            catch(Exception e)
             {
-                MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
-                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom ProcessPayload(): Local value 'raw' as " + raw + " and 'source' as " + source
+                            + " sb was " + sb + " and call was " + call + " Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
 
@@ -1084,10 +1093,17 @@ namespace VenomNamespace
                         //RTB_Diag.AppendText("Thread release signal was sent at " + s_dur + "." + Environment.NewLine); RTB_Diag.ScrollToCaret();
                     }
                 }
-                catch
+                catch (Exception e)
                 {
-                    MessageBox.Show("Catastrophic SetText error.", "Error",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    /*MessageBox.Show("Catastrophic SetText error.", "Error",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                    //ystem.Net.IPAddress ip = new System.Net.IPAddress(ipbytes);
+                    /*LogException("Venom SetText Exception with local value 'type' as " + type + " and 'source' as " + source
+                        + " and Message " + e.Message + " and Stacktrace " + e.StackTrace);*/
+
+                    LogException("Venom SetText(): Local value 'type' as " + type + " and 'source' as " + source
+                                + " Message and Stacktrace were ");
+                    LogException(e, true);
                     return;
                 }
             }
@@ -1290,13 +1306,21 @@ namespace VenomNamespace
                             return;
                         }
 
-                        catch
+                        /*catch
                         {
                             MessageBox.Show("Catastrophic thread closure error. Closing all threads.", "Error: Threads Failed to Close",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                             //Environment.Exit(1);
+                            return;
+                        }*/
+                        catch (Exception f)
+                        {
+                            /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                                + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                            LogException("Venom BTN_Payload(): Message and Stacktrace were ");
+                            LogException(f, true);
+                            return;
                         }
-
 
                     }
                     else //Dialog was Yes
@@ -1457,13 +1481,20 @@ namespace VenomNamespace
                 else
                     return false;
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic SendMQTT error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom SendMQTT():  Message and Stacktrace were ");
+                LogException(e, true);
+                return false;
             }
-
 
         }
         public void Wait(int timeout)
@@ -1493,12 +1524,19 @@ namespace VenomNamespace
                 }
             }
 
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic Wait error.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom SendMQTT():  Message and Stacktrace were ");
+                LogException(e, true);
+                return ;
             }
-
         }
         public void printAllNode()
         {
@@ -1542,8 +1580,8 @@ namespace VenomNamespace
             }
             catch
             {
-                MessageBox.Show("Catastrophic ProgressThread error.", "Error",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                /*MessageBox.Show("Catastrophic ProgressThread error.", "Error",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);*/
                 return;
             }
 
@@ -1630,14 +1668,21 @@ namespace VenomNamespace
                 StopTimer();
 
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic RemoteOps error.", "Error",
                                                MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
 
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom RemoteOps():  Message and Stacktrace were ");
+                LogException(e, true);
+                return;
             }
-
         }
         public void TTFExec(ConnectedApplianceInfo cai, IPData ipd, byte[] ipbytes, int var)
         {
@@ -1884,10 +1929,18 @@ namespace VenomNamespace
 
                 
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic TTFExec error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom TTFExec():  Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
         }
@@ -1913,10 +1966,18 @@ namespace VenomNamespace
                 //RTB_Diag.AppendText("TTF ending with ttf equal " + ttf + Environment.NewLine); RTB_Diag.ScrollToCaret();
 
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic TTFRun error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom TTFRun():  Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
         }
@@ -2150,10 +2211,18 @@ namespace VenomNamespace
 
                 return false;
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic CycExec error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom CycExec():  Message and Stacktrace were ");
+                LogException(e, true);
                 return false;
             }
         }
@@ -2165,10 +2234,18 @@ namespace VenomNamespace
                 ipd.Result = node.Value;
                 SetText("auto", "AutoGen Result", num);  //Table index for this test case
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic SetCyc error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom SetCyc():  Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
         }
@@ -2234,10 +2311,19 @@ namespace VenomNamespace
                 else
                     return false;
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic CycRun error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }*/
+
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom CycRun():  Message and Stacktrace were ");
+                LogException(e, true);
                 return false;
             }
 
@@ -2318,10 +2404,18 @@ namespace VenomNamespace
 
                 return false;
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic CheckBeat error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom CheckBeat(): tbeat was " + tbeat + " and mbeat was " + mbeat + " Message and Stacktrace were ");
+                LogException(e, true);
                 return false;
             }
         }
@@ -2449,13 +2543,20 @@ namespace VenomNamespace
                     }
                 }
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic Testinit error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom Testinit():  Message and Stacktrace were ");
+                LogException(e, true);
+                return;
             }
-
         }
         public void TestCheck(ConnectedApplianceInfo cai, IPData ipd, int iter)
         {
@@ -3023,13 +3124,20 @@ namespace VenomNamespace
                     }
                 }
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic TestCheck error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom TestCheck():  Message and Stacktrace were ");
+                LogException(e, true);
+                return;
             }
-
         }
         public bool PendCheck(int i)
         {
@@ -3063,12 +3171,19 @@ namespace VenomNamespace
                 }
                 return false;
             }
-            catch {
+            /*catch {
                 MessageBox.Show("Catastrophic PendCheck error.", "Error",
                                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom PendCheck():  Message and Stacktrace were ");
+                LogException(e, true);
+                return false;
             }
-
         }
         public void FailLeft(int phase, bool type)
         {
@@ -3130,10 +3245,18 @@ namespace VenomNamespace
                 }
                 
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic Failleft error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom FailLeft():  Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
         }
@@ -3172,11 +3295,20 @@ namespace VenomNamespace
 
                 ipd.LList.Clear();
             }
-            catch
+            /*catch
             {
 
                 MessageBox.Show("Catastrophic ProcessCyc error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }*/
+
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom ProcessCyc():  Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
         }
@@ -3234,13 +3366,21 @@ namespace VenomNamespace
 
                 return paybytes;
             }
-            catch
+
+            /*catch
             {
                 MessageBox.Show("Catastrophic SetTestTarget error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return null;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom SetTestTarget():  Message and Stacktrace were ");
+                LogException(e, true);
+                return null;
             }
-            
 
         }
         public void ResetTarget(int i)
@@ -3257,10 +3397,19 @@ namespace VenomNamespace
                 if (i == 4 || i == 5)
                     InvColor(23, "uttfhi");
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic ResetTarget error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }*/
+
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom ResetTarget():  Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
         }
@@ -3393,14 +3542,21 @@ namespace VenomNamespace
                     FinalResult();
                 }
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic RunTask error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 barrier.SignalAndWait();
                 return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom RunTask():  Message and Stacktrace were ");
+                LogException(e, true);
+                return;
             }
-
         }
         public void RunAuto(ManualResetEventSlim sig, string ipindex)
         {
@@ -3447,7 +3603,7 @@ namespace VenomNamespace
                 //Console.WriteLine("Pre-run CAI is" + cai.VersionNumber);
                 for (int i = 0; i < AUTOCNT; i++)
                 {
-                    
+                    glob_i = i;
                     bool thread_waits = true;   // Indicates this is a thread that will require a reboot time for the product
                     bool check = false;
                     //Force each thread to live only two hours (process somehow got stuck)
@@ -3678,7 +3834,7 @@ namespace VenomNamespace
                     MqttRecon(cai, "con"); //Start process to reconnect MQTT
                     Wait(RECONWAIT-6000); //Give time to reconnect
                     //Console.WriteLine("4 minute reconwait ended");
-                    bool mqtt_retry = false;
+                    //bool mqtt_retry = false;
                     /*if (cai.IsMqttConnected && cai.IsTraceOn)
                     {
                         Console.WriteLine("MQTT recon skipped (was connected with traceon) for iteration " + i);
@@ -3791,21 +3947,28 @@ namespace VenomNamespace
                 ResetTarget(5);
                 FinalResult();
             }
-            catch (Exception e)
+            /*catch (Exception e)
             {
                 MessageBox.Show("Catastrophic RunAuto error. Exception was " + GetExceptionDetails(e), "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom RunAuto(): i was " + glob_i + " Message and Stacktrace were ");
+                LogException(e, true);
+                return;
             }
-
         }
-        public static string GetExceptionDetails(Exception exception)
+        /*public static string GetExceptionDetails(Exception exception)
         {
             return "Exception: " + exception.GetType()
                 + "\r\nInnerException: " + exception.InnerException
                 + "\r\nMessage: " + exception.Message
                 + "\r\nStackTrace: " + exception.StackTrace;
-        }
+        }*/
         public void ProcessIP()
         {
             try
@@ -3861,10 +4024,19 @@ namespace VenomNamespace
 
                 return;
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("ProcessIP exception.", "Error",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }*/
+
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom ProcessIP():  Message and Stacktrace were ");
+                LogException(e, true);
                 return;
             }
         }
@@ -3940,12 +4112,20 @@ namespace VenomNamespace
                 }
 
 
-                catch
+                /*catch
                 {
                     MessageBox.Show("Trace was not able to start.  Please verify the socket can be " +
                                     "opened and it is not in use (UITracer is not running). You may need to close" +
                                 "Widebox and try again.", "Error: Unable to start Trace",
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return false;
+                }*/
+                catch (Exception e)
+                {
+                    /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                        + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                    LogException("Venom RevelationConnect():  Message and Stacktrace were ");
+                    LogException(e, true);
                     return false;
                 }
             }
@@ -3983,13 +4163,20 @@ namespace VenomNamespace
 
                 return true;
             }
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic TraceConnect error.", "Error",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom TraceConnect():  Message and Stacktrace were ");
+                LogException(e, true);
+                return false;
             }
-
         }
         public void MqttRecon(ConnectedApplianceInfo cai, string type)
         {
@@ -4006,7 +4193,7 @@ namespace VenomNamespace
                 {
                     string localIP = WifiLocal.Localhost.ToString();
                     CertManager.CertificateManager certMgr = new CertManager.CertificateManager();
-
+                    //Instead of below, see if WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), null); works (should take what was previously set)
                     // Restart Wifi Connection
                     if (certMgr.IsLocalValid)
                     {
@@ -4032,14 +4219,21 @@ namespace VenomNamespace
                 }
 
             }
-            catch
+            /*atch
             {
                 MessageBox.Show("Catastrophic MqttRecon error.", "Error",
                                MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
 
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom MqttRecon():  Message and Stacktrace were ");
+                LogException(e, true);
+                return;
             }
-
         }
         public void SizeCol()
         {
@@ -4075,7 +4269,15 @@ namespace VenomNamespace
                 }
 
             }
-            catch { }
+            /*catch { }*/
+            catch (Exception f)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom BTN_Remove():  Message and Stacktrace were ");
+                LogException(f, true);
+                return;
+            }
         }
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
@@ -4186,15 +4388,25 @@ namespace VenomNamespace
                         SizeCol();
                     }
                 }
-                catch
+                /*catch
                 {
                     MessageBox.Show("Import failed due to unkown error. Verify the import file has not been corrupted or in an incorrect format" +
                                     "then retry importing. Clearing IP Address list.", "Error: Import Failed",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     iplist.Clear();
                     LB_IPs.Items.Clear();
-                }
+                }*/
+                catch (Exception f)
+                {
+                    /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                        + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                    LogException("Venom BTN_Import():  Message and Stacktrace were ");
+                    LogException(f, true);
 
+                    iplist.Clear();
+                    LB_IPs.Items.Clear();
+                    return;
+                }
             }
         }
         private void ResetGlobal()
@@ -4223,6 +4435,7 @@ namespace VenomNamespace
             clm = "";
             rssi = "";
             glblip = "";
+            glob_i = 0;
     }
         public void ResetForm(bool operation)
         {
@@ -4302,13 +4515,20 @@ namespace VenomNamespace
                     return;
             }
 
-            catch
+            /*catch
             {
                 MessageBox.Show("Catastrophic FinalResult error.", "Error",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
+            }*/
+            catch (Exception e)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom FinalResult():  Message and Stacktrace were ");
+                LogException(e, true);
+                return;
             }
-
         }
         private void Venom_Load(object sender, EventArgs e)
         {

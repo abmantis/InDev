@@ -78,13 +78,13 @@ namespace VenomNamespace
             }
 
         }
-        private void ClearAll()
+        /*private void ClearAll()
         {
             parent.results.Clear();
             parent.iplist.Clear();
             parent.LB_IPs.Items.Clear();
             parent.DGV_Data.Refresh();
-        }
+        }*/
         private bool CheckFill()
         {
             bool check = true;
@@ -421,8 +421,17 @@ namespace VenomNamespace
                 parent.BTN_Import.Enabled = false;
                 parent.SizeCol();
             }
-            catch
+            /*catch
             {
+            }*/
+
+            catch (Exception f)
+            {
+                /*MessageBox.Show("Catastrophic ProcessPayload error. source was " + source + " raw was " 
+                    + raw + " sb was " + sb + " and call was " + call, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                LogException("Venom BTN_Gen():  Message and Stacktrace were ");
+                LogException(f, true);
+                return;
             }
         }
         private void AutoGen_Load(object sender, EventArgs e)
@@ -430,7 +439,6 @@ namespace VenomNamespace
             if (!CB_Save.Checked)
                 ResetForm();
         }
-
         private void BTN_Clr_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("This will clear the entire AutoGen form. Please confirm you want to clear the entire form.", "Verify Clearing form", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
