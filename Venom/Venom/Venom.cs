@@ -344,13 +344,20 @@ namespace VenomNamespace
             //tbeat check TOURMA
             if (autogen && tourma && !tbeat && data.ContentAsString.StartsWith("hs:"))
             {
+                //hs:
+                //
                 string[] split = data.ContentAsString.Split(':');
                 string[] parts = split[1].Split(' ');
                 if (IsAllNumeric(parts[0].Replace(" ", "")))
                 {
                     if (!ttf)
                         tbeat = true;
-
+                    if (tourma)
+                    {
+                        //TAKE ME OUT
+                        /*LogException("Venom tbeat set as " + tbeat);
+                        LogException("Venom sb was " + data.ContentAsString);*/
+                    }
                     //RTB_Diag.AppendText("tbeat calling ProcessPayload with sb= " + data.ContentAsString + Environment.NewLine);
                     lock (writeobj)
                     {
@@ -550,6 +557,7 @@ namespace VenomNamespace
                 if (sb.Equals("tbeat"))
                 {
                     call = "tbeat";
+                    
                     string[] parts = raw.Split(' ');
                     string[] split = parts[6].Split('[');
 
@@ -575,6 +583,12 @@ namespace VenomNamespace
                             clm = split[1];
                             split = parts[2].Split('=');
                             prov = split[1];
+
+                            //TAKE ME OUT
+                            /*LogException("Venom rssi is " + rssi);
+                            LogException("Venom prov is " + prov);
+                            LogException("Venom clm is " + clm);
+                            LogException("Venom ccuri is " + ccuri);*/
                         }
                         else
                         {
@@ -601,7 +615,7 @@ namespace VenomNamespace
                     if (tourma)
                     {
                         //Console.WriteLine("rssi is " + rssi);
-                        //RTB_Diag.AppendText("rssi is " + rssi + Environment.NewLine); RTB_Diag.ScrollToCaret();
+                        //RTB_Diag.AppendText("rssi is " + rssi + Environment.NewLine); RTB_Diag.ScrollToCaret();                        
                     }
                     //Console.WriteLine("Entire string was " + sb);
 
