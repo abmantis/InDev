@@ -47,6 +47,7 @@
             this.CB_NoGen = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
             this.CB_Type = new System.Windows.Forms.ComboBox();
+            this.CB_Cert = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // TB_IP
@@ -67,14 +68,14 @@
             // 
             // TB_UP
             // 
-            this.TB_UP.Location = new System.Drawing.Point(132, 49);
+            this.TB_UP.Location = new System.Drawing.Point(116, 51);
             this.TB_UP.Name = "TB_UP";
             this.TB_UP.Size = new System.Drawing.Size(609, 20);
             this.TB_UP.TabIndex = 7;
             // 
             // TB_DWN
             // 
-            this.TB_DWN.Location = new System.Drawing.Point(132, 85);
+            this.TB_DWN.Location = new System.Drawing.Point(116, 87);
             this.TB_DWN.Name = "TB_DWN";
             this.TB_DWN.Size = new System.Drawing.Size(609, 20);
             this.TB_DWN.TabIndex = 8;
@@ -82,7 +83,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(20, 52);
+            this.label6.Location = new System.Drawing.Point(4, 54);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(92, 13);
             this.label6.TabIndex = 15;
@@ -91,7 +92,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(20, 88);
+            this.label7.Location = new System.Drawing.Point(4, 90);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(106, 13);
             this.label7.TabIndex = 16;
@@ -99,7 +100,7 @@
             // 
             // BTN_Gen
             // 
-            this.BTN_Gen.Location = new System.Drawing.Point(18, 122);
+            this.BTN_Gen.Location = new System.Drawing.Point(2, 124);
             this.BTN_Gen.Name = "BTN_Gen";
             this.BTN_Gen.Size = new System.Drawing.Size(94, 23);
             this.BTN_Gen.TabIndex = 24;
@@ -154,7 +155,7 @@
             // CB_Save
             // 
             this.CB_Save.AutoSize = true;
-            this.CB_Save.Location = new System.Drawing.Point(629, 126);
+            this.CB_Save.Location = new System.Drawing.Point(613, 128);
             this.CB_Save.Name = "CB_Save";
             this.CB_Save.Size = new System.Drawing.Size(112, 17);
             this.CB_Save.TabIndex = 32;
@@ -163,7 +164,7 @@
             // 
             // BTN_Clr
             // 
-            this.BTN_Clr.Location = new System.Drawing.Point(132, 122);
+            this.BTN_Clr.Location = new System.Drawing.Point(116, 124);
             this.BTN_Clr.Name = "BTN_Clr";
             this.BTN_Clr.Size = new System.Drawing.Size(94, 23);
             this.BTN_Clr.TabIndex = 33;
@@ -174,7 +175,7 @@
             // CB_NoCyc
             // 
             this.CB_NoCyc.AutoSize = true;
-            this.CB_NoCyc.Location = new System.Drawing.Point(290, 126);
+            this.CB_NoCyc.Location = new System.Drawing.Point(274, 128);
             this.CB_NoCyc.Name = "CB_NoCyc";
             this.CB_NoCyc.Size = new System.Drawing.Size(87, 17);
             this.CB_NoCyc.TabIndex = 34;
@@ -184,7 +185,7 @@
             // CB_NoTTF
             // 
             this.CB_NoTTF.AutoSize = true;
-            this.CB_NoTTF.Location = new System.Drawing.Point(382, 126);
+            this.CB_NoTTF.Location = new System.Drawing.Point(366, 128);
             this.CB_NoTTF.Name = "CB_NoTTF";
             this.CB_NoTTF.Size = new System.Drawing.Size(70, 17);
             this.CB_NoTTF.TabIndex = 35;
@@ -194,7 +195,7 @@
             // CB_NoGen
             // 
             this.CB_NoGen.AutoSize = true;
-            this.CB_NoGen.Location = new System.Drawing.Point(458, 126);
+            this.CB_NoGen.Location = new System.Drawing.Point(442, 128);
             this.CB_NoGen.Name = "CB_NoGen";
             this.CB_NoGen.Size = new System.Drawing.Size(87, 17);
             this.CB_NoGen.TabIndex = 36;
@@ -217,12 +218,27 @@
             this.CB_Type.Name = "CB_Type";
             this.CB_Type.Size = new System.Drawing.Size(75, 21);
             this.CB_Type.TabIndex = 37;
+            this.CB_Type.SelectedValueChanged += new System.EventHandler(this.CB_Type_SelectedValueChanged);
+            // 
+            // CB_Cert
+            // 
+            this.CB_Cert.AutoSize = true;
+            this.CB_Cert.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.25F);
+            this.CB_Cert.Location = new System.Drawing.Point(249, 32);
+            this.CB_Cert.Name = "CB_Cert";
+            this.CB_Cert.Size = new System.Drawing.Size(115, 17);
+            this.CB_Cert.TabIndex = 39;
+            this.CB_Cert.Text = "Use Symantec Cert";
+            this.CB_Cert.UseVisualStyleBackColor = true;
+            this.CB_Cert.Visible = false;
+            this.CB_Cert.CheckedChanged += new System.EventHandler(this.CB_Cert_CheckedChanged);
             // 
             // AutoGen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(760, 158);
+            this.Controls.Add(this.CB_Cert);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.CB_Type);
             this.Controls.Add(this.CB_NoGen);
@@ -271,5 +287,6 @@
         private System.Windows.Forms.CheckBox CB_NoGen;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox CB_Type;
+        private System.Windows.Forms.CheckBox CB_Cert;
     }
 }

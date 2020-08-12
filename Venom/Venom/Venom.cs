@@ -63,6 +63,7 @@ namespace VenomNamespace
         public bool indigo = false;
         public bool tourma = false;
         public bool tfound = false;
+        public bool symcert = false;
 
         public string curfilename;
         public string ccuri = "";
@@ -4211,9 +4212,9 @@ namespace VenomNamespace
                     // Restart Wifi Connection
                     if (certMgr.IsLocalValid)
                     {
-                        //if (tourma)
-                            //WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
-                        //else
+                        if (symcert)
+                            WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Symantec20172020));
+                        else
                             WifiLocal.SetWifi(System.Net.IPAddress.Parse(localIP), certMgr.GetCertificate(CertManager.CertificateManager.CertificateTypes.Digicert20202022));
 
                         Wait(2000);
@@ -4442,6 +4443,7 @@ namespace VenomNamespace
             indigo = false;
             tourma = false;
             tfound = false;
+            symcert = false;
             ccuri = "";
             vers = "";
             ispp = "";

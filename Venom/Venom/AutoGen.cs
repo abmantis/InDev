@@ -59,6 +59,8 @@ namespace VenomNamespace
             CB_NoTTF.Checked = false;
             CB_NoGen.Checked = false;
             CB_Save.Checked = false;
+            CB_Cert.Checked = false;
+            CB_Cert.Visible = false;
         }
         public void CB_Variant_SelectedValueChanged(object sender, EventArgs e)
         {
@@ -446,6 +448,25 @@ namespace VenomNamespace
             if (dialogResult != DialogResult.Yes)
                 return;
             ResetForm();
+        }
+        private void CB_Cert_CheckedChanged(object sender, EventArgs e)
+        {
+            if (CB_Cert.Checked)
+                parent.symcert = true;
+            else
+                parent.symcert = false;
+        }
+
+        private void CB_Type_SelectedValueChanged(object sender, EventArgs e)
+        {
+            if (CB_Type.Text == "Gen4")
+                CB_Cert.Visible = true;
+            else
+            {
+                CB_Cert.Visible = false;
+                CB_Cert.Checked = false;
+            }
+                
         }
     }
 }
